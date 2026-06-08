@@ -5,6 +5,24 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: index.php");
     exit();
 }
+
+include "config/db.php";
+
+// 👤 Total Members
+$result = $conn->query("SELECT COUNT(*) AS total FROM members");
+$data = $result->fetch_assoc();
+$total_members = $data['total'] ?? 0;
+
+// 💰 Total Loans
+$result = $conn->query("SELECT SUM(principal_amount) AS total FROM loans");
+$data = $result->fetch_assoc();
+$total_loans = $data['total'] ?? 0;
+
+// 💵 Total Savings
+$result = $conn->query("SELECT SUM(balance) AS total FROM savings");
+$data = $result->fetch_assoc();
+$total_savings = $data['total'] ?? 0;
+
 ?>
 
 <!DOCTYPE html>
@@ -49,7 +67,7 @@ body {
     background: #374151;
 }
 
-/* Main content */
+/* Main */
 .main {
     margin-left: 250px;
     padding: 20px;
@@ -110,24 +128,27 @@ body {
     <!-- Cards -->
     <div class="row g-3">
 
+        <!-- Members -->
         <div class="col-md-4">
             <div class="card-box">
                 <div class="card-title">Total Members</div>
-                <div class="card-value">120</div>
+                <div class="card-value"><?php echo $total_members; ?></div>
             </div>
         </div>
 
+        <!-- Loans -->
         <div class="col-md-4">
             <div class="card-box">
                 <div class="card-title">Total Loans</div>
-                <div class="card-value">৳ 5,00,000</div>
+                <div class="card-value">৳ <?php echo number_format($total_loans); ?></div>
             </div>
         </div>
 
+        <!-- Savings -->
         <div class="col-md-4">
             <div class="card-box">
                 <div class="card-title">Total Savings</div>
-                <div class="card-value">৳ 2,50,000</div>
+                <div class="card-value">৳ <?php echo number_format($total_savings); ?></div>
             </div>
         </div>
 
