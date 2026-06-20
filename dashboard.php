@@ -105,15 +105,16 @@ body {
 </head>
 
 <body>
-
-<!-- Sidebar -->
 <div class="sidebar">
     <h2>MicroFinance</h2>
-    <a href="#">Dashboard</a>
-    <a href="#">Members</a>
-    <a href="#">Loans</a>
-    <a href="#">Installments</a>
-    <a href="#">Savings</a>
+
+    <a href="dashboard.php">Dashboard</a>
+    <a href="committees/">Committees</a>
+    <a href="members/">Members</a>
+    <a href="loans/">Loans</a>
+    <a href="installments/">Installments</a>
+    <a href="savings/">Savings</a>
+
     <a href="logout.php">Logout</a>
 </div>
 
