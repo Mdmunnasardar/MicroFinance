@@ -10,13 +10,19 @@ if (!isset($_SESSION['user_id'])) {
 // GET ALL PAYMENTS
 $sql = "
 SELECT 
-lp.*,
+lp.payment_id,
+lp.amount,
+lp.payment_date,
+lp.note,
+
 l.loan_code,
 m.full_name,
 m.member_code
+
 FROM loan_payments lp
 LEFT JOIN loans l ON lp.loan_id = l.loan_id
 LEFT JOIN members m ON lp.member_id = m.member_id
+
 ORDER BY lp.payment_id DESC
 ";
 
@@ -26,7 +32,7 @@ $result = $conn->query($sql);
 <!DOCTYPE html>
 <html>
 <head>
-<title>Loan Payments</title>
+<title>Payment List</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
@@ -40,11 +46,12 @@ body{
 
 <div class="container mt-4">
 
-<h3>Installment Payment History</h3>
+<h3>All Installment Payments</h3>
 
-<a href="payment.php" class="btn btn-primary mb-3">
-+ Collect Payment
-</a>
+<div class="mb-3">
+    <a href="payment.php" class="btn btn-success">+ Collect Payment</a>
+    <a href="index.php" class="btn btn-secondary">Refresh</a>
+</div>
 
 <table class="table table-bordered bg-white">
 
@@ -54,7 +61,7 @@ body{
     <th>Loan Code</th>
     <th>Member</th>
     <th>Amount</th>
-    <th>Payment Date</th>
+    <th>Date</th>
     <th>Note</th>
 </tr>
 </thead>
