@@ -101,6 +101,17 @@ body{
     <td><?php echo $row['maturity_date']; ?></td>
 
 </tr>
+<td>
+    <a href="edit.php?id=<?php echo $row['loan_id']; ?>" class="btn btn-warning btn-sm">
+        Edit
+    </a>
+
+    <a href="delete.php?id=<?php echo $row['loan_id']; ?>" 
+       class="btn btn-danger btn-sm"
+       onclick="return confirm('Are you sure?')">
+        Delete
+    </a>
+</td>
 
 <?php } ?>
 
