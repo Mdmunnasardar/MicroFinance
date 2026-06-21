@@ -14,14 +14,14 @@ if(isset($_POST['submit'])){
     $payment_date = $_POST['payment_date'];
     $note = $_POST['note'];
 
-    // get loan info
+    // loan info
     $loan = $conn->query("SELECT member_id, total_paid FROM loans WHERE loan_id=$loan_id");
     $l = $loan->fetch_assoc();
 
     $member_id = $l['member_id'];
     $new_total = $l['total_paid'] + $amount;
 
-    // insert payment history
+    // insert payment
     $conn->query("
         INSERT INTO loan_payments (loan_id, member_id, amount, payment_date, note)
         VALUES ('$loan_id','$member_id','$amount','$payment_date','$note')
@@ -68,7 +68,7 @@ WHERE l.status='active'
 while($row = $loans->fetch_assoc()){
 ?>
 <option value="<?php echo $row['loan_id']; ?>">
-    <?php echo $row['loan_code']; ?> - <?php echo $row['full_name']; ?>
+<?php echo $row['loan_code']." - ".$row['full_name']; ?>
 </option>
 <?php } ?>
 
