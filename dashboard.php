@@ -8,28 +8,43 @@ if (!isset($_SESSION['user_id'])) {
 
 include "config/db.php";
 
-// 👤 Total Members
+# =========================
+# 📊 BASIC STATS
+# =========================
+
+// Members
 $result = $conn->query("SELECT COUNT(*) AS total FROM members");
-$data = $result->fetch_assoc();
-$total_members = $data['total'] ?? 0;
+$total_members = $result->fetch_assoc()['total'] ?? 0;
 
-// 💰 Total Loans
+// Loans
 $result = $conn->query("SELECT SUM(principal_amount) AS total FROM loans");
-$data = $result->fetch_assoc();
-$total_loans = $data['total'] ?? 0;
+$total_loans = $result->fetch_assoc()['total'] ?? 0;
 
-// 💵 Total Savings
+// Savings
 $result = $conn->query("SELECT SUM(balance) AS total FROM savings");
-$data = $result->fetch_assoc();
-$total_savings = $data['total'] ?? 0;
+$total_savings = $result->fetch_assoc()['total'] ?? 0;
+
+# =========================
+# 💥 DUE SYSTEM CALCULATION
+# =========================
+
+// Total Loan
+$result = $conn->query("SELECT SUM(principal_amount) AS total FROM loans");
+$total_loan = $result->fetch_assoc()['total'] ?? 0;
+
+// Total Paid
+$result = $conn->query("SELECT SUM(total_paid) AS total FROM loans");
+$total_paid = $result->fetch_assoc()['total'] ?? 0;
+
+// Due
+$total_due = $total_loan - $total_paid;
 
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Dashboard</title>
+<title>MicroFinance Dashboard</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -83,7 +98,7 @@ body {
 }
 
 .card-title {
-    font-size: 18px;
+    font-size: 16px;
     color: gray;
 }
 
@@ -105,6 +120,8 @@ body {
 </head>
 
 <body>
+
+<!-- SIDEBAR -->
 <div class="sidebar">
     <h2>MicroFinance</h2>
 
@@ -114,23 +131,25 @@ body {
     <a href="loans/">Loans</a>
     <a href="installments/">Installments</a>
     <a href="savings/">Savings</a>
-
+    <a href="due_system/index.php">Due System</a>
+    <a href="due_system/overdue.php">Overdue Loans</a>
     <a href="logout.php">Logout</a>
 </div>
 
-<!-- Main -->
+<!-- MAIN -->
 <div class="main">
 
+    <!-- TOPBAR -->
     <div class="topbar">
         <h4>Welcome, <?php echo $_SESSION['name']; ?></h4>
         <small>Role: <?php echo $_SESSION['role']; ?></small>
     </div>
 
-    <!-- Cards -->
+    <!-- CARDS -->
     <div class="row g-3">
 
         <!-- Members -->
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card-box">
                 <div class="card-title">Total Members</div>
                 <div class="card-value"><?php echo $total_members; ?></div>
@@ -138,7 +157,7 @@ body {
         </div>
 
         <!-- Loans -->
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card-box">
                 <div class="card-title">Total Loans</div>
                 <div class="card-value">৳ <?php echo number_format($total_loans); ?></div>
@@ -146,10 +165,20 @@ body {
         </div>
 
         <!-- Savings -->
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card-box">
                 <div class="card-title">Total Savings</div>
                 <div class="card-value">৳ <?php echo number_format($total_savings); ?></div>
+            </div>
+        </div>
+
+        <!-- Due -->
+        <div class="col-md-3">
+            <div class="card-box">
+                <div class="card-title">Total Due</div>
+                <div class="card-value text-danger">
+                    ৳ <?php echo number_format($total_due); ?>
+                </div>
             </div>
         </div>
 
