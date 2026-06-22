@@ -1,91 +1,61 @@
 <?php
 session_start();
+include "config/db.php";
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: index.php");
     exit();
 }
 
-include "config/db.php";
-
 # =========================
 # 📊 BASIC STATS
 # =========================
 
 // Members
-$result = $conn->query("SELECT COUNT(*) AS total FROM members");
-$total_members = $result->fetch_assoc()['total'] ?? 0;
+$total_members = $conn->query("SELECT COUNT(*) AS total FROM members")
+->fetch_assoc()['total'] ?? 0;
+
+// Active Members
+$active_members = $conn->query("SELECT COUNT(*) AS total FROM members WHERE is_active=1")
+->fetch_assoc()['total'] ?? 0;
 
 // Loans
-$result = $conn->query("SELECT SUM(principal_amount) AS total FROM loans");
-$total_loans = $result->fetch_assoc()['total'] ?? 0;
+$total_loans = $conn->query("SELECT COUNT(*) AS total FROM loans")
+->fetch_assoc()['total'] ?? 0;
 
-// Savings
-$result = $conn->query("SELECT SUM(balance) AS total FROM savings");
-$total_savings = $result->fetch_assoc()['total'] ?? 0;
+// Active Loans
+$active_loans = $conn->query("SELECT COUNT(*) AS total FROM loans WHERE status='active'")
+->fetch_assoc()['total'] ?? 0;
 
-# =========================
-# 💥 DUE SYSTEM CALCULATION
-# =========================
-
-// Total Loan
-$result = $conn->query("SELECT SUM(principal_amount) AS total FROM loans");
-$total_loan = $result->fetch_assoc()['total'] ?? 0;
+// Total Loan Amount
+$total_loan_amount = $conn->query("SELECT SUM(principal_amount) AS total FROM loans")
+->fetch_assoc()['total'] ?? 0;
 
 // Total Paid
-$result = $conn->query("SELECT SUM(total_paid) AS total FROM loans");
-$total_paid = $result->fetch_assoc()['total'] ?? 0;
+$total_paid = $conn->query("SELECT SUM(total_paid) AS total FROM loans")
+->fetch_assoc()['total'] ?? 0;
 
-// Due
-$total_due = $total_loan - $total_paid;
+// Due Amount
+$total_due = $total_loan_amount - $total_paid;
 
-<div class="row g-3">
+// Savings
+$total_savings = $conn->query("SELECT SUM(balance) AS total FROM savings")
+->fetch_assoc()['total'] ?? 0;
 
-<div class="col-md-3">
-<div class="card-box">
-<div class="card-title">Total Members</div>
-<div class="card-value"><?php echo $total_members; ?></div>
-</div>
-</div>
+// Total Collected (Installments)
+$total_collected = $conn->query("SELECT SUM(amount) AS total FROM loan_payments")
+->fetch_assoc()['total'] ?? 0;
 
-<div class="col-md-3">
-<div class="card-box">
-<div class="card-title">Active Members</div>
-<div class="card-value"><?php echo $active_members; ?></div>
-</div>
-</div>
-
-<div class="col-md-3">
-<div class="card-box">
-<div class="card-title">Total Loans</div>
-<div class="card-value"><?php echo $total_loans; ?></div>
-</div>
-</div>
-
-<div class="col-md-3">
-<div class="card-box">
-<div class="card-title">Active Loans</div>
-<div class="card-value"><?php echo $active_loans; ?></div>
-</div>
-</div>
-
-<div class="col-md-3">
-<div class="card-box">
-<div class="card-title">Total Savings</div>
-<div class="card-value">৳ <?php echo number_format($total_savings); ?></div>
-</div>
-</div>
-
-<div class="col-md-3">
-<div class="card-box">
-<div class="card-title">Total Collected</div>
-<div class="card-value">৳ <?php echo number_format($total_collected); ?></div>
-</div>
-</div>
-
-</div>
+// Overdue Loans (simple logic)
+$overdue_loans = $conn->query("
+SELECT COUNT(*) AS total
+FROM loans
+WHERE status='active'
+AND maturity_date < CURDATE()
+")->fetch_assoc()['total'] ?? 0;
 
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -144,12 +114,12 @@ body {
 }
 
 .card-title {
-    font-size: 16px;
+    font-size: 15px;
     color: gray;
 }
 
 .card-value {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: bold;
 }
 
@@ -172,13 +142,13 @@ body {
     <h2>MicroFinance</h2>
 
     <a href="dashboard.php">Dashboard</a>
-    <a href="committees/">Committees</a>
     <a href="members/">Members</a>
+    <a href="committees/">Committees</a>
     <a href="loans/">Loans</a>
     <a href="installments/">Installments</a>
     <a href="savings/">Savings</a>
     <a href="due_system/index.php">Due System</a>
-    <a href="due_system/overdue.php">Overdue Loans</a>
+    <a href="due_system/overdue.php">Overdue</a>
     <a href="logout.php">Logout</a>
 </div>
 
@@ -194,7 +164,6 @@ body {
     <!-- CARDS -->
     <div class="row g-3">
 
-        <!-- Members -->
         <div class="col-md-3">
             <div class="card-box">
                 <div class="card-title">Total Members</div>
@@ -202,29 +171,66 @@ body {
             </div>
         </div>
 
-        <!-- Loans -->
+        <div class="col-md-3">
+            <div class="card-box">
+                <div class="card-title">Active Members</div>
+                <div class="card-value"><?php echo $active_members; ?></div>
+            </div>
+        </div>
+
         <div class="col-md-3">
             <div class="card-box">
                 <div class="card-title">Total Loans</div>
-                <div class="card-value">৳ <?php echo number_format($total_loans); ?></div>
+                <div class="card-value"><?php echo $total_loans; ?></div>
             </div>
         </div>
 
-        <!-- Savings -->
         <div class="col-md-3">
             <div class="card-box">
-                <div class="card-title">Total Savings</div>
-                <div class="card-value">৳ <?php echo number_format($total_savings); ?></div>
+                <div class="card-title">Active Loans</div>
+                <div class="card-value"><?php echo $active_loans; ?></div>
             </div>
         </div>
 
-        <!-- Due -->
+        <div class="col-md-3">
+            <div class="card-box">
+                <div class="card-title">Total Loan Amount</div>
+                <div class="card-value">৳ <?php echo number_format($total_loan_amount); ?></div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card-box">
+                <div class="card-title">Total Paid</div>
+                <div class="card-value">৳ <?php echo number_format($total_paid); ?></div>
+            </div>
+        </div>
+
         <div class="col-md-3">
             <div class="card-box">
                 <div class="card-title">Total Due</div>
-                <div class="card-value text-danger">
-                    ৳ <?php echo number_format($total_due); ?>
-                </div>
+                <div class="card-value text-danger">৳ <?php echo number_format($total_due); ?></div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card-box">
+                <div class="card-title">Savings</div>
+                <div class="card-value text-success">৳ <?php echo number_format($total_savings); ?></div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card-box">
+                <div class="card-title">Collected</div>
+                <div class="card-value">৳ <?php echo number_format($total_collected); ?></div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card-box">
+                <div class="card-title">Overdue Loans</div>
+                <div class="card-value text-danger"><?php echo $overdue_loans; ?></div>
             </div>
         </div>
 
