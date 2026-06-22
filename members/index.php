@@ -8,10 +8,23 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 /* ======================
-   SEARCH SAFE
+   FILTERS
 ====================== */
-$search = "";
+$search = $_GET['search'] ?? "";
+$branch = $_GET['branch'] ?? "";
 
+/* ======================
+   STATS
+====================== */
+$total_members = $conn->query("SELECT COUNT(*) as t FROM members")->fetch_assoc()['t'] ?? 0;
+
+$active_members = $conn->query("
+SELECT COUNT(*) as t FROM members WHERE is_active=1
+")->fetch_assoc()['t'] ?? 0;
+
+/* ======================
+   MAIN QUERY
+====================== */
 $sql = "
 SELECT m.*, c.committee_name, b.branch_name
 FROM members m
@@ -20,10 +33,7 @@ LEFT JOIN branches b ON m.branch_id = b.branch_id
 WHERE 1
 ";
 
-if(isset($_GET['search']) && $_GET['search'] != "") {
-
-    $search = trim($_GET['search']);
-
+if($search != ""){
     $sql .= " AND (
         m.full_name LIKE '%$search%'
         OR m.member_code LIKE '%$search%'
@@ -32,9 +42,18 @@ if(isset($_GET['search']) && $_GET['search'] != "") {
     )";
 }
 
+if($branch != ""){
+    $sql .= " AND m.branch_id='$branch'";
+}
+
 $sql .= " ORDER BY m.member_id DESC";
 
 $result = $conn->query($sql);
+
+/* ======================
+   BRANCH LIST
+====================== */
+$branches = $conn->query("SELECT * FROM branches");
 ?>
 
 <!DOCTYPE html>
@@ -43,18 +62,11 @@ $result = $conn->query($sql);
 <title>Members</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-<style>
-body{
-    background:#f4f6f9;
-    font-family:Segoe UI;
-}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-.card-box{
-    background:#fff;
-    padding:15px;
-    border-radius:10px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.05);
-}
+<style>
+body{background:#f4f6f9;}
+.card-box{background:#fff;padding:15px;border-radius:10px;}
 </style>
 </head>
 
@@ -62,84 +74,82 @@ body{
 
 <div class="container mt-4">
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-
 <h3>Members</h3>
 
-<a href="add.php" class="btn btn-success">+ Add Member</a>
+<!-- STATS -->
+<div class="row mb-3">
+
+<div class="col-md-6">
+<div class="card-box text-center">
+<h5>Total Members</h5>
+<h3><?php echo $total_members; ?></h3>
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="card-box text-center">
+<h5>Active Members</h5>
+<h3><?php echo $active_members; ?></h3>
+</div>
+</div>
 
 </div>
 
-<!-- SEARCH -->
-<div class="card-box mb-3">
-
-<form method="GET">
+<!-- FILTER -->
+<form method="GET" class="mb-3">
 <div class="row">
 
-<div class="col-md-10">
-<input type="text" name="search" class="form-control"
-placeholder="Search by Name / Code / Phone / NID"
-value="<?php echo htmlspecialchars($search); ?>">
+<div class="col-md-4">
+<input type="text" name="search" class="form-control" placeholder="Search..." value="<?php echo $search; ?>">
 </div>
 
-<div class="col-md-2">
-<button class="btn btn-primary w-100">Search</button>
+<div class="col-md-4">
+<select name="branch" class="form-control">
+<option value="">All Branch</option>
+<?php while($b = $branches->fetch_assoc()){ ?>
+<option value="<?php echo $b['branch_id']; ?>"
+<?php if($branch==$b['branch_id']) echo "selected"; ?>>
+<?php echo $b['branch_name']; ?>
+</option>
+<?php } ?>
+</select>
+</div>
+
+<div class="col-md-4">
+<button class="btn btn-primary w-100">Filter</button>
 </div>
 
 </div>
 </form>
 
-</div>
+<!-- EXPORT -->
+<a href="export_csv.php" class="btn btn-success mb-2">Export CSV</a>
 
 <!-- TABLE -->
-<div class="card-box">
+<table class="table table-bordered bg-white">
 
-<table class="table table-bordered table-hover">
-
-<thead class="table-dark">
 <tr>
 <th>ID</th>
-<th>Code</th>
 <th>Name</th>
-<th>DOB</th>
 <th>Phone</th>
-<th>Committee</th>
 <th>Branch</th>
-<th width="180">Action</th>
+<th>Action</th>
 </tr>
-</thead>
 
-<tbody>
-
-<?php while($row = $result->fetch_assoc()) { ?>
+<?php while($row = $result->fetch_assoc()){ ?>
 
 <tr>
-
 <td><?php echo $row['member_id']; ?></td>
-<td><?php echo $row['member_code']; ?></td>
 <td><?php echo $row['full_name']; ?></td>
-<td><?php echo $row['dob']; ?></td>
 <td><?php echo $row['phone']; ?></td>
-<td><?php echo $row['committee_name']; ?></td>
 <td><?php echo $row['branch_name']; ?></td>
 
 <td>
 
-<a href="view.php?id=<?php echo $row['member_id']; ?>" 
-   class="btn btn-info btn-sm text-white">
-   View
-</a>
-
-<a href="edit.php?id=<?php echo $row['member_id']; ?>" 
-   class="btn btn-warning btn-sm">
-   Edit
-</a>
-
-<a href="delete.php?id=<?php echo $row['member_id']; ?>" 
-   class="btn btn-danger btn-sm"
-   onclick="return confirm('Are you sure?')">
-   Delete
-</a>
+<button class="btn btn-info btn-sm viewBtn"
+data-id="<?php echo $row['member_id']; ?>">
+Quick View
+</button>
 
 </td>
 
@@ -147,13 +157,36 @@ value="<?php echo htmlspecialchars($search); ?>">
 
 <?php } ?>
 
-</tbody>
-
 </table>
 
 </div>
 
+<!-- MODAL -->
+<div class="modal fade" id="viewModal">
+<div class="modal-dialog">
+<div class="modal-content p-3" id="modalData"></div>
 </div>
+</div>
+
+<script>
+$(".viewBtn").click(function(){
+
+var id = $(this).data("id");
+
+$.ajax({
+url:"quick_view.php",
+type:"POST",
+data:{id:id},
+success:function(data){
+$("#modalData").html(data);
+$("#viewModal").modal("show");
+}
+});
+
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>
