@@ -14,25 +14,48 @@ if(isset($_POST['submit'])){
     $payment_date = $_POST['payment_date'];
     $note = $_POST['note'];
 
-    // loan info
-    $loan = $conn->query("SELECT member_id, total_paid FROM loans WHERE loan_id=$loan_id");
+    // 1. GET MEMBER
+    $loan = $conn->query("SELECT member_id FROM loans WHERE loan_id=$loan_id");
     $l = $loan->fetch_assoc();
-
     $member_id = $l['member_id'];
-    $new_total = $l['total_paid'] + $amount;
 
-    // insert payment
+    // 2. INSERT PAYMENT
     $conn->query("
         INSERT INTO loan_payments (loan_id, member_id, amount, payment_date, note)
         VALUES ('$loan_id','$member_id','$amount','$payment_date','$note')
     ");
 
-    // update loan
+    // 3. RE-CALCULATE TOTAL PAID (SAFE METHOD)
+    $total = $conn->query("
+        SELECT IFNULL(SUM(amount),0) as total
+        FROM loan_payments
+        WHERE loan_id=$loan_id
+    ")->fetch_assoc()['total'];
+
     $conn->query("
         UPDATE loans 
-        SET total_paid='$new_total'
+        SET total_paid='$total'
         WHERE loan_id=$loan_id
     ");
+
+    // 4. UPDATE INSTALLMENT (AUTO MARK NEXT ONE PAID)
+    $inst = $conn->query("
+        SELECT installment_id
+        FROM loan_installments
+        WHERE loan_id=$loan_id AND status='pending'
+        ORDER BY installment_no ASC
+        LIMIT 1
+    ");
+
+    if($inst && $inst->num_rows > 0){
+        $i = $inst->fetch_assoc();
+
+        $conn->query("
+            UPDATE loan_installments
+            SET status='paid', paid_date='$payment_date'
+            WHERE installment_id=".$i['installment_id']."
+        ");
+    }
 
     header("Location: index.php");
     exit();
@@ -42,7 +65,7 @@ if(isset($_POST['submit'])){
 <!DOCTYPE html>
 <html>
 <head>
-<title>Collect Installment</title>
+<title>Collect Payment</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
@@ -55,6 +78,7 @@ if(isset($_POST['submit'])){
 <form method="POST">
 
 <select name="loan_id" class="form-control mb-2" required>
+
 <option value="">Select Loan</option>
 
 <?php
@@ -80,7 +104,9 @@ while($row = $loans->fetch_assoc()){
 
 <input type="text" name="note" class="form-control mb-2" placeholder="Note">
 
-<button class="btn btn-success w-100" name="submit">Collect Payment</button>
+<button class="btn btn-success w-100" name="submit">
+Collect Payment
+</button>
 
 </form>
 
