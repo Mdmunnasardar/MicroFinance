@@ -72,8 +72,19 @@ body{background:#f4f6f9;font-family:Segoe UI;}
 
 <!-- HEADER -->
 <div class="d-flex justify-content-between mb-3">
+
 <h3>Members System</h3>
-<a href="add.php" class="btn btn-success">+ Add Member</a>
+
+<div>
+    <a href="loan_chart.php" class="btn btn-dark me-2">
+        📊 Loan Graph
+    </a>
+
+    <a href="add.php" class="btn btn-success">
+        + Add Member
+    </a>
+</div>
+
 </div>
 
 <!-- STATS -->
