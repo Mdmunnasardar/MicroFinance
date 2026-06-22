@@ -39,6 +39,52 @@ $total_paid = $result->fetch_assoc()['total'] ?? 0;
 // Due
 $total_due = $total_loan - $total_paid;
 
+<div class="row g-3">
+
+<div class="col-md-3">
+<div class="card-box">
+<div class="card-title">Total Members</div>
+<div class="card-value"><?php echo $total_members; ?></div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card-box">
+<div class="card-title">Active Members</div>
+<div class="card-value"><?php echo $active_members; ?></div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card-box">
+<div class="card-title">Total Loans</div>
+<div class="card-value"><?php echo $total_loans; ?></div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card-box">
+<div class="card-title">Active Loans</div>
+<div class="card-value"><?php echo $active_loans; ?></div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card-box">
+<div class="card-title">Total Savings</div>
+<div class="card-value">৳ <?php echo number_format($total_savings); ?></div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card-box">
+<div class="card-title">Total Collected</div>
+<div class="card-value">৳ <?php echo number_format($total_collected); ?></div>
+</div>
+</div>
+
+</div>
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
