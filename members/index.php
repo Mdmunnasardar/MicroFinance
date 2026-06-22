@@ -7,6 +7,9 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+/* ======================
+   SEARCH SAFE
+====================== */
 $search = "";
 
 $sql = "
@@ -19,7 +22,7 @@ WHERE 1
 
 if(isset($_GET['search']) && $_GET['search'] != "") {
 
-    $search = $_GET['search'];
+    $search = trim($_GET['search']);
 
     $sql .= " AND (
         m.full_name LIKE '%$search%'
@@ -43,6 +46,14 @@ $result = $conn->query($sql);
 <style>
 body{
     background:#f4f6f9;
+    font-family:Segoe UI;
+}
+
+.card-box{
+    background:#fff;
+    padding:15px;
+    border-radius:10px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.05);
 }
 </style>
 </head>
@@ -51,16 +62,24 @@ body{
 
 <div class="container mt-4">
 
-<h3>Member List</h3>
+<div class="d-flex justify-content-between align-items-center mb-3">
+
+<h3>Members</h3>
+
+<a href="add.php" class="btn btn-success">+ Add Member</a>
+
+</div>
 
 <!-- SEARCH -->
-<form method="GET" class="mb-3">
+<div class="card-box mb-3">
+
+<form method="GET">
 <div class="row">
 
 <div class="col-md-10">
 <input type="text" name="search" class="form-control"
 placeholder="Search by Name / Code / Phone / NID"
-value="<?php echo $search; ?>">
+value="<?php echo htmlspecialchars($search); ?>">
 </div>
 
 <div class="col-md-2">
@@ -70,12 +89,14 @@ value="<?php echo $search; ?>">
 </div>
 </form>
 
-<!-- ACTION -->
-<a href="add.php" class="btn btn-success mb-3">+ Add Member</a>
-<a href="index.php" class="btn btn-secondary mb-3">Reset</a>
+</div>
 
-<table class="table table-bordered bg-white">
+<!-- TABLE -->
+<div class="card-box">
 
+<table class="table table-bordered table-hover">
+
+<thead class="table-dark">
 <tr>
 <th>ID</th>
 <th>Code</th>
@@ -84,8 +105,11 @@ value="<?php echo $search; ?>">
 <th>Phone</th>
 <th>Committee</th>
 <th>Branch</th>
-<th>Action</th>
+<th width="180">Action</th>
 </tr>
+</thead>
+
+<tbody>
 
 <?php while($row = $result->fetch_assoc()) { ?>
 
@@ -101,8 +125,7 @@ value="<?php echo $search; ?>">
 
 <td>
 
-<!-- 💥 VIEW PROFILE (IMPORTANT ADD) -->
-<a href="profile.php?id=<?php echo $row['member_id']; ?>" 
+<a href="view.php?id=<?php echo $row['member_id']; ?>" 
    class="btn btn-info btn-sm text-white">
    View
 </a>
@@ -124,7 +147,11 @@ value="<?php echo $search; ?>">
 
 <?php } ?>
 
+</tbody>
+
 </table>
+
+</div>
 
 </div>
 
