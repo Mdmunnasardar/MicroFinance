@@ -7,236 +7,321 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-# =========================
-# 📊 BASIC STATS
-# =========================
+/* =========================
+   CORE STATS
+========================= */
 
-// Members
-$total_members = $conn->query("SELECT COUNT(*) AS total FROM members")
-->fetch_assoc()['total'] ?? 0;
+$total_members = $conn->query("SELECT COUNT(*) AS t FROM members")->fetch_assoc()['t'] ?? 0;
 
-// Active Members
-$active_members = $conn->query("SELECT COUNT(*) AS total FROM members WHERE is_active=1")
-->fetch_assoc()['total'] ?? 0;
+$active_members = $conn->query("SELECT COUNT(*) AS t FROM members WHERE is_active=1")->fetch_assoc()['t'] ?? 0;
 
-// Loans
-$total_loans = $conn->query("SELECT COUNT(*) AS total FROM loans")
-->fetch_assoc()['total'] ?? 0;
+$total_loans = $conn->query("SELECT SUM(principal_amount) AS t FROM loans")->fetch_assoc()['t'] ?? 0;
 
-// Active Loans
-$active_loans = $conn->query("SELECT COUNT(*) AS total FROM loans WHERE status='active'")
-->fetch_assoc()['total'] ?? 0;
+$total_paid = $conn->query("SELECT SUM(total_paid) AS t FROM loans")->fetch_assoc()['t'] ?? 0;
 
-// Total Loan Amount
-$total_loan_amount = $conn->query("SELECT SUM(principal_amount) AS total FROM loans")
-->fetch_assoc()['total'] ?? 0;
+$total_due = $total_loans - $total_paid;
 
-// Total Paid
-$total_paid = $conn->query("SELECT SUM(total_paid) AS total FROM loans")
-->fetch_assoc()['total'] ?? 0;
+$total_savings = $conn->query("SELECT SUM(balance) AS t FROM savings")->fetch_assoc()['t'] ?? 0;
 
-// Due Amount
-$total_due = $total_loan_amount - $total_paid;
+$total_collection = $conn->query("SELECT SUM(amount) AS t FROM loan_payments")->fetch_assoc()['t'] ?? 0;
 
-// Savings
-$total_savings = $conn->query("SELECT SUM(balance) AS total FROM savings")
-->fetch_assoc()['total'] ?? 0;
+/* =========================
+   ADVANCED ANALYTICS
+========================= */
 
-// Total Collected (Installments)
-$total_collected = $conn->query("SELECT SUM(amount) AS total FROM loan_payments")
-->fetch_assoc()['total'] ?? 0;
+$this_month_collection = $conn->query("
+SELECT SUM(amount) AS t
+FROM loan_payments
+WHERE MONTH(payment_date)=MONTH(CURDATE())
+AND YEAR(payment_date)=YEAR(CURDATE())
+")->fetch_assoc()['t'] ?? 0;
 
-// Overdue Loans (simple logic)
-$overdue_loans = $conn->query("
-SELECT COUNT(*) AS total
+$this_month_loans = $conn->query("
+SELECT SUM(principal_amount) AS t
+FROM loans
+WHERE MONTH(created_at)=MONTH(CURDATE())
+AND YEAR(created_at)=YEAR(CURDATE())
+")->fetch_assoc()['t'] ?? 0;
+
+$overdue = $conn->query("
+SELECT COUNT(*) AS t
 FROM loans
 WHERE status='active'
 AND maturity_date < CURDATE()
-")->fetch_assoc()['total'] ?? 0;
+")->fetch_assoc()['t'] ?? 0;
 
+$top = $conn->query("
+SELECT m.full_name, SUM(l.principal_amount) AS total
+FROM loans l
+LEFT JOIN members m ON l.member_id=m.member_id
+GROUP BY l.member_id
+ORDER BY total DESC
+LIMIT 1
+")->fetch_assoc();
+
+/* =========================
+   LOAN HEALTH
+========================= */
+
+$health = ($total_loans > 0) ? ($total_paid / $total_loans) * 100 : 0;
+
+/* =========================
+   MONTHLY GRAPH DATA
+========================= */
+
+$months = [];
+$loanData = [];
+$payData = [];
+
+for ($i = 5; $i >= 0; $i--) {
+
+    $m = date('Y-m', strtotime("-$i month"));
+    $months[] = $m;
+
+    $loan = $conn->query("
+        SELECT SUM(principal_amount) AS t
+        FROM loans
+        WHERE DATE_FORMAT(created_at,'%Y-%m')='$m'
+    ")->fetch_assoc()['t'] ?? 0;
+
+    $pay = $conn->query("
+        SELECT SUM(amount) AS t
+        FROM loan_payments
+        WHERE DATE_FORMAT(payment_date,'%Y-%m')='$m'
+    ")->fetch_assoc()['t'] ?? 0;
+
+    $loanData[] = $loan;
+    $payData[] = $pay;
+}
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>MicroFinance Dashboard</title>
+<title>Bank Dashboard Pro</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body {
-    margin: 0;
-    font-family: 'Segoe UI';
-    background: #f4f6f9;
+body{
+    background:#f4f7fb;
+    font-family:Segoe UI;
 }
 
-/* Sidebar */
-.sidebar {
-    width: 250px;
-    height: 100vh;
-    position: fixed;
-    background: #1f2937;
-    color: white;
-    padding-top: 20px;
+/* SIDEBAR */
+.sidebar{
+    width:250px;
+    height:100vh;
+    position:fixed;
+    background:#0f172a;
+    color:white;
+    padding:20px;
 }
 
-.sidebar h2 {
-    text-align: center;
-    margin-bottom: 30px;
+.sidebar a{
+    display:block;
+    color:#fff;
+    padding:10px;
+    text-decoration:none;
+    border-radius:6px;
+    margin-bottom:5px;
 }
 
-.sidebar a {
-    display: block;
-    color: white;
-    padding: 12px 20px;
-    text-decoration: none;
-    transition: 0.3s;
+.sidebar a:hover{
+    background:#1e293b;
 }
 
-.sidebar a:hover {
-    background: #374151;
+/* MAIN */
+.main{
+    margin-left:270px;
+    padding:20px;
 }
 
-/* Main */
-.main {
-    margin-left: 250px;
-    padding: 20px;
+/* CARD */
+.card-box{
+    background:#fff;
+    padding:16px;
+    border-radius:14px;
+    box-shadow:0 8px 18px rgba(0,0,0,0.06);
+    transition:0.2s;
 }
 
-/* Cards */
-.card-box {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    text-align: center;
+.card-box:hover{
+    transform:translateY(-2px);
 }
 
-.card-title {
-    font-size: 15px;
-    color: gray;
+.title{
+    font-size:12px;
+    color:#6b7280;
 }
 
-.card-value {
-    font-size: 26px;
-    font-weight: bold;
+.value{
+    font-size:22px;
+    font-weight:600;
 }
 
-/* Topbar */
-.topbar {
-    background: white;
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+/* ALERT */
+.alert-strip{
+    background:#fee2e2;
+    padding:10px 15px;
+    border-radius:10px;
+    color:#991b1b;
+    margin-bottom:15px;
+    font-weight:500;
+}
+
+/* SMALL PANEL */
+.panel{
+    background:#fff;
+    padding:15px;
+    border-radius:14px;
+    box-shadow:0 5px 12px rgba(0,0,0,0.05);
 }
 </style>
-
 </head>
 
 <body>
-
 <!-- SIDEBAR -->
 <div class="sidebar">
-    <h2>MicroFinance</h2>
+<h3>🏦 MICROFINANCE</h3>
 
-    <a href="dashboard.php">Dashboard</a>
-    <a href="members/">Members</a>
-    <a href="committees/">Committees</a>
-    <a href="loans/">Loans</a>
-    <a href="installments/">Installments</a>
-    <a href="savings/">Savings</a>
-    <a href="due_system/index.php">Due System</a>
-    <a href="due_system/overdue.php">Overdue</a>
-    <a href="logout.php">Logout</a>
+<a href="dashboard.php">Dashboard</a>
+
+<!-- ADD THIS -->
+<a href="committees/">Committees</a>
+
+<a href="members/">Members</a>
+<a href="loans/">Loans</a>
+<a href="installments/">Installments</a>
+<a href="savings/">Savings</a>
+<a href="due_system/">Due System</a>
+
+<a href="logout.php">Logout</a>
 </div>
 
 <!-- MAIN -->
 <div class="main">
 
-    <!-- TOPBAR -->
-    <div class="topbar">
-        <h4>Welcome, <?php echo $_SESSION['name']; ?></h4>
-        <small>Role: <?php echo $_SESSION['role']; ?></small>
-    </div>
+<h3 class="mb-3">📊 Bank Analytics Dashboard</h3>
 
-    <!-- CARDS -->
-    <div class="row g-3">
+<?php if($overdue > 0): ?>
+<div class="alert-strip">
+⚠️ Overdue Loans: <b><?php echo $overdue; ?></b> require attention!
+</div>
+<?php endif; ?>
 
-        <div class="col-md-3">
-            <div class="card-box">
-                <div class="card-title">Total Members</div>
-                <div class="card-value"><?php echo $total_members; ?></div>
-            </div>
-        </div>
+<!-- KPI ROW -->
+<div class="row g-3">
 
-        <div class="col-md-3">
-            <div class="card-box">
-                <div class="card-title">Active Members</div>
-                <div class="card-value"><?php echo $active_members; ?></div>
-            </div>
-        </div>
+<div class="col-md-3">
+<div class="card-box">
+<div class="title">Total Members</div>
+<div class="value"><?php echo $total_members; ?></div>
+</div>
+</div>
 
-        <div class="col-md-3">
-            <div class="card-box">
-                <div class="card-title">Total Loans</div>
-                <div class="card-value"><?php echo $total_loans; ?></div>
-            </div>
-        </div>
+<div class="col-md-3">
+<div class="card-box">
+<div class="title">Active Members</div>
+<div class="value text-success"><?php echo $active_members; ?></div>
+</div>
+</div>
 
-        <div class="col-md-3">
-            <div class="card-box">
-                <div class="card-title">Active Loans</div>
-                <div class="card-value"><?php echo $active_loans; ?></div>
-            </div>
-        </div>
+<div class="col-md-3">
+<div class="card-box">
+<div class="title">Total Loans</div>
+<div class="value"><?php echo number_format($total_loans); ?></div>
+</div>
+</div>
 
-        <div class="col-md-3">
-            <div class="card-box">
-                <div class="card-title">Total Loan Amount</div>
-                <div class="card-value">৳ <?php echo number_format($total_loan_amount); ?></div>
-            </div>
-        </div>
+<div class="col-md-3">
+<div class="card-box">
+<div class="title">Total Paid</div>
+<div class="value text-success"><?php echo number_format($total_paid); ?></div>
+</div>
+</div>
 
-        <div class="col-md-3">
-            <div class="card-box">
-                <div class="card-title">Total Paid</div>
-                <div class="card-value">৳ <?php echo number_format($total_paid); ?></div>
-            </div>
-        </div>
+<div class="col-md-3">
+<div class="card-box">
+<div class="title">Total Due</div>
+<div class="value text-danger"><?php echo number_format($total_due); ?></div>
+</div>
+</div>
 
-        <div class="col-md-3">
-            <div class="card-box">
-                <div class="card-title">Total Due</div>
-                <div class="card-value text-danger">৳ <?php echo number_format($total_due); ?></div>
-            </div>
-        </div>
+<div class="col-md-3">
+<div class="card-box">
+<div class="title">Savings</div>
+<div class="value text-primary"><?php echo number_format($total_savings); ?></div>
+</div>
+</div>
 
-        <div class="col-md-3">
-            <div class="card-box">
-                <div class="card-title">Savings</div>
-                <div class="card-value text-success">৳ <?php echo number_format($total_savings); ?></div>
-            </div>
-        </div>
+<div class="col-md-3">
+<div class="card-box">
+<div class="title">Monthly Collection</div>
+<div class="value text-success"><?php echo number_format($this_month_collection); ?></div>
+</div>
+</div>
 
-        <div class="col-md-3">
-            <div class="card-box">
-                <div class="card-title">Collected</div>
-                <div class="card-value">৳ <?php echo number_format($total_collected); ?></div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card-box">
-                <div class="card-title">Overdue Loans</div>
-                <div class="card-value text-danger"><?php echo $overdue_loans; ?></div>
-            </div>
-        </div>
-
-    </div>
+<div class="col-md-3">
+<div class="card-box">
+<div class="title">Loan Health</div>
+<div class="value"><?php echo round($health,2); ?>%</div>
+</div>
+</div>
 
 </div>
+
+<!-- TOP PANEL -->
+<div class="row mt-4">
+
+<div class="col-md-8">
+<div class="card-box">
+<h6>📈 Monthly Trend</h6>
+<canvas id="trendChart" height="90"></canvas>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="panel">
+<h6>🏆 Top Borrower</h6>
+<br>
+<h5><?php echo $top['full_name'] ?? 'N/A'; ?></h5>
+</div>
+
+<div class="panel mt-3">
+<h6>💰 This Month Loans</h6>
+<h4><?php echo number_format($this_month_loans); ?></h4>
+</div>
+</div>
+
+</div>
+
+</div>
+
+<script>
+new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+        labels: <?php echo json_encode($months); ?>,
+        datasets: [
+            {
+                label: 'Loans',
+                data: <?php echo json_encode($loanData); ?>,
+                borderColor: '#3b82f6',
+                fill: false
+            },
+            {
+                label: 'Collection',
+                data: <?php echo json_encode($payData); ?>,
+                borderColor: '#22c55e',
+                fill: false
+            }
+        ]
+    }
+});
+</script>
 
 </body>
 </html>
