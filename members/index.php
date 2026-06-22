@@ -18,6 +18,7 @@ WHERE 1
 ";
 
 if(isset($_GET['search']) && $_GET['search'] != "") {
+
     $search = $_GET['search'];
 
     $sql .= " AND (
@@ -52,9 +53,8 @@ body{
 
 <h3>Member List</h3>
 
-<!-- SEARCH BOX -->
+<!-- SEARCH -->
 <form method="GET" class="mb-3">
-
 <div class="row">
 
 <div class="col-md-10">
@@ -68,7 +68,6 @@ value="<?php echo $search; ?>">
 </div>
 
 </div>
-
 </form>
 
 <!-- ACTION -->
@@ -89,6 +88,7 @@ value="<?php echo $search; ?>">
 </tr>
 
 <?php while($row = $result->fetch_assoc()) { ?>
+
 <tr>
 
 <td><?php echo $row['member_id']; ?></td>
@@ -101,22 +101,27 @@ value="<?php echo $search; ?>">
 
 <td>
 
-<a href="view.php?id=<?php echo $row['member_id']; ?>" class="btn btn-info btn-sm text-white">
-View
+<!-- 💥 VIEW PROFILE (IMPORTANT ADD) -->
+<a href="profile.php?id=<?php echo $row['member_id']; ?>" 
+   class="btn btn-info btn-sm text-white">
+   View
 </a>
 
-<a href="edit.php?id=<?php echo $row['member_id']; ?>" class="btn btn-warning btn-sm">
-Edit
+<a href="edit.php?id=<?php echo $row['member_id']; ?>" 
+   class="btn btn-warning btn-sm">
+   Edit
 </a>
 
-<a href="delete.php?id=<?php echo $row['member_id']; ?>" class="btn btn-danger btn-sm"
-onclick="return confirm('Are you sure?')">
-Delete
+<a href="delete.php?id=<?php echo $row['member_id']; ?>" 
+   class="btn btn-danger btn-sm"
+   onclick="return confirm('Are you sure?')">
+   Delete
 </a>
 
 </td>
 
 </tr>
+
 <?php } ?>
 
 </table>
