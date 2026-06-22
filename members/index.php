@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 /* ======================
-   FILTERS
+   FILTER
 ====================== */
 $search = $_GET['search'] ?? "";
 $branch = $_GET['branch'] ?? "";
@@ -18,12 +18,10 @@ $branch = $_GET['branch'] ?? "";
 ====================== */
 $total_members = $conn->query("SELECT COUNT(*) as t FROM members")->fetch_assoc()['t'] ?? 0;
 
-$active_members = $conn->query("
-SELECT COUNT(*) as t FROM members WHERE is_active=1
-")->fetch_assoc()['t'] ?? 0;
+$active_members = $conn->query("SELECT COUNT(*) as t FROM members WHERE is_active=1")->fetch_assoc()['t'] ?? 0;
 
 /* ======================
-   MAIN QUERY
+   QUERY
 ====================== */
 $sql = "
 SELECT m.*, c.committee_name, b.branch_name
@@ -50,9 +48,6 @@ $sql .= " ORDER BY m.member_id DESC";
 
 $result = $conn->query($sql);
 
-/* ======================
-   BRANCH LIST
-====================== */
 $branches = $conn->query("SELECT * FROM branches");
 ?>
 
@@ -60,13 +55,14 @@ $branches = $conn->query("SELECT * FROM branches");
 <html>
 <head>
 <title>Members</title>
+
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <style>
-body{background:#f4f6f9;}
-.card-box{background:#fff;padding:15px;border-radius:10px;}
+body{background:#f4f6f9;font-family:Segoe UI;}
+.card-box{background:#fff;padding:15px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.05);}
 </style>
 </head>
 
@@ -74,7 +70,11 @@ body{background:#f4f6f9;}
 
 <div class="container mt-4">
 
-<h3>Members</h3>
+<!-- HEADER -->
+<div class="d-flex justify-content-between mb-3">
+<h3>Members System</h3>
+<a href="add.php" class="btn btn-success">+ Add Member</a>
+</div>
 
 <!-- STATS -->
 <div class="row mb-3">
@@ -96,11 +96,15 @@ body{background:#f4f6f9;}
 </div>
 
 <!-- FILTER -->
-<form method="GET" class="mb-3">
+<div class="card-box mb-3">
+
+<form method="GET">
 <div class="row">
 
-<div class="col-md-4">
-<input type="text" name="search" class="form-control" placeholder="Search..." value="<?php echo $search; ?>">
+<div class="col-md-5">
+<input type="text" name="search" class="form-control"
+placeholder="Search name / code / phone / NID"
+value="<?php echo $search; ?>">
 </div>
 
 <div class="col-md-4">
@@ -115,26 +119,34 @@ body{background:#f4f6f9;}
 </select>
 </div>
 
-<div class="col-md-4">
+<div class="col-md-3">
 <button class="btn btn-primary w-100">Filter</button>
 </div>
 
 </div>
 </form>
 
+</div>
+
 <!-- EXPORT -->
 <a href="export_csv.php" class="btn btn-success mb-2">Export CSV</a>
 
 <!-- TABLE -->
-<table class="table table-bordered bg-white">
+<div class="card-box">
 
+<table class="table table-hover">
+
+<thead class="table-dark">
 <tr>
 <th>ID</th>
 <th>Name</th>
 <th>Phone</th>
 <th>Branch</th>
-<th>Action</th>
+<th width="220">Action</th>
 </tr>
+</thead>
+
+<tbody>
 
 <?php while($row = $result->fetch_assoc()){ ?>
 
@@ -146,18 +158,39 @@ body{background:#f4f6f9;}
 
 <td>
 
-<button class="btn btn-info btn-sm viewBtn"
+<!-- VIEW PROFILE -->
+<a href="view.php?id=<?php echo $row['member_id']; ?>" class="btn btn-info btn-sm">
+View
+</a>
+
+<!-- EDIT -->
+<a href="edit.php?id=<?php echo $row['member_id']; ?>" class="btn btn-warning btn-sm">
+Edit
+</a>
+
+<!-- DELETE -->
+<a href="delete.php?id=<?php echo $row['member_id']; ?>"
+class="btn btn-danger btn-sm"
+onclick="return confirm('Delete this member?')">
+Delete
+</a>
+
+<!-- QUICK VIEW -->
+<button class="btn btn-secondary btn-sm viewBtn"
 data-id="<?php echo $row['member_id']; ?>">
-Quick View
+Quick
 </button>
 
 </td>
-
 </tr>
 
 <?php } ?>
 
+</tbody>
+
 </table>
+
+</div>
 
 </div>
 
@@ -170,19 +203,12 @@ Quick View
 
 <script>
 $(".viewBtn").click(function(){
-
 var id = $(this).data("id");
 
-$.ajax({
-url:"quick_view.php",
-type:"POST",
-data:{id:id},
-success:function(data){
+$.post("quick_view.php", {id:id}, function(data){
 $("#modalData").html(data);
 $("#viewModal").modal("show");
-}
 });
-
 });
 </script>
 
