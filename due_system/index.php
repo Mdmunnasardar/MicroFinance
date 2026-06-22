@@ -13,7 +13,6 @@ l.loan_id,
 l.loan_code,
 l.principal_amount,
 l.total_paid,
-l.status,
 m.full_name,
 
 (l.principal_amount - l.total_paid) AS remaining
@@ -37,7 +36,10 @@ $result = $conn->query($sql);
 
 <div class="container mt-4">
 
-<h3>Loan Due List</h3>
+<h3>📊 Due List</h3>
+
+<a href="overdue.php" class="btn btn-danger mb-3">Overdue</a>
+<a href="report.php" class="btn btn-info mb-3">Report</a>
 
 <table class="table table-bordered bg-white">
 
@@ -59,9 +61,7 @@ $result = $conn->query($sql);
 <td>৳ <?php echo number_format($row['principal_amount']); ?></td>
 <td>৳ <?php echo number_format($row['total_paid']); ?></td>
 
-<td>
-<strong>৳ <?php echo number_format($row['remaining']); ?></strong>
-</td>
+<td><b>৳ <?php echo number_format($row['remaining']); ?></b></td>
 
 <td>
 <?php
