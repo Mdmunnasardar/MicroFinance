@@ -1,73 +1,69 @@
-<div class="fixed left-0 top-0 w-64 h-screen bg-slate-900 text-white">
+<div class="sidebar">
 
-<div class="p-6">
+<div class="logo">
 
-<h2 class="text-2xl font-bold">
-
-🏦 MicroFinance
-
-</h2>
+<h3>🏦 MicroFinance</h3>
 
 </div>
 
-<nav>
+<ul class="menu">
 
-<a href="../dashboard.php"
-class="block px-6 py-3 hover:bg-slate-800">
-
-Dashboard
-
+<li>
+<a href="/dashboard.php">
+<i class="fa-solid fa-chart-line"></i>
+<span>Dashboard</span>
 </a>
+</li>
 
-<a href="../members/"
-class="block px-6 py-3 hover:bg-slate-800">
-
-Members
-
+<li>
+<a href="/members/">
+<i class="fa-solid fa-users"></i>
+<span>Members</span>
 </a>
+</li>
 
-<a href="../committees/"
-class="block px-6 py-3 hover:bg-slate-800">
-
-Committees
-
+<li>
+<a href="/committees/">
+<i class="fa-solid fa-layer-group"></i>
+<span>Committees</span>
 </a>
+</li>
 
-<a href="../loans/"
-class="block px-6 py-3 hover:bg-slate-800">
-
-Loans
-
+<li>
+<a href="/loans/">
+<i class="fa-solid fa-money-bill-wave"></i>
+<span>Loans</span>
 </a>
+</li>
 
-<a href="../installments/"
-class="block px-6 py-3 hover:bg-slate-800">
-
-Installments
-
+<li>
+<a href="/installments/">
+<i class="fa-solid fa-wallet"></i>
+<span>Installments</span>
 </a>
+</li>
 
-<a href="../savings/"
-class="block px-6 py-3 hover:bg-slate-800">
-
-Savings
-
+<li>
+<a href="/savings/">
+<i class="fa-solid fa-piggy-bank"></i>
+<span>Savings</span>
 </a>
+</li>
 
-<a href="../due_system/"
-class="block px-6 py-3 hover:bg-slate-800">
-
-Due System
-
+<li>
+<a href="/due_system/">
+<i class="fa-solid fa-clock"></i>
+<span>Due System</span>
 </a>
+</li>
 
-<a href="../logout.php"
-class="block px-6 py-3 text-red-400 hover:bg-red-600 hover:text-white">
-
-Logout
-
+<li>
+<a href="/logout.php">
+<i class="fa-solid fa-right-from-bracket"></i>
+<span>Logout</span>
 </a>
+</li>
 
-</nav>
+</ul>
 
 </div>
