@@ -1,12 +1,12 @@
-<div class="main">
-
 <div class="topbar">
 
 <div>
 
 <h4>
+
 Welcome,
-<?php echo $_SESSION['name']; ?>
+<?php echo $_SESSION['name']; ?> 👋
+
 </h4>
 
 <small>
@@ -18,13 +18,19 @@ Role :
 
 </div>
 
-<div>
+<div class="profile">
 
-<button class="btn btn-primary">
+<i class="fa-regular fa-bell fa-lg"></i>
 
-<i class="fa-solid fa-bell"></i>
+<div class="avatar">
 
-</button>
+<?php
+
+echo strtoupper(substr($_SESSION['name'],0,1));
+
+?>
+
+</div>
 
 </div>
 
