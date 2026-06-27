@@ -1,6 +1,7 @@
 <?php
 /**
  * Chart Card Component
+ * Usage: renderChartCard($title, $badge, $chartId)
  */
 function renderChartCard($title, $badge, $chartId) {
 ?>
