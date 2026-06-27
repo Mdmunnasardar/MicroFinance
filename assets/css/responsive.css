@@ -1,0 +1,44 @@
+/* ========================================
+   RESPONSIVE OVERRIDES
+   ======================================== */
+
+/* Tablets */
+@media (max-width: 1024px) {
+    :root {
+        --sidebar-width: 0px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .bottom-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .transaction-table {
+        overflow-x: auto;
+    }
+    
+    .chart-wrapper {
+        height: 200px;
+    }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: 16px;
+    }
+    
+    .stat-value {
+        font-size: 20px;
+    }
+}
