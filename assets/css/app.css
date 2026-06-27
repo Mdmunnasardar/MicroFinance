@@ -1,80 +1,73 @@
-:root{
+/* ========================================
+   MICROFINANCE MANAGEMENT SYSTEM
+   Global Styles
+   ======================================== */
 
---primary:#4f46e5;
---primary-dark:#4338ca;
-
---success:#22c55e;
---danger:#ef4444;
---warning:#f59e0b;
-
---sidebar:#0f172a;
-
---body:#f5f7fb;
-
---card:#ffffff;
-
---text:#111827;
-
---muted:#6b7280;
-
---border:#e5e7eb;
-
---radius:20px;
-
---shadow:0 15px 40px rgba(15,23,42,.08);
-
+:root {
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --primary-light: #eef2ff;
+    --success: #22c55e;
+    --success-light: #dcfce7;
+    --danger: #ef4444;
+    --danger-light: #fee2e2;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --info: #06b6d4;
+    --info-light: #cffafe;
+    --purple: #8b5cf6;
+    --purple-light: #ede9fe;
+    --teal: #14b8a6;
+    --gold: #f59e0b;
+    
+    --gray-50: #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-300: #cbd5e1;
+    --gray-400: #94a3b8;
+    --gray-500: #64748b;
+    --gray-600: #475569;
+    --gray-700: #334155;
+    --gray-800: #1e293b;
+    --gray-900: #0f172a;
+    
+    --sidebar-width: 260px;
+    --topbar-height: 70px;
+    --radius: 16px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.06);
+    --shadow-hover: 0 8px 32px rgba(0,0,0,0.10);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-*{
-
-margin:0;
-
-padding:0;
-
-box-sizing:border-box;
-
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-html{
-
-scroll-behavior:smooth;
-
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-800);
+    overflow-x: hidden;
 }
 
-body{
-
-background:var(--body);
-
-font-family:'Inter',sans-serif;
-
-color:var(--text);
-
-overflow-x:hidden;
-
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: var(--gray-100);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--gray-300);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-400);
 }
 
-a{
-
-text-decoration:none;
-
-}
-
-img{
-
-max-width:100%;
-
-display:block;
-
-}
-
-.main{
-
-margin-left:270px;
-
-padding:30px;
-
-min-height:100vh;
-
-transition:.3s;
-
-}
+/* Utilities */
+.text-muted { color: var(--gray-400); }
+.text-center { text-align: center; }
