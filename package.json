@@ -1,0 +1,33 @@
+{
+  "name": "microfinance",
+  "version": "1.0.0",
+  "description": "MicroFinance Management System",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npx @tailwindcss/cli -i ./src/input.css -o ./assets/css/app.css --watch",
+    "build": "npx @tailwindcss/cli -i ./src/input.css -o ./assets/css/app.css --minify",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mdmunnasardar/MicroFinance.git"
+  },
+  "keywords": [
+    "php",
+    "mysql",
+    "tailwindcss",
+    "microfinance",
+    "dashboard"
+  ],
+  "author": "Md Munna Sardar",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Mdmunnasardar/MicroFinance/issues"
+  },
+  "homepage": "https://github.com/Mdmunnasardar/MicroFinance#readme",
+  "dependencies": {
+    "@tailwindcss/cli": "^4.3.1",
+    "tailwindcss": "^4.3.1"
+  }
+}
