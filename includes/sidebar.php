@@ -1,69 +1,74 @@
+<?php
+$current = basename($_SERVER['PHP_SELF']);
+?>
+
 <div class="sidebar">
 
-<h3>🏦 MicroFinance</h3>
+    <!-- Logo -->
+    <div class="logo">
 
-<a href="dashboard.php">
+        <div class="logo-icon">
+            <i class="fa-solid fa-building-columns"></i>
+        </div>
 
-<i class="fa-solid fa-chart-line"></i>
+        <div>
+            <h4>MicroFinance</h4>
+            <small>Management System</small>
+        </div>
 
-Dashboard
+    </div>
 
-</a>
+    <!-- Menu -->
+    <div class="menu">
 
-<a href="members/">
+        <a class="<?= ($current=="dashboard.php")?'active':''; ?>" href="/dashboard.php">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span>Dashboard</span>
+        </a>
 
-<i class="fa-solid fa-users"></i>
+        <a href="/members/" class="<?= strpos($_SERVER['REQUEST_URI'],'members')!==false?'active':''; ?>">
+            <i class="fa-solid fa-users"></i>
+            <span>Members</span>
+        </a>
 
-Members
+        <a href="/committees/" class="<?= strpos($_SERVER['REQUEST_URI'],'committees')!==false?'active':''; ?>">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>Committees</span>
+        </a>
 
-</a>
+        <a href="/loans/" class="<?= strpos($_SERVER['REQUEST_URI'],'loans')!==false?'active':''; ?>">
+            <i class="fa-solid fa-money-bill-wave"></i>
+            <span>Loans</span>
+        </a>
 
-<a href="committees/">
+        <a href="/installments/" class="<?= strpos($_SERVER['REQUEST_URI'],'installments')!==false?'active':''; ?>">
+            <i class="fa-solid fa-credit-card"></i>
+            <span>Installments</span>
+        </a>
 
-<i class="fa-solid fa-layer-group"></i>
+        <a href="/savings/" class="<?= strpos($_SERVER['REQUEST_URI'],'savings')!==false?'active':''; ?>">
+            <i class="fa-solid fa-piggy-bank"></i>
+            <span>Savings</span>
+        </a>
 
-Committees
+        <a href="/due_system/" class="<?= strpos($_SERVER['REQUEST_URI'],'due_system')!==false?'active':''; ?>">
+            <i class="fa-solid fa-clock"></i>
+            <span>Due System</span>
+        </a>
 
-</a>
+    </div>
 
-<a href="loans/">
+    <!-- Bottom -->
+    <div class="sidebar-bottom">
 
-<i class="fa-solid fa-money-bill-wave"></i>
+        <a href="/logout.php">
 
-Loans
+            <i class="fa-solid fa-right-from-bracket"></i>
 
-</a>
+            <span>Logout</span>
 
-<a href="installments/">
+        </a>
 
-<i class="fa-solid fa-wallet"></i>
-
-Installments
-
-</a>
-
-<a href="savings/">
-
-<i class="fa-solid fa-piggy-bank"></i>
-
-Savings
-
-</a>
-
-<a href="due_system/">
-
-<i class="fa-solid fa-clock"></i>
-
-Due System
-
-</a>
-
-<a href="logout.php">
-
-<i class="fa-solid fa-right-from-bracket"></i>
-
-Logout
-
-</a>
+    </div>
 
 </div>
