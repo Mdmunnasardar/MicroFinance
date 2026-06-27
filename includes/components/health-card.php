@@ -1,4 +1,8 @@
 <?php
+/**
+ * Health Card Component
+ * Usage: renderHealthCard($health)
+ */
 function renderHealthCard($health) {
 ?>
 <div class="health-card">
