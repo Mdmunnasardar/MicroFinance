@@ -1,5 +1,9 @@
 <?php
-function renderStatCard($icon, $iconClass, $value, $label, $trend, $trendClass, $subText) {
+/**
+ * Stat Card Component
+ * Usage: renderStatCard($icon, $iconClass, $value, $label, $trendIcon, $trendValue, $trendClass, $subText)
+ */
+function renderStatCard($icon, $iconClass, $value, $label, $trendIcon, $trendValue, $trendClass, $subText) {
 ?>
 <div class="stat-card">
     <div class="stat-header">
@@ -7,8 +11,8 @@ function renderStatCard($icon, $iconClass, $value, $label, $trend, $trendClass, 
             <i class="fa-solid <?php echo $icon; ?>"></i>
         </div>
         <div class="stat-trend <?php echo $trendClass; ?>">
-            <i class="fa-solid <?php echo $trend['icon']; ?>"></i>
-            <?php echo $trend['value']; ?>
+            <i class="fa-solid <?php echo $trendIcon; ?>"></i>
+            <?php echo $trendValue; ?>
         </div>
     </div>
     <div class="stat-value"><?php echo $value; ?></div>

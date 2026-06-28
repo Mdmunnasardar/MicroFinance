@@ -1,4 +1,8 @@
 <?php
+/**
+ * Top Borrower Component
+ * Usage: renderTopBorrower($top)
+ */
 function renderTopBorrower($top) {
 ?>
 <div class="top-borrower">
@@ -6,7 +10,7 @@ function renderTopBorrower($top) {
         <i class="fa-solid fa-trophy"></i>
         <span>Top Borrower</span>
     </div>
-    <?php if($top): ?>
+    <?php if($top && isset($top['full_name'])): ?>
     <div class="top-member">
         <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($top['full_name']); ?>&background=4f46e5&color=fff&size=52" alt="Avatar">
         <div>
