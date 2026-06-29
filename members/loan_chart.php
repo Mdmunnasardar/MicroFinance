@@ -2,96 +2,136 @@
 session_start();
 include "../config/db.php";
 
+// Authentication check
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../index.php");
     exit();
 }
 
-/* =========================
-   MEMBER LOAN DATA
-========================= */
-$result = $conn->query("
-SELECT 
-m.full_name,
-COALESCE(SUM(l.principal_amount),0) AS total_loan
+// ============================================
+// BUSINESS LOGIC
+// ============================================
+
+// Get filters
+$search = $_GET['search'] ?? "";
+$branch = $_GET['branch'] ?? "";
+$status = $_GET['status'] ?? "";
+
+// Get statistics
+$total_members = $conn->query("SELECT COUNT(*) as t FROM members")->fetch_assoc()['t'] ?? 0;
+$active_members = $conn->query("SELECT COUNT(*) as t FROM members WHERE is_active=1")->fetch_assoc()['t'] ?? 0;
+$inactive_members = $conn->query("SELECT COUNT(*) as t FROM members WHERE is_active=0")->fetch_assoc()['t'] ?? 0;
+$total_loans = $conn->query("SELECT COALESCE(SUM(principal_amount),0) as t FROM loans")->fetch_assoc()['t'] ?? 0;
+
+// Build members query
+$sql = "
+SELECT m.*, c.committee_name, b.branch_name
 FROM members m
-LEFT JOIN loans l ON m.member_id = l.member_id
-GROUP BY m.member_id
-ORDER BY total_loan DESC
-LIMIT 10
-");
+LEFT JOIN committees c ON m.committee_id = c.committee_id
+LEFT JOIN branches b ON m.branch_id = b.branch_id
+WHERE 1
+";
 
-$names = [];
-$loans = [];
-
-while($row = $result->fetch_assoc()){
-    $names[] = $row['full_name'];
-    $loans[] = (float)$row['total_loan'];
+if($search != ""){
+    $sql .= " AND (
+        m.full_name LIKE '%$search%'
+        OR m.member_code LIKE '%$search%'
+        OR m.phone LIKE '%$search%'
+        OR m.email LIKE '%$search%'
+    )";
 }
+
+if($branch != ""){
+    $sql .= " AND m.branch_id='$branch'";
+}
+
+if($status != ""){
+    $sql .= " AND m.is_active='$status'";
+}
+
+$sql .= " ORDER BY m.member_id DESC";
+
+$members = $conn->query($sql);
+
+// Get branches for filter dropdown
+$branches = $conn->query("SELECT * FROM branches ORDER BY branch_name");
+
+// Prepare data for components
+$stats_data = [
+    'total' => $total_members,
+    'active' => $active_members,
+    'inactive' => $inactive_members,
+    'loans' => $total_loans,
+    'active_percentage' => $total_members > 0 ? round(($active_members/$total_members)*100, 1) : 0
+];
+
+$filter_data = [
+    'search' => $search,
+    'branch' => $branch,
+    'status' => $status,
+    'branches' => $branches
+];
+
+$table_data = [
+    'members' => $members,
+    'total' => $total_members
+];
+
+// ============================================
+// RENDER VIEW
+// ============================================
 ?>
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Member Loan Chart</title>
-
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<style>
-body{
-    background:#f4f6f9;
-    font-family:Segoe UI;
-}
-.card-box{
-    background:#fff;
-    padding:20px;
-    border-radius:10px;
-    box-shadow:0 2px 10px rgba(0,0,0,0.08);
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Members Management - MicroFinance</title>
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../assets/css/members.css">
 </head>
-
 <body>
 
-<div class="container mt-4">
+<!-- Include Layout Components -->
+<?php include "../includes/header.php"; ?>
+<?php include "../includes/sidebar.php"; ?>
+<?php include "../includes/topbar.php"; ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3>📊 Member Wise Loan Chart</h3>
-    <a href="index.php" class="btn btn-secondary">← Back</a>
+<!-- Main Content -->
+<div class="main-content">
+    <div class="container mx-auto px-4 py-8">
+        
+        <!-- Page Header -->
+        <?php include "../includes/components/member/page-header.php"; ?>
+        
+        <!-- Stats Cards -->
+        <?php include "../includes/components/member/stats.php"; ?>
+        
+        <!-- Filters -->
+        <?php include "../includes/components/member/filters.php"; ?>
+        
+        <!-- Members Table -->
+        <?php include "../includes/components/member/table.php"; ?>
+        
+    </div>
 </div>
 
-<div class="card-box">
-    <canvas id="loanChart"></canvas>
-</div>
+<!-- Quick View Modal -->
+<?php include "../includes/components/member/modal.php"; ?>
 
-</div>
+<!-- Footer -->
+<?php include "../includes/footer.php"; ?>
 
-<script>
-const ctx = document.getElementById('loanChart');
-
-new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: <?php echo json_encode($names); ?>,
-        datasets: [{
-            label: 'Total Loan (৳)',
-            data: <?php echo json_encode($loans); ?>,
-            backgroundColor: 'rgba(54, 162, 235, 0.7)',
-            borderRadius: 5
-        }]
-    },
-    options: {
-        responsive: true,
-        scales: {
-            y: {
-                beginAtZero: true
-            }
-        }
-    }
-});
-</script>
+<!-- JavaScript -->
+<script src="../assets/js/members.js"></script>
 
 </body>
 </html>
