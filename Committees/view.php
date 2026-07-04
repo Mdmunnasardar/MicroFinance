@@ -13,11 +13,15 @@ if ($committee_id <= 0) {
     exit();
 }
 
-// Fetch committee details with member count
+// ============================================
+// GET COMMITTEE DETAILS
+// ============================================
 $sql = "
 SELECT c.*, 
        b.branch_name, 
        u.full_name AS officer_name,
+       u.email AS officer_email,
+       u.phone AS officer_phone,
        COUNT(m.member_id) as member_count
 FROM committees c
 LEFT JOIN branches b ON c.branch_id = b.branch_id
@@ -36,214 +40,304 @@ if (!$committee) {
     exit();
 }
 
-// Fetch committee members (from members table directly)
-$members_sql = "
-SELECT m.*
-FROM members m
-WHERE m.committee_id = ? AND m.is_active = 1
-ORDER BY m.full_name
-";
+// ============================================
+// GET MEMBERS
+// ============================================
+$members_sql = "SELECT * FROM members WHERE committee_id = ? AND is_active = 1 ORDER BY full_name";
 $stmt = $conn->prepare($members_sql);
 $stmt->bind_param("i", $committee_id);
 $stmt->execute();
 $members = $stmt->get_result();
+
+// ============================================
+// GET STATS
+// ============================================
+$stats_sql = "
+SELECT 
+    (SELECT COALESCE(SUM(balance), 0) FROM savings s 
+     JOIN members m ON s.member_id = m.member_id 
+     WHERE m.committee_id = ?) as total_savings,
+    (SELECT COUNT(*) FROM loans l 
+     JOIN members m ON l.member_id = m.member_id 
+     WHERE m.committee_id = ?) as total_loans
+";
+$stmt = $conn->prepare($stats_sql);
+$stmt->bind_param("ii", $committee_id, $committee_id);
+$stmt->execute();
+$stats = $stmt->get_result()->fetch_assoc();
+
+include "../includes/header.php";
 ?>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Committee Details - MicroFinance</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { background: #f0f2f5; }
-        .detail-card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            margin-bottom: 20px;
-        }
-        .detail-label {
-            font-weight: 600;
-            color: #6b7280;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .detail-value {
-            font-size: 1.05rem;
-            margin-bottom: 12px;
-            padding: 5px 0;
-        }
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 5px 30px;
-        }
-        .member-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #eef2ff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #4f46e5;
-            font-weight: 600;
-        }
-        @media (max-width: 768px) {
-            .info-grid { grid-template-columns: 1fr; }
-        }
-    </style>
-</head>
+<!-- ============================================
+     PAGE HEADER
+     ============================================ -->
+<div class="page-header flex justify-between items-center flex-wrap gap-4">
+    <div>
+        <h1 class="page-title">
+            <i class="fas fa-users-cog text-indigo-500 mr-3"></i>Committee Details
+        </h1>
+        <p class="page-subtitle">Complete committee information</p>
+    </div>
+    <div class="flex gap-2">
+        <a href="edit.php?id=<?php echo $committee_id; ?>" class="btn-primary gap-2">
+            <i class="fas fa-edit"></i>
+            <span>Edit</span>
+        </a>
+        <a href="index.php" class="btn-secondary gap-2">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back</span>
+        </a>
+    </div>
+</div>
 
-<body>
+<!-- ============================================
+     MAIN CONTENT
+     ============================================ -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+    
+    <!-- ==========================================
+         COMMITTEE INFO (Left - 2 columns)
+         ========================================== -->
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-2xl shadow-sm p-6">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">
+                        <?php echo htmlspecialchars($committee['committee_name']); ?>
+                    </h2>
+                    <p class="text-sm text-gray-500 mt-1">
+                        <i class="fas fa-tag mr-1"></i>
+                        #<?php echo $committee['committee_id']; ?>
+                    </p>
+                </div>
+                <span class="badge-status <?php echo $committee['is_active'] ? 'active' : 'inactive'; ?> text-sm px-4 py-1.5">
+                    <?php echo $committee['is_active'] ? 'Active' : 'Inactive'; ?>
+                </span>
+            </div>
 
-<div class="container mt-4">
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <p class="detail-label">Branch</p>
+                    <p class="detail-value">
+                        <i class="fas fa-building text-indigo-500 mr-2"></i>
+                        <?php echo htmlspecialchars($committee['branch_name'] ?? 'N/A'); ?>
+                    </p>
+                </div>
+                <div class="detail-item">
+                    <p class="detail-label">Formed Date</p>
+                    <p class="detail-value">
+                        <i class="fas fa-calendar-alt text-amber-500 mr-2"></i>
+                        <?php echo date('d F Y', strtotime($committee['formed_date'])); ?>
+                    </p>
+                </div>
+                <div class="detail-item">
+                    <p class="detail-label">Meeting Schedule</p>
+                    <p class="detail-value">
+                        <span class="badge-day">
+                            <i class="fas fa-calendar-day mr-1"></i>
+                            <?php echo $committee['meeting_day']; ?>
+                        </span>
+                        <span class="badge-time ml-2">
+                            <i class="fas fa-clock mr-1"></i>
+                            <?php echo date('h:i A', strtotime($committee['meeting_time'])); ?>
+                        </span>
+                    </p>
+                </div>
+                <div class="detail-item">
+                    <p class="detail-label">Total Members</p>
+                    <p class="detail-value">
+                        <i class="fas fa-users text-violet-500 mr-2"></i>
+                        <span class="font-bold text-lg"><?php echo $committee['member_count']; ?></span>
+                    </p>
+                </div>
+                <div class="detail-item">
+                    <p class="detail-label">Total Savings</p>
+                    <p class="detail-value">
+                        <i class="fas fa-piggy-bank text-emerald-500 mr-2"></i>
+                        <span class="font-bold text-lg">$<?php echo number_format($stats['total_savings'] ?? 0, 2); ?></span>
+                    </p>
+                </div>
+                <div class="detail-item">
+                    <p class="detail-label">Total Loans</p>
+                    <p class="detail-value">
+                        <i class="fas fa-hand-holding-usd text-amber-500 mr-2"></i>
+                        <span class="font-bold text-lg"><?php echo $stats['total_loans'] ?? 0; ?></span>
+                    </p>
+                </div>
+            </div>
 
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-        <div>
-            <h4 class="fw-bold">
-                <i class="fas fa-users-cog text-primary me-2"></i>Committee Details
+            <p class="text-xs text-gray-400 mt-4">
+                <i class="fas fa-clock mr-1"></i>
+                Created: <?php echo date('d F Y h:i A', strtotime($committee['created_at'])); ?>
+            </p>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         SIDEBAR (Right - 1 column)
+         ========================================== -->
+    <div class="lg:col-span-1">
+        <!-- Field Officer Card -->
+        <div class="officer-card mb-4">
+            <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
+                <i class="fas fa-user-tie text-indigo-500 mr-2"></i>
+                Field Officer
             </h4>
-            <p class="text-muted mb-0 small">Complete committee information</p>
-        </div>
-        <div>
-            <a href="edit.php?id=<?php echo $committee_id; ?>" class="btn btn-primary">
-                <i class="fas fa-edit me-2"></i>Edit
-            </a>
-            <a href="index.php" class="btn btn-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Back
-            </a>
-        </div>
-    </div>
-
-    <!-- Committee Info -->
-    <div class="detail-card">
-        <div class="row">
-            <div class="col-md-8">
-                <h4 class="mb-3">
-                    <?php echo htmlspecialchars($committee['committee_name']); ?>
-                    <?php if ($committee['is_active']): ?>
-                    <span class="badge bg-success ms-2">Active</span>
-                    <?php else: ?>
-                    <span class="badge bg-danger ms-2">Inactive</span>
+            <div class="flex items-center gap-3">
+                <div class="officer-avatar">
+                    <?php 
+                    $officer_name = $committee['officer_name'] ?? '?';
+                    $initial = strtoupper(substr($officer_name, 0, 2));
+                    if (strpos($officer_name, ' ') !== false) {
+                        $names = explode(' ', $officer_name);
+                        $initial = strtoupper(substr($names[0], 0, 1) . substr(end($names), 0, 1));
+                    }
+                    echo $initial;
+                    ?>
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-800">
+                        <?php echo htmlspecialchars($committee['officer_name'] ?? 'Not Assigned'); ?>
+                    </p>
+                    <?php if ($committee['officer_email']): ?>
+                    <p class="text-xs text-gray-600">
+                        <i class="fas fa-envelope mr-1"></i>
+                        <?php echo $committee['officer_email']; ?>
+                    </p>
                     <?php endif; ?>
-                </h4>
-                
-                <div class="info-grid">
-                    <div>
-                        <div class="detail-label">Committee ID</div>
-                        <div class="detail-value">#<?php echo $committee['committee_id']; ?></div>
-                    </div>
-                    <div>
-                        <div class="detail-label">Formed Date</div>
-                        <div class="detail-value">
-                            <i class="fas fa-calendar-alt text-warning me-2"></i>
-                            <?php echo date('d F Y', strtotime($committee['formed_date'])); ?>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="detail-label">Branch</div>
-                        <div class="detail-value">
-                            <i class="fas fa-building text-primary me-2"></i>
-                            <?php echo htmlspecialchars($committee['branch_name'] ?? 'N/A'); ?>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="detail-label">Field Officer</div>
-                        <div class="detail-value">
-                            <i class="fas fa-user-tie text-success me-2"></i>
-                            <?php echo htmlspecialchars($committee['officer_name'] ?? 'N/A'); ?>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="detail-label">Meeting Schedule</div>
-                        <div class="detail-value">
-                            <span class="badge bg-info"><?php echo $committee['meeting_day']; ?></span>
-                            <span class="badge bg-secondary ms-1"><?php echo date('h:i A', strtotime($committee['meeting_time'])); ?></span>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="detail-label">Total Members</div>
-                        <div class="detail-value">
-                            <i class="fas fa-users text-primary me-2"></i>
-                            <span class="badge bg-primary rounded-pill"><?php echo $committee['member_count']; ?></span>
-                        </div>
-                    </div>
+                    <?php if ($committee['officer_phone']): ?>
+                    <p class="text-xs text-gray-600">
+                        <i class="fas fa-phone mr-1"></i>
+                        <?php echo $committee['officer_phone']; ?>
+                    </p>
+                    <?php endif; ?>
                 </div>
             </div>
+        </div>
 
-            <div class="col-md-4">
-                <div class="card bg-light">
-                    <div class="card-body">
-                        <h6 class="fw-bold mb-3">Quick Actions</h6>
-                        <div class="d-grid gap-2">
-                            <a href="assign-member.php?committee_id=<?php echo $committee_id; ?>" class="btn btn-outline-primary">
-                                <i class="fas fa-user-plus me-2"></i>Assign Members
-                            </a>
-                            <button onclick="toggleStatus(<?php echo $committee['committee_id']; ?>, <?php echo $committee['is_active']; ?>)" 
-                                    class="btn btn-outline-<?php echo $committee['is_active'] ? 'warning' : 'success'; ?>">
-                                <i class="fas fa-<?php echo $committee['is_active'] ? 'pause' : 'play'; ?> me-2"></i>
-                                <?php echo $committee['is_active'] ? 'Deactivate' : 'Activate'; ?>
-                            </button>
-                            <button onclick="deleteCommittee(<?php echo $committee_id; ?>)" 
-                                    class="btn btn-outline-danger">
-                                <i class="fas fa-trash me-2"></i>Delete Committee
-                            </button>
-                        </div>
-                    </div>
-                </div>
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-2xl shadow-sm p-4">
+            <h4 class="font-semibold text-gray-800 text-sm mb-3">Quick Actions</h4>
+            <div class="space-y-2">
+                <a href="assign-member.php?committee_id=<?php echo $committee_id; ?>" 
+                   class="btn-outline-primary w-full gap-2 text-sm">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Manage Members</span>
+                </a>
+                <button onclick="toggleStatus(<?php echo $committee['committee_id']; ?>, <?php echo $committee['is_active']; ?>, '<?php echo addslashes($committee['committee_name']); ?>')"
+                        class="btn-outline-<?php echo $committee['is_active'] ? 'amber' : 'emerald'; ?> w-full gap-2 text-sm">
+                    <i class="fas fa-<?php echo $committee['is_active'] ? 'pause' : 'play'; ?>"></i>
+                    <span><?php echo $committee['is_active'] ? 'Deactivate' : 'Activate'; ?></span>
+                </button>
+                <button onclick="deleteCommittee(<?php echo $committee_id; ?>, '<?php echo addslashes($committee['committee_name']); ?>')"
+                        class="btn-outline-danger w-full gap-2 text-sm">
+                    <i class="fas fa-trash"></i>
+                    <span>Delete</span>
+                </button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Committee Members -->
-    <div class="detail-card">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0 fw-bold">
-                <i class="fas fa-users text-primary me-2"></i>Committee Members
-                <span class="badge bg-secondary ms-2"><?php echo $members->num_rows; ?></span>
-            </h5>
-            <a href="assign-member.php?committee_id=<?php echo $committee_id; ?>" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus me-2"></i>Assign Member
-            </a>
-        </div>
-
+<!-- ============================================
+     MEMBERS LIST
+     ============================================ -->
+<div class="bg-white rounded-2xl shadow-sm mt-6 overflow-hidden">
+    <div class="px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center">
+        <h3 class="font-semibold text-gray-800">
+            <i class="fas fa-users text-indigo-500 mr-2"></i>
+            Committee Members
+            <span class="ml-2 bg-gray-200 text-gray-700 text-xs px-2.5 py-1 rounded-full">
+                <?php echo $members->num_rows; ?>
+            </span>
+        </h3>
+        <a href="assign-member.php?committee_id=<?php echo $committee_id; ?>" 
+           class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+            <i class="fas fa-plus mr-1"></i> Add Member
+        </a>
+    </div>
+    <div class="p-4">
         <?php if ($members->num_rows > 0): ?>
-        <div class="table-responsive">
-            <table class="table table-hover">
+        <div class="overflow-x-auto">
+            <table class="w-full">
                 <thead>
-                    <tr>
-                        <th>Member</th>
-                        <th>Code</th>
-                        <th>Phone</th>
-                        <th>Gender</th>
-                        <th>Actions</th>
+                    <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <th class="px-4 py-3">Member</th>
+                        <th class="px-4 py-3">Code</th>
+                        <th class="px-4 py-3">Contact</th>
+                        <th class="px-4 py-3">Gender</th>
+                        <th class="px-4 py-3">Join Date</th>
+                        <th class="px-4 py-3 text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php while($member = $members->fetch_assoc()): ?>
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="member-avatar me-2">
-                                    <?php echo strtoupper(substr($member['full_name'], 0, 2)); ?>
+                    <tr class="border-t border-gray-100 hover:bg-gray-50/50 transition-colors">
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-3">
+                                <div class="member-avatar">
+                                    <?php 
+                                    $initial = strtoupper(substr($member['full_name'], 0, 2));
+                                    if (strpos($member['full_name'], ' ') !== false) {
+                                        $names = explode(' ', $member['full_name']);
+                                        $initial = strtoupper(substr($names[0], 0, 1) . substr(end($names), 0, 1));
+                                    }
+                                    echo $initial;
+                                    ?>
                                 </div>
-                                <strong><?php echo htmlspecialchars($member['full_name']); ?></strong>
+                                <div>
+                                    <p class="font-medium text-gray-800"><?php echo htmlspecialchars($member['full_name']); ?></p>
+                                    <?php if ($member['guarantor_name']): ?>
+                                    <p class="text-xs text-gray-500">
+                                        <i class="fas fa-user-check mr-1"></i>
+                                        Guarantor: <?php echo htmlspecialchars($member['guarantor_name']); ?>
+                                    </p>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </td>
-                        <td><?php echo $member['member_code']; ?></td>
-                        <td><?php echo $member['phone']; ?></td>
-                        <td><?php echo $member['gender']; ?></td>
-                        <td>
-                            <a href="remove-member.php?committee_id=<?php echo $committee_id; ?>&member_id=<?php echo $member['member_id']; ?>" 
-                               class="btn btn-sm btn-outline-danger"
-                               onclick="return confirm('Remove this member from the committee?')">
-                                <i class="fas fa-user-minus"></i>
-                            </a>
+                        <td class="px-4 py-3">
+                            <span class="bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-full">
+                                <?php echo $member['member_code']; ?>
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-600">
+                            <?php if ($member['phone']): ?>
+                            <p><i class="fas fa-phone text-emerald-500 mr-1"></i> <?php echo $member['phone']; ?></p>
+                            <?php endif; ?>
+                            <?php if ($member['national_id']): ?>
+                            <p class="text-xs text-gray-400">
+                                <i class="fas fa-id-card mr-1"></i> <?php echo $member['national_id']; ?>
+                            </p>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-4 py-3">
+                            <?php if ($member['gender'] == 'M'): ?>
+                            <span class="bg-blue-100 text-blue-700 text-xs px-2.5 py-1 rounded-full">Male</span>
+                            <?php elseif ($member['gender'] == 'F'): ?>
+                            <span class="bg-pink-100 text-pink-700 text-xs px-2.5 py-1 rounded-full">Female</span>
+                            <?php else: ?>
+                            <span class="bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-full">Other</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-600">
+                            <?php echo date('d M Y', strtotime($member['join_date'])); ?>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="flex items-center justify-end gap-1">
+                                <a href="../members/view.php?id=<?php echo $member['member_id']; ?>" 
+                                   class="text-indigo-500 hover:text-indigo-700 p-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
+                                   title="View Member">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="assign-member.php?committee_id=<?php echo $committee_id; ?>&remove=<?php echo $member['member_id']; ?>" 
+                                   class="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
+                                   onclick="return confirm('Remove <?php echo htmlspecialchars($member['full_name']); ?>?')"
+                                   title="Remove">
+                                    <i class="fas fa-user-minus"></i>
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     <?php endwhile; ?>
@@ -251,31 +345,21 @@ $members = $stmt->get_result();
             </table>
         </div>
         <?php else: ?>
-        <div class="text-center py-4">
-            <i class="fas fa-users fa-3x text-muted mb-3 d-block"></i>
-            <p class="text-muted">No members assigned to this committee</p>
-            <a href="assign-member.php?committee_id=<?php echo $committee_id; ?>" class="btn btn-primary btn-sm">
-                <i class="fas fa-user-plus me-2"></i>Assign First Member
+        <div class="text-center py-12">
+            <i class="fas fa-users text-4xl text-gray-300 mb-3"></i>
+            <p class="text-gray-500">No members assigned to this committee</p>
+            <a href="assign-member.php?committee_id=<?php echo $committee_id; ?>" 
+               class="text-indigo-600 hover:text-indigo-800 text-sm mt-2 inline-block">
+                <i class="fas fa-plus mr-1"></i> Assign First Member
             </a>
         </div>
         <?php endif; ?>
     </div>
 </div>
 
-<script>
-function toggleStatus(id, currentStatus) {
-    const action = currentStatus ? 'deactivate' : 'activate';
-    if (confirm(`Are you sure you want to ${action} this committee?`)) {
-        window.location.href = `toggle-status.php?id=${id}&status=${currentStatus ? 0 : 1}`;
-    }
-}
+<!-- ============================================
+     SCRIPTS
+     ============================================ -->
+<script src="../assets/js/committees.js"></script>
 
-function deleteCommittee(id) {
-    if (confirm('Are you sure you want to delete this committee?')) {
-        window.location.href = `delete.php?id=${id}`;
-    }
-}
-</script>
-
-</body>
-</html>
+<?php include "../includes/footer.php"; ?>
