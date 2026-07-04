@@ -1,26 +1,22 @@
 // ============================================
-// COMMITTEES MODULE - JavaScript
+// COMMITTEES MODULE - JAVASCRIPT
 // ============================================
 
 (function() {
     'use strict';
 
-    // ============================================
-    // 1. DOM READY
-    // ============================================
     document.addEventListener('DOMContentLoaded', function() {
         initAlerts();
         initSearch();
         initSelectAll();
         initMemberItems();
-        initStatusToggles();
-        initDeleteButtons();
-        initExportButtons();
+        initFormValidation();
+        initToggleStatusLabel();
         updateSelectedCount();
     });
 
     // ============================================
-    // 2. INIT ALERTS (Auto-dismiss)
+    // ALERTS
     // ============================================
     function initAlerts() {
         document.querySelectorAll('.alert:not(.alert-permanent)').forEach(alert => {
@@ -32,7 +28,7 @@
     }
 
     // ============================================
-    // 3. INIT SEARCH (Debounce)
+    // SEARCH
     // ============================================
     function initSearch() {
         const searchInput = document.querySelector('input[name="search"]');
@@ -49,15 +45,14 @@
     }
 
     // ============================================
-    // 4. INIT SELECT ALL
+    // SELECT ALL
     // ============================================
     function initSelectAll() {
         const selectAll = document.getElementById('selectAll');
         if (!selectAll) return;
 
         selectAll.addEventListener('change', function() {
-            const checkboxes = document.querySelectorAll('.member-checkbox');
-            checkboxes.forEach((cb, index) => {
+            document.querySelectorAll('.member-checkbox').forEach((cb, index) => {
                 cb.checked = this.checked;
                 const parent = cb.closest('.member-item');
                 if (parent) {
@@ -69,14 +64,12 @@
     }
 
     // ============================================
-    // 5. INIT MEMBER ITEMS
+    // MEMBER ITEMS
     // ============================================
     function initMemberItems() {
         document.querySelectorAll('.member-item').forEach(item => {
             item.addEventListener('click', function(e) {
-                // Ignore if clicking checkbox directly
                 if (e.target.type === 'checkbox') return;
-
                 const checkbox = this.querySelector('.member-checkbox');
                 if (checkbox) {
                     checkbox.checked = !checkbox.checked;
@@ -86,7 +79,6 @@
             });
         });
 
-        // Individual checkbox change
         document.querySelectorAll('.member-checkbox').forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 const parent = this.closest('.member-item');
@@ -99,7 +91,7 @@
     }
 
     // ============================================
-    // 6. UPDATE SELECTED COUNT
+    // UPDATE SELECTED COUNT
     // ============================================
     window.updateSelectedCount = function() {
         const checked = document.querySelectorAll('.member-checkbox:checked');
@@ -109,68 +101,92 @@
 
         if (countEl) {
             countEl.textContent = count + ' selected';
-            countEl.style.display = count > 0 ? 'inline-block' : 'inline-block';
         }
         if (assignBtn) {
             assignBtn.disabled = count === 0;
-            assignBtn.classList.toggle('opacity-50', count === 0);
-            assignBtn.classList.toggle('cursor-not-allowed', count === 0);
         }
     };
 
     // ============================================
-    // 7. INIT STATUS TOGGLES
+    // FORM VALIDATION
     // ============================================
-    function initStatusToggles() {
-        document.querySelectorAll('[data-toggle-status]').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const id = this.dataset.id;
-                const currentStatus = parseInt(this.dataset.status);
-                const action = currentStatus ? 'deactivate' : 'activate';
-                const committeeName = this.dataset.name || 'this committee';
+    function initFormValidation() {
+        const form = document.getElementById('committeeForm');
+        if (!form) return;
 
-                if (confirm(`Are you sure you want to ${action} "${committeeName}"?`)) {
-                    window.location.href = `toggle-status.php?id=${id}&status=${currentStatus ? 0 : 1}`;
+        form.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('blur', function() {
+                validateField(this);
+            });
+
+            input.addEventListener('input', function() {
+                if (this.classList.contains('error')) {
+                    validateField(this);
                 }
             });
         });
-    }
 
-    // ============================================
-    // 8. INIT DELETE BUTTONS
-    // ============================================
-    function initDeleteButtons() {
-        document.querySelectorAll('[data-delete-committee]').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const id = this.dataset.id;
-                const name = this.dataset.name || 'this committee';
-
-                if (confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
-                    window.location.href = `delete.php?id=${id}`;
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            this.querySelectorAll('[required]').forEach(field => {
+                if (!validateField(field)) {
+                    isValid = false;
                 }
             });
-        });
-    }
 
-    // ============================================
-    // 9. INIT EXPORT BUTTONS
-    // ============================================
-    function initExportButtons() {
-        document.querySelectorAll('[data-export]').forEach(btn => {
-            btn.addEventListener('click', function(e) {
+            if (!isValid) {
                 e.preventDefault();
-                const id = this.dataset.id;
-                const format = this.dataset.format || 'csv';
-                alert(`Export feature coming soon! (${format})`);
-                // window.location.href = `export.php?id=${id}&format=${format}`;
-            });
+                const firstError = this.querySelector('.form-control.error');
+                if (firstError) {
+                    firstError.focus();
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
         });
+
+        function validateField(field) {
+            const errorMsg = field.closest('.form-group').querySelector('.error-message');
+            const isRequired = field.hasAttribute('required');
+            
+            if (isRequired) {
+                if (field.value.trim() === '' || field.value === '') {
+                    field.classList.add('error');
+                    field.classList.remove('success');
+                    if (errorMsg) errorMsg.classList.add('show');
+                    return false;
+                } else {
+                    field.classList.remove('error');
+                    field.classList.add('success');
+                    if (errorMsg) errorMsg.classList.remove('show');
+                    return true;
+                }
+            }
+            return true;
+        }
     }
 
     // ============================================
-    // 10. GLOBAL HELPERS
+    // TOGGLE STATUS LABEL
+    // ============================================
+    function initToggleStatusLabel() {
+        const toggle = document.getElementById('isActive');
+        const statusLabel = document.getElementById('statusLabel');
+        
+        if (toggle && statusLabel) {
+            toggle.addEventListener('change', function() {
+                if (this.checked) {
+                    statusLabel.textContent = 'Active';
+                    statusLabel.className = 'toggle-status active';
+                } else {
+                    statusLabel.textContent = 'Inactive';
+                    statusLabel.className = 'toggle-status inactive';
+                }
+            });
+        }
+    }
+
+    // ============================================
+    // GLOBAL FUNCTIONS
     // ============================================
     window.toggleStatus = function(id, currentStatus, name) {
         const action = currentStatus ? 'deactivate' : 'activate';
@@ -183,31 +199,6 @@
         if (confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
             window.location.href = `delete.php?id=${id}`;
         }
-    };
-
-    window.formatCurrency = function(amount) {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2
-        }).format(amount);
-    };
-
-    window.formatDate = function(dateString) {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    };
-
-    window.getStatusBadge = function(status) {
-        const map = {
-            'Active': 'badge-status active',
-            'Inactive': 'badge-status inactive',
-            'Dissolved': 'badge-status danger'
-        };
-        return map[status] || 'badge-status secondary';
     };
 
     console.log('🏦 Committees Module loaded successfully');

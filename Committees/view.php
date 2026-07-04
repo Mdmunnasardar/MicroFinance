@@ -13,9 +13,7 @@ if ($committee_id <= 0) {
     exit();
 }
 
-// ============================================
-// GET COMMITTEE DETAILS
-// ============================================
+// Get committee details
 $sql = "
 SELECT c.*, 
        b.branch_name, 
@@ -40,18 +38,14 @@ if (!$committee) {
     exit();
 }
 
-// ============================================
-// GET MEMBERS
-// ============================================
+// Get members
 $members_sql = "SELECT * FROM members WHERE committee_id = ? AND is_active = 1 ORDER BY full_name";
 $stmt = $conn->prepare($members_sql);
 $stmt->bind_param("i", $committee_id);
 $stmt->execute();
 $members = $stmt->get_result();
 
-// ============================================
-// GET STATS
-// ============================================
+// Get stats
 $stats_sql = "
 SELECT 
     (SELECT COALESCE(SUM(balance), 0) FROM savings s 
@@ -69,51 +63,34 @@ $stats = $stmt->get_result()->fetch_assoc();
 include "../includes/header.php";
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Committee Details - MicroFinance</title>
-    <link rel="stylesheet" href="../assets/css/committees.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
-
 <div class="container mx-auto px-4 py-6 max-w-7xl">
 
-    <!-- ==========================================
-         PAGE HEADER
-         ========================================== -->
+    <!-- Page Header -->
     <div class="page-header">
-        <div class="flex items-center gap-4">
-            <div class="page-icon">
+        <div class="header-left">
+            <div class="header-icon primary">
                 <i class="fas fa-users-cog"></i>
             </div>
             <div>
-                <h1 class="page-title">Committee Details</h1>
-                <p class="page-subtitle">Complete committee information</p>
+                <h1 class="header-title">Committee Details</h1>
+                <p class="header-subtitle">Complete committee information</p>
             </div>
         </div>
-        <div class="flex gap-3">
+        <div class="header-actions">
             <a href="edit.php?id=<?php echo $committee_id; ?>" class="btn btn-primary">
-                <i class="fas fa-edit"></i>
-                Edit
+                <i class="fas fa-edit"></i> Edit
             </a>
             <a href="index.php" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i>
-                Back
+                <i class="fas fa-arrow-left"></i> Back
             </a>
         </div>
     </div>
 
-    <!-- ==========================================
-         COMMITTEE INFO
-         ========================================== -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Content -->
+    <div class="grid grid-cols-3 gap-6">
         
-        <!-- Main Info -->
-        <div class="lg:col-span-2">
+        <!-- Committee Info -->
+        <div class="grid-cols-2" style="grid-column: span 2;">
             <div class="detail-section">
                 <div class="flex items-start justify-between mb-6">
                     <div>
@@ -129,33 +106,33 @@ include "../includes/header.php";
 
                 <div class="detail-grid">
                     <div>
-                        <p class="detail-label"><i class="fas fa-building text-indigo-500 mr-1"></i> Branch</p>
+                        <p class="detail-label"><i class="fas fa-building text-primary mr-1"></i> Branch</p>
                         <p class="detail-value"><?php echo htmlspecialchars($committee['branch_name'] ?? 'N/A'); ?></p>
                     </div>
                     <div>
-                        <p class="detail-label"><i class="fas fa-calendar-alt text-amber-500 mr-1"></i> Formed Date</p>
+                        <p class="detail-label"><i class="fas fa-calendar-alt text-warning mr-1"></i> Formed Date</p>
                         <p class="detail-value"><?php echo date('d F Y', strtotime($committee['formed_date'])); ?></p>
                     </div>
                     <div>
-                        <p class="detail-label"><i class="fas fa-calendar-day text-blue-500 mr-1"></i> Meeting Schedule</p>
+                        <p class="detail-label"><i class="fas fa-calendar-day text-info mr-1"></i> Meeting Schedule</p>
                         <p class="detail-value">
                             <span class="badge badge-info"><?php echo $committee['meeting_day']; ?></span>
                             <span class="badge badge-gray ml-2"><?php echo date('h:i A', strtotime($committee['meeting_time'])); ?></span>
                         </p>
                     </div>
                     <div>
-                        <p class="detail-label"><i class="fas fa-users text-purple-500 mr-1"></i> Total Members</p>
-                        <p class="detail-value text-2xl font-bold text-purple-600"><?php echo $committee['member_count']; ?></p>
+                        <p class="detail-label"><i class="fas fa-users text-purple mr-1"></i> Total Members</p>
+                        <p class="detail-value text-2xl font-bold text-purple"><?php echo $committee['member_count']; ?></p>
                     </div>
                     <div>
-                        <p class="detail-label"><i class="fas fa-piggy-bank text-emerald-500 mr-1"></i> Total Savings</p>
-                        <p class="detail-value text-xl font-bold text-emerald-600">
+                        <p class="detail-label"><i class="fas fa-piggy-bank text-success mr-1"></i> Total Savings</p>
+                        <p class="detail-value text-xl font-bold text-success">
                             $<?php echo number_format($stats['total_savings'] ?? 0, 2); ?>
                         </p>
                     </div>
                     <div>
-                        <p class="detail-label"><i class="fas fa-hand-holding-usd text-amber-500 mr-1"></i> Total Loans</p>
-                        <p class="detail-value text-xl font-bold text-amber-600"><?php echo $stats['total_loans'] ?? 0; ?></p>
+                        <p class="detail-label"><i class="fas fa-hand-holding-usd text-warning mr-1"></i> Total Loans</p>
+                        <p class="detail-value text-xl font-bold text-warning"><?php echo $stats['total_loans'] ?? 0; ?></p>
                     </div>
                 </div>
 
@@ -167,12 +144,11 @@ include "../includes/header.php";
         </div>
 
         <!-- Sidebar -->
-        <div class="lg:col-span-1">
+        <div style="grid-column: span 1;">
             <!-- Field Officer -->
             <div class="officer-card mb-4">
                 <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
-                    <i class="fas fa-user-tie text-indigo-500 mr-2"></i>
-                    Field Officer
+                    <i class="fas fa-user-tie text-primary mr-2"></i> Field Officer
                 </h4>
                 <div class="flex items-center gap-4">
                     <div class="officer-avatar">
@@ -189,14 +165,10 @@ include "../includes/header.php";
                     <div>
                         <p class="font-semibold text-gray-800"><?php echo htmlspecialchars($committee['officer_name'] ?? 'Not Assigned'); ?></p>
                         <?php if ($committee['officer_email']): ?>
-                        <p class="text-xs text-gray-600">
-                            <i class="fas fa-envelope mr-1"></i> <?php echo $committee['officer_email']; ?>
-                        </p>
+                        <p class="text-xs text-gray-600"><i class="fas fa-envelope mr-1"></i> <?php echo $committee['officer_email']; ?></p>
                         <?php endif; ?>
                         <?php if ($committee['officer_phone']): ?>
-                        <p class="text-xs text-gray-600">
-                            <i class="fas fa-phone mr-1"></i> <?php echo $committee['officer_phone']; ?>
-                        </p>
+                        <p class="text-xs text-gray-600"><i class="fas fa-phone mr-1"></i> <?php echo $committee['officer_phone']; ?></p>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -206,42 +178,35 @@ include "../includes/header.php";
             <div class="detail-section">
                 <h4 class="font-semibold text-gray-800 text-sm mb-3">Quick Actions</h4>
                 <div class="space-y-2">
-                    <a href="assign-member.php?committee_id=<?php echo $committee_id; ?>" 
-                       class="btn btn-outline-primary" style="width: 100%;">
-                        <i class="fas fa-user-plus"></i>
-                        Manage Members
+                    <a href="assign-member.php?committee_id=<?php echo $committee_id; ?>" class="btn btn-outline-primary btn-block">
+                        <i class="fas fa-user-plus"></i> Manage Members
                     </a>
                     <button onclick="toggleStatus(<?php echo $committee['committee_id']; ?>, <?php echo $committee['is_active']; ?>, '<?php echo addslashes($committee['committee_name']); ?>')"
-                            class="btn <?php echo $committee['is_active'] ? 'btn-warning' : 'btn-success'; ?>" style="width: 100%;">
+                            class="btn <?php echo $committee['is_active'] ? 'btn-warning' : 'btn-success'; ?> btn-block">
                         <i class="fas fa-<?php echo $committee['is_active'] ? 'pause' : 'play'; ?>"></i>
                         <?php echo $committee['is_active'] ? 'Deactivate' : 'Activate'; ?>
                     </button>
                     <button onclick="deleteCommittee(<?php echo $committee_id; ?>, '<?php echo addslashes($committee['committee_name']); ?>')"
-                            class="btn btn-danger" style="width: 100%;">
-                        <i class="fas fa-trash"></i>
-                        Delete Committee
+                            class="btn btn-danger btn-block">
+                        <i class="fas fa-trash"></i> Delete Committee
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ==========================================
-         MEMBERS LIST
-     ========================================== -->
+    <!-- Members List -->
     <div class="detail-section mt-6">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-bold text-gray-800 flex items-center">
-                <i class="fas fa-users text-indigo-500 mr-2"></i>
+                <i class="fas fa-users text-primary mr-2"></i>
                 Committee Members
                 <span class="ml-2 bg-gray-200 text-gray-700 text-xs px-2.5 py-1 rounded-full">
                     <?php echo $members->num_rows; ?>
                 </span>
             </h3>
-            <a href="assign-member.php?committee_id=<?php echo $committee_id; ?>" 
-               class="btn btn-primary btn-sm">
-                <i class="fas fa-plus"></i>
-                Add Member
+            <a href="assign-member.php?committee_id=<?php echo $committee_id; ?>" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Add Member
             </a>
         </div>
 
@@ -263,7 +228,7 @@ include "../includes/header.php";
                     <tr>
                         <td>
                             <div class="flex items-center gap-3">
-                                <div class="avatar" style="width: 36px; height: 36px; font-size: 12px; background: var(--primary-bg); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                                <div class="avatar">
                                     <?php 
                                     $initial = strtoupper(substr($member['full_name'], 0, 2));
                                     if (strpos($member['full_name'], ' ') !== false) {
@@ -284,13 +249,11 @@ include "../includes/header.php";
                                 </div>
                             </div>
                         </td>
-                        <td>
-                            <span class="badge badge-gray badge-sm"><?php echo $member['member_code']; ?></span>
-                        </td>
+                        <td><span class="badge badge-gray badge-sm"><?php echo $member['member_code']; ?></span></td>
                         <td>
                             <?php if ($member['phone']): ?>
                             <p class="text-sm text-gray-600">
-                                <i class="fas fa-phone text-emerald-500 mr-1"></i> <?php echo $member['phone']; ?>
+                                <i class="fas fa-phone text-success mr-1"></i> <?php echo $member['phone']; ?>
                             </p>
                             <?php endif; ?>
                             <?php if ($member['national_id']): ?>
@@ -308,17 +271,14 @@ include "../includes/header.php";
                             <span class="badge badge-gray badge-sm">Other</span>
                             <?php endif; ?>
                         </td>
-                        <td class="text-sm text-gray-600">
-                            <?php echo date('d M Y', strtotime($member['join_date'])); ?>
-                        </td>
+                        <td class="text-sm text-gray-600"><?php echo date('d M Y', strtotime($member['join_date'])); ?></td>
                         <td style="text-align: right;">
                             <div class="flex items-center justify-end gap-1">
-                                <a href="../members/view.php?id=<?php echo $member['member_id']; ?>" 
-                                   class="btn btn-secondary btn-sm btn-icon" title="View Member">
+                                <a href="../members/view.php?id=<?php echo $member['member_id']; ?>" class="action-btn primary" title="View">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 <a href="assign-member.php?committee_id=<?php echo $committee_id; ?>&remove=<?php echo $member['member_id']; ?>" 
-                                   class="btn btn-danger btn-sm btn-icon"
+                                   class="action-btn danger"
                                    onclick="return confirm('Remove <?php echo htmlspecialchars($member['full_name']); ?>?')"
                                    title="Remove">
                                     <i class="fas fa-user-minus"></i>
@@ -332,15 +292,11 @@ include "../includes/header.php";
         </div>
         <?php else: ?>
         <div class="empty-state" style="padding: 40px 20px;">
-            <div class="empty-icon" style="font-size: 48px;">
-                <i class="fas fa-users"></i>
-            </div>
+            <div class="empty-icon" style="font-size: 48px;"><i class="fas fa-users"></i></div>
             <h3 class="empty-title" style="font-size: 18px;">No Members Assigned</h3>
             <p class="empty-description" style="font-size: 13px;">This committee doesn't have any members yet.</p>
-            <a href="assign-member.php?committee_id=<?php echo $committee_id; ?>" 
-               class="btn btn-primary btn-sm">
-                <i class="fas fa-plus"></i>
-                Assign First Member
+            <a href="assign-member.php?committee_id=<?php echo $committee_id; ?>" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Assign First Member
             </a>
         </div>
         <?php endif; ?>
@@ -348,25 +304,6 @@ include "../includes/header.php";
 
 </div>
 
-<!-- ==========================================
-     SCRIPTS
-     ========================================== -->
-<script>
-function toggleStatus(id, currentStatus, name) {
-    const action = currentStatus ? 'deactivate' : 'activate';
-    if (confirm(`Are you sure you want to ${action} "${name}"?`)) {
-        window.location.href = `toggle-status.php?id=${id}&status=${currentStatus ? 0 : 1}`;
-    }
-}
-
-function deleteCommittee(id, name) {
-    if (confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
-        window.location.href = `delete.php?id=${id}`;
-    }
-}
-</script>
-
-</body>
-</html>
+<script src="../assets/js/committees.js"></script>
 
 <?php include "../includes/footer.php"; ?>

@@ -7,17 +7,13 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// ============================================
-// GET FILTER PARAMETERS
-// ============================================
+// Get filter parameters
 $search = isset($_GET['search']) ? $_GET['search'] : '';
 $branch_filter = isset($_GET['branch_id']) ? $_GET['branch_id'] : '';
 $status_filter = isset($_GET['status']) ? $_GET['status'] : '';
 $day_filter = isset($_GET['meeting_day']) ? $_GET['meeting_day'] : '';
 
-// ============================================
-// BUILD WHERE CLAUSE
-// ============================================
+// Build WHERE clause
 $where = [];
 $params = [];
 $types = "";
@@ -48,9 +44,7 @@ if (!empty($day_filter)) {
 
 $where_clause = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
 
-// ============================================
-// MAIN QUERY
-// ============================================
+// Main query with member count
 $sql = "
 SELECT c.*, 
        b.branch_name, 
@@ -72,9 +66,7 @@ if (!empty($params)) {
 $stmt->execute();
 $committees = $stmt->get_result();
 
-// ============================================
-// GET STATISTICS
-// ============================================
+// Get statistics
 $stats_sql = "
 SELECT 
     COUNT(*) as total,
@@ -90,111 +82,94 @@ $branches = $conn->query("SELECT * FROM branches ORDER BY branch_name");
 // Get total members
 $total_members = $conn->query("SELECT COUNT(*) as total FROM members WHERE is_active = 1")->fetch_assoc();
 
-// Get days for filter
 $days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 include "../includes/header.php";
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Committees - MicroFinance</title>
-    <link rel="stylesheet" href="../assets/css/committees.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
-
 <div class="container mx-auto px-4 py-6 max-w-7xl">
 
-    <!-- ==========================================
-         PAGE HEADER
-         ========================================== -->
+    <!-- Page Header -->
     <div class="page-header">
-        <div class="flex items-center gap-4">
-            <div class="page-icon">
+        <div class="header-left">
+            <div class="header-icon primary">
                 <i class="fas fa-users-cog"></i>
             </div>
             <div>
-                <h1 class="page-title">Committees</h1>
-                <p class="page-subtitle">Manage all committees and their members</p>
+                <h1 class="header-title">Committees</h1>
+                <p class="header-subtitle">Manage all committees and their members</p>
             </div>
         </div>
-        <a href="add.php" class="btn btn-primary">
-            <i class="fas fa-plus-circle"></i>
-            Add Committee
-        </a>
+        <div class="header-actions">
+            <a href="add.php" class="btn btn-primary">
+                <i class="fas fa-plus-circle"></i>
+                Add Committee
+            </a>
+        </div>
     </div>
 
-    <!-- ==========================================
-         STATISTICS CARDS
-         ========================================== -->
+    <!-- Statistics Cards -->
     <div class="stat-grid">
-        <div class="stat-card stat-card-primary animate-slide-up" style="animation-delay: 0.05s">
-            <div class="flex justify-between items-start">
+        <div class="stat-card primary animate-slide-up" style="animation-delay: 0.05s">
+            <div class="stat-top">
                 <div>
                     <p class="stat-label">Total Committees</p>
                     <p class="stat-number"><?php echo $stats['total'] ?? 0; ?></p>
                 </div>
-                <div class="stat-icon stat-icon-primary">
+                <div class="stat-icon primary-icon">
                     <i class="fas fa-building"></i>
                 </div>
             </div>
         </div>
-        <div class="stat-card stat-card-success animate-slide-up" style="animation-delay: 0.1s">
-            <div class="flex justify-between items-start">
+        <div class="stat-card success animate-slide-up" style="animation-delay: 0.1s">
+            <div class="stat-top">
                 <div>
                     <p class="stat-label">Active</p>
-                    <p class="stat-number" style="color: var(--success);"><?php echo $stats['active'] ?? 0; ?></p>
+                    <p class="stat-number success-text"><?php echo $stats['active'] ?? 0; ?></p>
                 </div>
-                <div class="stat-icon stat-icon-success">
+                <div class="stat-icon success-icon">
                     <i class="fas fa-check-circle"></i>
                 </div>
             </div>
         </div>
-        <div class="stat-card stat-card-danger animate-slide-up" style="animation-delay: 0.15s">
-            <div class="flex justify-between items-start">
+        <div class="stat-card danger animate-slide-up" style="animation-delay: 0.15s">
+            <div class="stat-top">
                 <div>
                     <p class="stat-label">Inactive</p>
-                    <p class="stat-number" style="color: var(--danger);"><?php echo $stats['inactive'] ?? 0; ?></p>
+                    <p class="stat-number danger-text"><?php echo $stats['inactive'] ?? 0; ?></p>
                 </div>
-                <div class="stat-icon stat-icon-danger">
+                <div class="stat-icon danger-icon">
                     <i class="fas fa-times-circle"></i>
                 </div>
             </div>
         </div>
-        <div class="stat-card stat-card-purple animate-slide-up" style="animation-delay: 0.2s">
-            <div class="flex justify-between items-start">
+        <div class="stat-card purple animate-slide-up" style="animation-delay: 0.2s">
+            <div class="stat-top">
                 <div>
                     <p class="stat-label">Total Members</p>
-                    <p class="stat-number" style="color: var(--purple);"><?php echo $total_members['total'] ?? 0; ?></p>
+                    <p class="stat-number purple-text"><?php echo $total_members['total'] ?? 0; ?></p>
                 </div>
-                <div class="stat-icon stat-icon-purple">
+                <div class="stat-icon purple-icon">
                     <i class="fas fa-users"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ==========================================
-         FILTER SECTION
-         ========================================== -->
+    <!-- Filter Section -->
     <div class="filter-section animate-slide-up" style="animation-delay: 0.25s">
-        <form method="GET" class="filter-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; align-items: end;">
-            <div>
-                <label class="filter-label">Search</label>
-                <div style="position: relative;">
-                    <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--gray-400);"></i>
+        <form method="GET" class="filter-grid">
+            <div class="filter-group">
+                <label class="filter-label"><i class="fas fa-search"></i> Search</label>
+                <div class="filter-input-icon">
+                    <i class="fas fa-search icon"></i>
                     <input type="text" name="search" class="filter-input" 
                            placeholder="Committee name..." 
-                           value="<?php echo htmlspecialchars($search); ?>"
-                           style="padding-left: 40px;">
+                           value="<?php echo htmlspecialchars($search); ?>">
                 </div>
             </div>
-            <div>
-                <label class="filter-label">Branch</label>
+            <div class="filter-group">
+                <label class="filter-label"><i class="fas fa-store"></i> Branch</label>
                 <select name="branch_id" class="filter-select">
                     <option value="">All Branches</option>
                     <?php while($b = $branches->fetch_assoc()): ?>
@@ -205,16 +180,16 @@ include "../includes/header.php";
                     <?php endwhile; ?>
                 </select>
             </div>
-            <div>
-                <label class="filter-label">Status</label>
+            <div class="filter-group">
+                <label class="filter-label"><i class="fas fa-circle"></i> Status</label>
                 <select name="status" class="filter-select">
                     <option value="">All</option>
                     <option value="1" <?php echo $status_filter === '1' ? 'selected' : ''; ?>>Active</option>
                     <option value="0" <?php echo $status_filter === '0' ? 'selected' : ''; ?>>Inactive</option>
                 </select>
             </div>
-            <div>
-                <label class="filter-label">Meeting Day</label>
+            <div class="filter-group">
+                <label class="filter-label"><i class="fas fa-calendar-day"></i> Meeting Day</label>
                 <select name="meeting_day" class="filter-select">
                     <option value="">All Days</option>
                     <?php foreach($days as $day): ?>
@@ -225,24 +200,20 @@ include "../includes/header.php";
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">
-                    <i class="fas fa-filter"></i>
-                    Apply Filter
+            <div class="filter-group">
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-filter"></i> Apply Filter
                 </button>
             </div>
         </form>
     </div>
 
-    <!-- ==========================================
-         COMMITTEE LIST
-         ========================================== -->
+    <!-- Committee Cards -->
     <?php if ($committees->num_rows > 0): ?>
     <div class="committee-grid animate-slide-up" style="animation-delay: 0.3s">
         <?php while($row = $committees->fetch_assoc()): ?>
         <div class="committee-card">
-            <!-- Card Header -->
-            <div class="card-header">
+            <div class="card-top">
                 <div>
                     <h3 class="committee-name"><?php echo htmlspecialchars($row['committee_name']); ?></h3>
                     <span class="committee-code">#<?php echo $row['committee_id']; ?></span>
@@ -251,60 +222,54 @@ include "../includes/header.php";
                     <?php echo $row['is_active'] ? 'Active' : 'Inactive'; ?>
                 </span>
             </div>
-
-            <!-- Card Body -->
             <div class="card-body">
-                <div class="info-row">
-                    <span class="info-label"><i class="fas fa-building"></i> Branch</span>
-                    <span class="info-value"><?php echo htmlspecialchars($row['branch_name'] ?? 'N/A'); ?></span>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="label"><i class="fas fa-building"></i> Branch</span>
+                        <span class="value"><?php echo htmlspecialchars($row['branch_name'] ?? 'N/A'); ?></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label"><i class="fas fa-user-tie"></i> Officer</span>
+                        <span class="value"><?php echo htmlspecialchars($row['officer_name'] ?? 'N/A'); ?></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label"><i class="fas fa-calendar-alt"></i> Formed</span>
+                        <span class="value"><?php echo date('d M Y', strtotime($row['formed_date'])); ?></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label"><i class="fas fa-users"></i> Members</span>
+                        <span class="value"><span class="badge badge-purple badge-sm"><?php echo $row['member_count'] ?? 0; ?></span></span>
+                    </div>
                 </div>
-                <div class="info-row">
-                    <span class="info-label"><i class="fas fa-user-tie"></i> Officer</span>
-                    <span class="info-value"><?php echo htmlspecialchars($row['officer_name'] ?? 'N/A'); ?></span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label"><i class="fas fa-calendar-alt"></i> Formed</span>
-                    <span class="info-value"><?php echo date('d M Y', strtotime($row['formed_date'])); ?></span>
-                </div>
-
-                <div class="badge-group">
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gray-100);">
                     <span class="badge badge-info badge-sm">
                         <i class="fas fa-calendar-day"></i> <?php echo $row['meeting_day']; ?>
                     </span>
                     <span class="badge badge-gray badge-sm">
                         <i class="fas fa-clock"></i> <?php echo date('h:i A', strtotime($row['meeting_time'])); ?>
                     </span>
-                    <span class="badge badge-purple badge-sm">
-                        <i class="fas fa-users"></i> <?php echo $row['member_count'] ?? 0; ?> members
-                    </span>
                 </div>
             </div>
-
-            <!-- Card Footer -->
             <div class="card-footer">
-                <div class="flex items-center gap-1">
-                    <a href="view.php?id=<?php echo $row['committee_id']; ?>" 
-                       class="btn btn-secondary btn-sm btn-icon" title="View Details">
+                <div class="action-group">
+                    <a href="view.php?id=<?php echo $row['committee_id']; ?>" class="action-btn primary" title="View">
                         <i class="fas fa-eye"></i>
                     </a>
-                    <a href="edit.php?id=<?php echo $row['committee_id']; ?>" 
-                       class="btn btn-secondary btn-sm btn-icon" title="Edit">
+                    <a href="edit.php?id=<?php echo $row['committee_id']; ?>" class="action-btn primary" title="Edit">
                         <i class="fas fa-edit"></i>
                     </a>
-                    <a href="assign-member.php?committee_id=<?php echo $row['committee_id']; ?>" 
-                       class="btn btn-secondary btn-sm btn-icon" title="Manage Members">
+                    <a href="assign-member.php?committee_id=<?php echo $row['committee_id']; ?>" class="action-btn success" title="Manage Members">
                         <i class="fas fa-users"></i>
                     </a>
                 </div>
-                <div class="flex items-center gap-1">
+                <div class="action-group">
                     <button onclick="toggleStatus(<?php echo $row['committee_id']; ?>, <?php echo $row['is_active']; ?>, '<?php echo addslashes($row['committee_name']); ?>')"
-                            class="btn <?php echo $row['is_active'] ? 'btn-warning' : 'btn-success'; ?> btn-sm btn-icon"
+                            class="action-btn <?php echo $row['is_active'] ? 'warning' : 'success'; ?>" 
                             title="<?php echo $row['is_active'] ? 'Deactivate' : 'Activate'; ?>">
                         <i class="fas fa-<?php echo $row['is_active'] ? 'pause' : 'play'; ?>"></i>
                     </button>
                     <button onclick="deleteCommittee(<?php echo $row['committee_id']; ?>, '<?php echo addslashes($row['committee_name']); ?>')"
-                            class="btn btn-danger btn-sm btn-icon"
-                            title="Delete">
+                            class="action-btn danger" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -313,43 +278,18 @@ include "../includes/header.php";
         <?php endwhile; ?>
     </div>
     <?php else: ?>
-    <!-- Empty State -->
     <div class="empty-state animate-slide-up" style="animation-delay: 0.3s">
-        <div class="empty-icon">
-            <i class="fas fa-inbox"></i>
-        </div>
+        <div class="empty-icon"><i class="fas fa-inbox"></i></div>
         <h3 class="empty-title">No Committees Found</h3>
         <p class="empty-description">Get started by creating your first committee.</p>
         <a href="add.php" class="btn btn-primary">
-            <i class="fas fa-plus-circle"></i>
-            Add Committee
+            <i class="fas fa-plus-circle"></i> Add Committee
         </a>
     </div>
     <?php endif; ?>
 
 </div>
 
-<!-- ==========================================
-     SCRIPTS
-     ========================================== -->
-<script>
-// Toggle Status
-function toggleStatus(id, currentStatus, name) {
-    const action = currentStatus ? 'deactivate' : 'activate';
-    if (confirm(`Are you sure you want to ${action} "${name}"?`)) {
-        window.location.href = `toggle-status.php?id=${id}&status=${currentStatus ? 0 : 1}`;
-    }
-}
-
-// Delete Committee
-function deleteCommittee(id, name) {
-    if (confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
-        window.location.href = `delete.php?id=${id}`;
-    }
-}
-</script>
-
-</body>
-</html>
+<script src="../assets/js/committees.js"></script>
 
 <?php include "../includes/footer.php"; ?>

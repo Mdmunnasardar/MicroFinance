@@ -13,9 +13,7 @@ if ($committee_id <= 0) {
     exit();
 }
 
-// ============================================
-// GET COMMITTEE DETAILS
-// ============================================
+// Get committee details
 $committee_sql = "SELECT * FROM committees WHERE committee_id = ?";
 $stmt = $conn->prepare($committee_sql);
 $stmt->bind_param("i", $committee_id);
@@ -27,9 +25,7 @@ if (!$committee) {
     exit();
 }
 
-// ============================================
-// HANDLE REMOVE MEMBER
-// ============================================
+// Handle remove member
 if (isset($_GET['remove'])) {
     $member_id = (int)$_GET['remove'];
     $unassigned_committee = 1;
@@ -45,9 +41,7 @@ if (isset($_GET['remove'])) {
     }
 }
 
-// ============================================
-// HANDLE SINGLE ASSIGN
-// ============================================
+// Handle single assign
 if (isset($_POST['assign_single'])) {
     $member_id = (int)$_POST['member_id'];
     if ($member_id) {
@@ -60,9 +54,7 @@ if (isset($_POST['assign_single'])) {
     }
 }
 
-// ============================================
-// HANDLE BULK ASSIGN
-// ============================================
+// Handle bulk assign
 if (isset($_POST['assign_multiple']) && isset($_POST['member_ids'])) {
     $member_ids = $_POST['member_ids'];
     if (!empty($member_ids)) {
@@ -77,9 +69,7 @@ if (isset($_POST['assign_multiple']) && isset($_POST['member_ids'])) {
     }
 }
 
-// ============================================
-// GET AVAILABLE MEMBERS
-// ============================================
+// Get available members
 $unassigned_committee = 1;
 $available_sql = "
 SELECT * FROM members m
@@ -92,9 +82,7 @@ $stmt->bind_param("ii", $unassigned_committee, $committee_id);
 $stmt->execute();
 $available_members = $stmt->get_result();
 
-// ============================================
-// GET CURRENT MEMBERS
-// ============================================
+// Get current members
 $current_sql = "
 SELECT * FROM members m
 WHERE m.committee_id = ? AND m.is_active = 1
@@ -110,79 +98,61 @@ $success = isset($_GET['success']) ? $_GET['success'] : '';
 include "../includes/header.php";
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Members - MicroFinance</title>
-    <link rel="stylesheet" href="../assets/css/committees.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
-
 <div class="container mx-auto px-4 py-6 max-w-7xl">
 
-    <!-- ==========================================
-         PAGE HEADER
-         ========================================== -->
+    <!-- Page Header -->
     <div class="page-header">
-        <div class="flex items-center gap-4">
-            <div class="page-icon">
+        <div class="header-left">
+            <div class="header-icon primary">
                 <i class="fas fa-user-plus"></i>
             </div>
             <div>
-                <h1 class="page-title">Manage Members</h1>
-                <p class="page-subtitle">
-                    <a href="view.php?id=<?php echo $committee_id; ?>" class="text-indigo-600 hover:text-indigo-800">
+                <h1 class="header-title">Manage Members</h1>
+                <p class="header-subtitle">
+                    <a href="view.php?id=<?php echo $committee_id; ?>" class="text-primary hover:text-primary-dark">
                         <?php echo htmlspecialchars($committee['committee_name']); ?>
                     </a>
                 </p>
             </div>
         </div>
-        <a href="view.php?id=<?php echo $committee_id; ?>" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i>
-            Back
-        </a>
+        <div class="header-actions">
+            <a href="view.php?id=<?php echo $committee_id; ?>" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
     </div>
 
-    <!-- ==========================================
-         SUCCESS MESSAGES
-         ========================================== -->
+    <!-- Success Messages -->
     <?php if ($success == 'assigned'): ?>
-    <div class="bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 p-4 rounded-xl mb-6 flex items-center justify-between animate-slide-up">
+    <div class="bg-success-bg border-l-4 border-success text-success-dark p-4 rounded-xl mb-6 flex items-center justify-between animate-slide-up">
         <div class="flex items-center gap-3">
-            <i class="fas fa-check-circle text-emerald-500 text-xl"></i>
+            <i class="fas fa-check-circle text-success text-xl"></i>
             <span>Member(s) assigned successfully!</span>
         </div>
-        <button type="button" class="text-emerald-700 hover:text-emerald-900" onclick="this.parentElement.remove()">
+        <button type="button" class="text-success-dark hover:text-success" onclick="this.parentElement.remove()">
             <i class="fas fa-times"></i>
         </button>
     </div>
     <?php elseif ($success == 'removed'): ?>
-    <div class="bg-amber-50 border-l-4 border-amber-500 text-amber-700 p-4 rounded-xl mb-6 flex items-center justify-between animate-slide-up">
+    <div class="bg-warning-bg border-l-4 border-warning text-warning-dark p-4 rounded-xl mb-6 flex items-center justify-between animate-slide-up">
         <div class="flex items-center gap-3">
-            <i class="fas fa-user-minus text-amber-500 text-xl"></i>
+            <i class="fas fa-user-minus text-warning text-xl"></i>
             <span>Member removed successfully!</span>
         </div>
-        <button type="button" class="text-amber-700 hover:text-amber-900" onclick="this.parentElement.remove()">
+        <button type="button" class="text-warning-dark hover:text-warning" onclick="this.parentElement.remove()">
             <i class="fas fa-times"></i>
         </button>
     </div>
     <?php endif; ?>
 
-    <!-- ==========================================
-         TWO COLUMN LAYOUT
-         ========================================== -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Two Column Layout -->
+    <div class="grid grid-cols-2 gap-6">
         
-        <!-- ==========================================
-             CURRENT MEMBERS
-             ========================================== -->
+        <!-- Current Members -->
         <div class="detail-section">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-gray-800 flex items-center">
-                    <i class="fas fa-users text-indigo-500 mr-2"></i>
+                    <i class="fas fa-users text-primary mr-2"></i>
                     Current Members
                     <span class="ml-2 bg-gray-200 text-gray-700 text-xs px-2.5 py-1 rounded-full">
                         <?php echo $current_members->num_rows; ?>
@@ -190,12 +160,12 @@ include "../includes/header.php";
                 </h3>
             </div>
 
-            <div class="max-h-[500px] overflow-y-auto custom-scroll space-y-2">
+            <div class="custom-scroll" style="max-height: 500px; overflow-y: auto;">
                 <?php if ($current_members->num_rows > 0): ?>
                     <?php while($member = $current_members->fetch_assoc()): ?>
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200 hover:border-indigo-300 transition-all">
+                    <div class="current-member">
                         <div class="flex items-center gap-3 min-w-0">
-                            <div class="avatar" style="width: 40px; height: 40px; font-size: 14px; background: var(--primary-bg); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">
+                            <div class="avatar">
                                 <?php 
                                 $initial = strtoupper(substr($member['full_name'], 0, 2));
                                 if (strpos($member['full_name'], ' ') !== false) {
@@ -205,13 +175,10 @@ include "../includes/header.php";
                                 echo $initial;
                                 ?>
                             </div>
-                            <div class="min-w-0">
-                                <p class="font-medium text-gray-800 truncate">
-                                    <?php echo htmlspecialchars($member['full_name']); ?>
-                                </p>
+                            <div class="min-w-0 flex-1">
+                                <p class="font-medium text-gray-800 truncate"><?php echo htmlspecialchars($member['full_name']); ?></p>
                                 <p class="text-xs text-gray-500">
-                                    <i class="fas fa-id-card mr-1"></i>
-                                    <?php echo $member['member_code']; ?>
+                                    <i class="fas fa-id-card mr-1"></i> <?php echo $member['member_code']; ?>
                                     <?php if ($member['phone']): ?>
                                     • <i class="fas fa-phone mr-1"></i><?php echo $member['phone']; ?>
                                     <?php endif; ?>
@@ -219,7 +186,7 @@ include "../includes/header.php";
                             </div>
                         </div>
                         <a href="?committee_id=<?php echo $committee_id; ?>&remove=<?php echo $member['member_id']; ?>" 
-                           class="text-rose-500 hover:text-rose-700 p-2 rounded-lg hover:bg-rose-50 transition-colors"
+                           class="action-btn danger"
                            onclick="return confirm('Remove <?php echo htmlspecialchars($member['full_name']); ?> from this committee?')"
                            title="Remove">
                             <i class="fas fa-user-minus"></i>
@@ -227,21 +194,19 @@ include "../includes/header.php";
                     </div>
                     <?php endwhile; ?>
                 <?php else: ?>
-                    <div class="text-center py-12">
-                        <i class="fas fa-users text-4xl text-gray-300 mb-3"></i>
-                        <p class="text-gray-500">No members assigned</p>
-                    </div>
+                <div class="text-center py-12">
+                    <i class="fas fa-users text-4xl text-gray-300 mb-3"></i>
+                    <p class="text-gray-500">No members assigned</p>
+                </div>
                 <?php endif; ?>
             </div>
         </div>
 
-        <!-- ==========================================
-             AVAILABLE MEMBERS
-             ========================================== -->
+        <!-- Available Members -->
         <div class="detail-section">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-gray-800 flex items-center">
-                    <i class="fas fa-user-plus text-emerald-500 mr-2"></i>
+                    <i class="fas fa-user-plus text-success mr-2"></i>
                     Available Members
                     <span class="ml-2 bg-gray-200 text-gray-700 text-xs px-2.5 py-1 rounded-full">
                         <?php echo $available_members->num_rows; ?>
@@ -251,24 +216,22 @@ include "../includes/header.php";
 
             <?php if ($available_members->num_rows > 0): ?>
                 <form method="POST">
-                    <!-- Select All -->
                     <div class="select-all-wrapper">
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" id="selectAll" class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <input type="checkbox" id="selectAll" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary">
                             <span class="text-sm font-medium text-gray-700">Select All</span>
                         </label>
                         <span id="selectedCount" class="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">0 selected</span>
                     </div>
 
-                    <!-- Member List -->
-                    <div class="max-h-[350px] overflow-y-auto custom-scroll space-y-2">
+                    <div class="custom-scroll" style="max-height: 350px; overflow-y: auto;">
                         <?php while($member = $available_members->fetch_assoc()): ?>
                         <div class="member-item">
                             <div class="flex items-center gap-3">
                                 <input type="checkbox" name="member_ids[]" value="<?php echo $member['member_id']; ?>" 
-                                       class="member-checkbox w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                       class="member-checkbox w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary">
                                 <label class="flex items-center gap-3 flex-1 cursor-pointer min-w-0">
-                                    <div class="avatar" style="width: 40px; height: 40px; font-size: 14px; background: var(--primary-bg); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">
+                                    <div class="avatar">
                                         <?php 
                                         $initial = strtoupper(substr($member['full_name'], 0, 2));
                                         if (strpos($member['full_name'], ' ') !== false) {
@@ -278,13 +241,10 @@ include "../includes/header.php";
                                         echo $initial;
                                         ?>
                                     </div>
-                                    <div class="min-w-0">
-                                        <p class="font-medium text-gray-800 truncate">
-                                            <?php echo htmlspecialchars($member['full_name']); ?>
-                                        </p>
-                                        <p class="text-xs text-gray-500">
-                                            <i class="fas fa-id-card mr-1"></i>
-                                            <?php echo $member['member_code']; ?>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="name"><?php echo htmlspecialchars($member['full_name']); ?></p>
+                                        <p class="details">
+                                            <i class="fas fa-id-card mr-1"></i> <?php echo $member['member_code']; ?>
                                             <?php if ($member['phone']): ?>
                                             • <i class="fas fa-phone mr-1"></i><?php echo $member['phone']; ?>
                                             <?php endif; ?>
@@ -296,84 +256,27 @@ include "../includes/header.php";
                         <?php endwhile; ?>
                     </div>
 
-                    <!-- Assign Button -->
                     <div class="mt-4">
                         <button type="submit" name="assign_multiple" id="assignBtn"
-                                class="btn btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">
-                            <i class="fas fa-user-plus"></i>
-                            Assign Selected Members
+                                class="btn btn-primary btn-block disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fas fa-user-plus"></i> Assign Selected Members
                         </button>
                     </div>
                 </form>
             <?php else: ?>
-                <div class="text-center py-12">
-                    <i class="fas fa-check-circle text-4xl text-emerald-300 mb-3"></i>
-                    <p class="text-gray-500">All members are already assigned</p>
-                    <a href="../members/index.php" class="text-indigo-600 hover:text-indigo-800 text-sm mt-2 inline-block">
-                        <i class="fas fa-arrow-right mr-1"></i> View All Members
-                    </a>
-                </div>
+            <div class="text-center py-12">
+                <i class="fas fa-check-circle text-4xl text-success-light mb-3"></i>
+                <p class="text-gray-500">All members are already assigned</p>
+                <a href="../members/index.php" class="text-primary hover:text-primary-dark text-sm mt-2 inline-block">
+                    <i class="fas fa-arrow-right mr-1"></i> View All Members
+                </a>
+            </div>
             <?php endif; ?>
         </div>
     </div>
 
 </div>
 
-<!-- ==========================================
-     SCRIPTS
-     ========================================== -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Toggle member selection
-    document.querySelectorAll('.member-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-            if (e.target.type === 'checkbox') return;
-            const checkbox = this.querySelector('.member-checkbox');
-            checkbox.checked = !checkbox.checked;
-            this.classList.toggle('selected');
-            updateSelectedCount();
-        });
-    });
-
-    // Individual checkbox change
-    document.querySelectorAll('.member-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const parent = this.closest('.member-item');
-            if (parent) {
-                parent.classList.toggle('selected', this.checked);
-            }
-            updateSelectedCount();
-        });
-    });
-
-    // Select All
-    document.getElementById('selectAll')?.addEventListener('change', function() {
-        document.querySelectorAll('.member-checkbox').forEach((cb, index) => {
-            cb.checked = this.checked;
-            const parent = cb.closest('.member-item');
-            if (parent) {
-                parent.classList.toggle('selected', this.checked);
-            }
-        });
-        updateSelectedCount();
-    });
-
-    // Update selected count
-    function updateSelectedCount() {
-        const checked = document.querySelectorAll('.member-checkbox:checked');
-        const count = checked.length;
-        const countEl = document.getElementById('selectedCount');
-        const assignBtn = document.getElementById('assignBtn');
-        
-        if (countEl) countEl.textContent = count + ' selected';
-        if (assignBtn) assignBtn.disabled = count === 0;
-    }
-
-    updateSelectedCount();
-});
-</script>
-
-</body>
-</html>
+<script src="../assets/js/committees.js"></script>
 
 <?php include "../includes/footer.php"; ?>
