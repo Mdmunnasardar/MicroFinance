@@ -101,9 +101,11 @@ include "../includes/header.php";
             </div>
         </div>
         <div class="header-actions">
+            <a href="../dashboard.php" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Dashboard
+            </a>
             <a href="add.php" class="btn btn-primary">
-                <i class="fas fa-plus-circle"></i>
-                Add Committee
+                <i class="fas fa-plus-circle"></i> Add Committee
             </a>
         </div>
     </div>

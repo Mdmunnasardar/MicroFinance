@@ -13,13 +13,11 @@ if ($committee_id <= 0) {
     exit();
 }
 
-// Get committee details
+// Get committee details - REMOVED email and phone from users table
 $sql = "
 SELECT c.*, 
        b.branch_name, 
        u.full_name AS officer_name,
-       u.email AS officer_email,
-       u.phone AS officer_phone,
        COUNT(m.member_id) as member_count
 FROM committees c
 LEFT JOIN branches b ON c.branch_id = b.branch_id
@@ -164,12 +162,6 @@ include "../includes/header.php";
                     </div>
                     <div>
                         <p class="font-semibold text-gray-800"><?php echo htmlspecialchars($committee['officer_name'] ?? 'Not Assigned'); ?></p>
-                        <?php if ($committee['officer_email']): ?>
-                        <p class="text-xs text-gray-600"><i class="fas fa-envelope mr-1"></i> <?php echo $committee['officer_email']; ?></p>
-                        <?php endif; ?>
-                        <?php if ($committee['officer_phone']): ?>
-                        <p class="text-xs text-gray-600"><i class="fas fa-phone mr-1"></i> <?php echo $committee['officer_phone']; ?></p>
-                        <?php endif; ?>
                     </div>
                 </div>
             </div>
