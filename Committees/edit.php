@@ -88,7 +88,7 @@ $days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 <div class="container mt-4">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
         <div>
             <h3><i class="fas fa-edit text-primary me-2"></i>Edit Committee</h3>
             <p class="text-muted mb-0">Update committee information</p>
@@ -200,7 +200,6 @@ $days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Toggle status label when checkbox changes
 document.getElementById('is_active').addEventListener('change', function() {
     const label = document.querySelector('label[for="is_active"]');
     if (this.checked) {
