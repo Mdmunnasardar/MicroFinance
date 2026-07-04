@@ -56,17 +56,6 @@ if (isset($_POST['assign_multiple']) && isset($_POST['member_ids'])) {
     }
 }
 
-// Handle removing member
-if (isset($_GET['remove'])) {
-    $member_id = (int)$_GET['remove'];
-    $update_sql = "UPDATE members SET committee_id = NULL WHERE member_id = ? AND committee_id = ?";
-    $stmt = $conn->prepare($update_sql);
-    $stmt->bind_param("ii", $member_id, $committee_id);
-    $stmt->execute();
-    header("Location: assign-member.php?committee_id=$committee_id&success=removed");
-    exit();
-}
-
 // Get available members (not assigned to any committee)
 $available_sql = "
 SELECT * FROM members m
@@ -91,6 +80,7 @@ $stmt->execute();
 $current_members = $stmt->get_result();
 
 $success = isset($_GET['success']) ? $_GET['success'] : '';
+$error = isset($_GET['error']) ? $_GET['error'] : '';
 ?>
 
 <!DOCTYPE html>
@@ -189,8 +179,13 @@ $success = isset($_GET['success']) ? $_GET['success'] : '';
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     <?php elseif ($success == 'removed'): ?>
-    <div class="alert alert-warning alert-dismissible fade show">
+    <div class="alert alert-success alert-dismissible fade show">
         <i class="fas fa-user-minus me-2"></i>Member removed successfully!
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <?php elseif ($error == 'remove_failed'): ?>
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-exclamation-circle me-2"></i>Failed to remove member. Please try again.
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     <?php endif; ?>
@@ -233,10 +228,10 @@ $success = isset($_GET['success']) ? $_GET['success'] : '';
                                         </small>
                                     </div>
                                 </div>
-                                <a href="?committee_id=<?php echo $committee_id; ?>&remove=<?php echo $member['member_id']; ?>" 
+                                <a href="remove-member.php?committee_id=<?php echo $committee_id; ?>&member_id=<?php echo $member['member_id']; ?>" 
                                    class="btn btn-sm btn-outline-danger btn-remove"
-                                   onclick="return confirm('Remove this member from the committee?')">
-                                    <i class="fas fa-user-minus"></i>
+                                   onclick="return confirm('Are you sure you want to remove <?php echo htmlspecialchars($member['full_name']); ?> from this committee?')">
+                                    <i class="fas fa-user-minus me-1"></i> Remove
                                 </a>
                             </div>
                         </div>
@@ -299,9 +294,6 @@ $success = isset($_GET['success']) ? $_GET['success'] : '';
                                                     <?php echo $member['member_code']; ?>
                                                     <?php if ($member['phone']): ?>
                                                     • <i class="fas fa-phone me-1"></i><?php echo $member['phone']; ?>
-                                                    <?php endif; ?>
-                                                    <?php if ($member['national_id']): ?>
-                                                    • <i class="fas fa-id-card me-1"></i><?php echo $member['national_id']; ?>
                                                     <?php endif; ?>
                                                 </small>
                                             </div>
@@ -379,8 +371,16 @@ document.getElementById('selectAll')?.addEventListener('change', function() {
 function updateSelectedCount() {
     const checked = document.querySelectorAll('.member-checkbox:checked');
     const count = checked.length;
-    document.getElementById('selectedCount').textContent = count + ' selected';
-    document.getElementById('assignBtn').disabled = count === 0;
+    const countElement = document.getElementById('selectedCount');
+    const assignBtn = document.getElementById('assignBtn');
+    
+    if (countElement) {
+        countElement.textContent = count + ' selected';
+    }
+    
+    if (assignBtn) {
+        assignBtn.disabled = count === 0;
+    }
 }
 
 // Initial update
