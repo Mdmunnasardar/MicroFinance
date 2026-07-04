@@ -25,43 +25,51 @@ if (!$committee) {
     exit();
 }
 
-// Handle assigning member
-if (isset($_POST['assign_member'])) {
+// Handle single member assignment
+if (isset($_POST['assign_single'])) {
     $member_id = $_POST['member_id'];
-    $field_officer_id = $_POST['field_officer_id'] ?? null;
     
-    $update_sql = "UPDATE members SET committee_id = ?, field_officer_id = ? WHERE member_id = ?";
-    $stmt = $conn->prepare($update_sql);
-    $stmt->bind_param("iii", $committee_id, $field_officer_id, $member_id);
-    $stmt->execute();
-    
-    header("Location: view.php?id=$committee_id&success=assigned");
-    exit();
-}
-
-// Handle bulk assign
-if (isset($_POST['assign_multiple'])) {
-    $member_ids = $_POST['member_ids'] ?? [];
-    $field_officer_id = $_POST['field_officer_id'] ?? null;
-    
-    if (!empty($member_ids)) {
-        foreach ($member_ids as $member_id) {
-            $update_sql = "UPDATE members SET committee_id = ?, field_officer_id = ? WHERE member_id = ?";
-            $stmt = $conn->prepare($update_sql);
-            $stmt->bind_param("iii", $committee_id, $field_officer_id, $member_id);
-            $stmt->execute();
-        }
-        header("Location: view.php?id=$committee_id&success=assigned");
+    if ($member_id) {
+        $update_sql = "UPDATE members SET committee_id = ? WHERE member_id = ?";
+        $stmt = $conn->prepare($update_sql);
+        $stmt->bind_param("ii", $committee_id, $member_id);
+        $stmt->execute();
+        
+        header("Location: assign-member.php?committee_id=$committee_id&success=assigned");
         exit();
     }
 }
 
-// Get field officers
-$officers = $conn->query("SELECT user_id, full_name FROM users WHERE role = 'field_officer' ORDER BY full_name");
+// Handle bulk assign
+if (isset($_POST['assign_multiple']) && isset($_POST['member_ids'])) {
+    $member_ids = $_POST['member_ids'];
+    
+    if (!empty($member_ids)) {
+        foreach ($member_ids as $member_id) {
+            $update_sql = "UPDATE members SET committee_id = ? WHERE member_id = ?";
+            $stmt = $conn->prepare($update_sql);
+            $stmt->bind_param("ii", $committee_id, $member_id);
+            $stmt->execute();
+        }
+        header("Location: assign-member.php?committee_id=$committee_id&success=assigned");
+        exit();
+    }
+}
+
+// Handle removing member
+if (isset($_GET['remove'])) {
+    $member_id = (int)$_GET['remove'];
+    $update_sql = "UPDATE members SET committee_id = NULL WHERE member_id = ? AND committee_id = ?";
+    $stmt = $conn->prepare($update_sql);
+    $stmt->bind_param("ii", $member_id, $committee_id);
+    $stmt->execute();
+    header("Location: assign-member.php?committee_id=$committee_id&success=removed");
+    exit();
+}
 
 // Get available members (not assigned to any committee)
 $available_sql = "
-SELECT m.* FROM members m
+SELECT * FROM members m
 WHERE m.is_active = 1 
 AND (m.committee_id IS NULL OR m.committee_id = 0 OR m.committee_id != ?)
 ORDER BY m.full_name
@@ -73,9 +81,7 @@ $available_members = $stmt->get_result();
 
 // Get current members
 $current_sql = "
-SELECT m.*, u.full_name as officer_name
-FROM members m
-LEFT JOIN users u ON m.field_officer_id = u.user_id
+SELECT * FROM members m
 WHERE m.committee_id = ? AND m.is_active = 1
 ORDER BY m.full_name
 ";
@@ -138,16 +144,19 @@ $success = isset($_GET['success']) ? $_GET['success'] : '';
             padding: 12px 15px;
             margin-bottom: 8px;
             border: 1px solid #e5e7eb;
+            transition: all 0.2s;
         }
         .current-member:hover {
             background: #f8fafc;
+            border-color: #4f46e5;
         }
-        .badge-officer {
-            background: #dbeafe;
-            color: #1e40af;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 11px;
+        .btn-remove {
+            padding: 4px 10px;
+        }
+        .select-all-wrapper {
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -173,9 +182,15 @@ $success = isset($_GET['success']) ? $_GET['success'] : '';
         </a>
     </div>
 
+    <!-- Success/Error Messages -->
     <?php if ($success == 'assigned'): ?>
     <div class="alert alert-success alert-dismissible fade show">
         <i class="fas fa-check-circle me-2"></i>Member(s) assigned successfully!
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <?php elseif ($success == 'removed'): ?>
+    <div class="alert alert-warning alert-dismissible fade show">
+        <i class="fas fa-user-minus me-2"></i>Member removed successfully!
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     <?php endif; ?>
@@ -184,7 +199,7 @@ $success = isset($_GET['success']) ? $_GET['success'] : '';
         <!-- Current Members -->
         <div class="col-md-6">
             <div class="card shadow-sm">
-                <div class="card-header bg-white">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h6 class="mb-0 fw-bold">
                         <i class="fas fa-users me-2"></i>
                         Current Members (<?php echo $current_members->num_rows; ?>)
@@ -210,18 +225,16 @@ $success = isset($_GET['success']) ? $_GET['success'] : '';
                                         <strong><?php echo htmlspecialchars($member['full_name']); ?></strong>
                                         <br>
                                         <small class="text-muted">
+                                            <i class="fas fa-id-card me-1"></i>
                                             <?php echo $member['member_code']; ?>
-                                            <?php if ($member['officer_name']): ?>
-                                            <span class="badge-officer ms-2">
-                                                <i class="fas fa-user-tie me-1"></i>
-                                                <?php echo $member['officer_name']; ?>
-                                            </span>
+                                            <?php if ($member['phone']): ?>
+                                            • <i class="fas fa-phone me-1"></i><?php echo $member['phone']; ?>
                                             <?php endif; ?>
                                         </small>
                                     </div>
                                 </div>
-                                <a href="remove-member.php?committee_id=<?php echo $committee_id; ?>&member_id=<?php echo $member['member_id']; ?>" 
-                                   class="btn btn-sm btn-outline-danger"
+                                <a href="?committee_id=<?php echo $committee_id; ?>&remove=<?php echo $member['member_id']; ?>" 
+                                   class="btn btn-sm btn-outline-danger btn-remove"
                                    onclick="return confirm('Remove this member from the committee?')">
                                     <i class="fas fa-user-minus"></i>
                                 </a>
@@ -231,7 +244,7 @@ $success = isset($_GET['success']) ? $_GET['success'] : '';
                     <?php else: ?>
                     <div class="text-center py-4">
                         <i class="fas fa-users fa-3x text-muted mb-3 d-block"></i>
-                        <p class="text-muted">No members assigned</p>
+                        <p class="text-muted">No members assigned to this committee</p>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -250,24 +263,23 @@ $success = isset($_GET['success']) ? $_GET['success'] : '';
                 <div class="card-body">
                     <?php if ($available_members->num_rows > 0): ?>
                         <form method="POST" id="assignForm">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold small">Select Field Officer (Optional)</label>
-                                <select name="field_officer_id" class="form-select">
-                                    <option value="">Assign to Field Officer</option>
-                                    <?php while($officer = $officers->fetch_assoc()): ?>
-                                    <option value="<?php echo $officer['user_id']; ?>">
-                                        <?php echo htmlspecialchars($officer['full_name']); ?>
-                                    </option>
-                                    <?php endwhile; ?>
-                                </select>
+                            <div class="select-all-wrapper">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="selectAll">
+                                    <label class="form-check-label fw-bold" for="selectAll">
+                                        Select All Members
+                                    </label>
+                                    <span class="badge bg-primary ms-2" id="selectedCount">0 selected</span>
+                                </div>
                             </div>
 
                             <div style="max-height: 350px; overflow-y: auto;">
                                 <?php while($member = $available_members->fetch_assoc()): ?>
-                                <div class="member-item" onclick="toggleMember(this)">
+                                <div class="member-item" data-member-id="<?php echo $member['member_id']; ?>">
                                     <div class="d-flex align-items-center">
                                         <input type="checkbox" name="member_ids[]" value="<?php echo $member['member_id']; ?>" 
-                                               class="form-check-input me-2" id="member_<?php echo $member['member_id']; ?>">
+                                               class="form-check-input me-2 member-checkbox" 
+                                               id="member_<?php echo $member['member_id']; ?>">
                                         <label class="d-flex align-items-center w-100 cursor-pointer" for="member_<?php echo $member['member_id']; ?>">
                                             <div class="member-avatar me-3">
                                                 <?php 
@@ -283,9 +295,13 @@ $success = isset($_GET['success']) ? $_GET['success'] : '';
                                                 <strong><?php echo htmlspecialchars($member['full_name']); ?></strong>
                                                 <br>
                                                 <small class="text-muted">
+                                                    <i class="fas fa-id-card me-1"></i>
                                                     <?php echo $member['member_code']; ?>
                                                     <?php if ($member['phone']): ?>
-                                                    • <?php echo $member['phone']; ?>
+                                                    • <i class="fas fa-phone me-1"></i><?php echo $member['phone']; ?>
+                                                    <?php endif; ?>
+                                                    <?php if ($member['national_id']): ?>
+                                                    • <i class="fas fa-id-card me-1"></i><?php echo $member['national_id']; ?>
                                                     <?php endif; ?>
                                                 </small>
                                             </div>
@@ -296,7 +312,7 @@ $success = isset($_GET['success']) ? $_GET['success'] : '';
                             </div>
 
                             <div class="mt-3">
-                                <button type="submit" name="assign_multiple" class="btn btn-primary w-100">
+                                <button type="submit" name="assign_multiple" class="btn btn-primary w-100" id="assignBtn" disabled>
                                     <i class="fas fa-user-plus me-2"></i>Assign Selected Members
                                 </button>
                             </div>
@@ -317,24 +333,61 @@ $success = isset($_GET['success']) ? $_GET['success'] : '';
 </div>
 
 <script>
-function toggleMember(element) {
-    const checkbox = element.querySelector('input[type="checkbox"]');
-    checkbox.checked = !checkbox.checked;
-    element.classList.toggle('selected');
-}
-
-// Auto-select all when clicking on member item
+// Toggle member selection
 document.querySelectorAll('.member-item').forEach(item => {
     item.addEventListener('click', function(e) {
-        // Don't toggle if clicking directly on checkbox
-        if (e.target.type !== 'checkbox') {
-            const checkbox = this.querySelector('input[type="checkbox"]');
-            checkbox.checked = !checkbox.checked;
-            this.classList.toggle('selected');
-        }
+        // Don't toggle if clicking on checkbox directly
+        if (e.target.type === 'checkbox') return;
+        
+        const checkbox = this.querySelector('.member-checkbox');
+        checkbox.checked = !checkbox.checked;
+        this.classList.toggle('selected');
+        updateSelectedCount();
     });
 });
+
+// Individual checkbox click
+document.querySelectorAll('.member-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const parent = this.closest('.member-item');
+        if (this.checked) {
+            parent.classList.add('selected');
+        } else {
+            parent.classList.remove('selected');
+        }
+        updateSelectedCount();
+    });
+});
+
+// Select All functionality
+document.getElementById('selectAll')?.addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.member-checkbox');
+    const memberItems = document.querySelectorAll('.member-item');
+    
+    checkboxes.forEach((checkbox, index) => {
+        checkbox.checked = this.checked;
+        if (this.checked) {
+            memberItems[index].classList.add('selected');
+        } else {
+            memberItems[index].classList.remove('selected');
+        }
+    });
+    updateSelectedCount();
+});
+
+// Update selected count and enable/disable assign button
+function updateSelectedCount() {
+    const checked = document.querySelectorAll('.member-checkbox:checked');
+    const count = checked.length;
+    document.getElementById('selectedCount').textContent = count + ' selected';
+    document.getElementById('assignBtn').disabled = count === 0;
+}
+
+// Initial update
+updateSelectedCount();
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>
