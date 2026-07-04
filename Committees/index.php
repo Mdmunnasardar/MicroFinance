@@ -46,8 +46,7 @@ $where_clause = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
 
 // Main query
 $sql = "
-SELECT c.*, b.branch_name, u.full_name AS officer_name,
-       (SELECT COUNT(*) FROM committee_members cm WHERE cm.committee_id = c.committee_id AND cm.is_active = 1) as member_count
+SELECT c.*, b.branch_name, u.full_name AS officer_name
 FROM committees c
 LEFT JOIN branches b ON c.branch_id = b.branch_id
 LEFT JOIN users u ON c.field_officer_id = u.user_id
@@ -75,6 +74,9 @@ $stats = $stats_result->fetch_assoc();
 
 // Get branches for filter
 $branches = $conn->query("SELECT * FROM branches ORDER BY branch_name");
+
+// Get officers for filter
+$officers = $conn->query("SELECT * FROM users WHERE role = 'field_officer' ORDER BY full_name");
 ?>
 
 <!DOCTYPE html>
@@ -111,14 +113,9 @@ $branches = $conn->query("SELECT * FROM branches ORDER BY branch_name");
             padding: 4px 8px;
             margin: 0 2px;
         }
-        .search-box {
-            max-width: 300px;
-        }
-        @media (max-width: 768px) {
-            .search-box {
-                max-width: 100%;
-                margin-bottom: 10px;
-            }
+        .badge-day {
+            font-size: 0.85rem;
+            padding: 5px 12px;
         }
     </style>
 </head>
@@ -145,7 +142,7 @@ $branches = $conn->query("SELECT * FROM branches ORDER BY branch_name");
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <p class="text-muted mb-1">Total Committees</p>
-                        <h4 class="mb-0"><?php echo $stats['total']; ?></h4>
+                        <h4 class="mb-0"><?php echo $stats['total'] ?? 0; ?></h4>
                     </div>
                     <div class="stat-icon bg-primary bg-opacity-10 text-primary">
                         <i class="fas fa-building"></i>
@@ -158,7 +155,7 @@ $branches = $conn->query("SELECT * FROM branches ORDER BY branch_name");
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <p class="text-muted mb-1">Active Committees</p>
-                        <h4 class="mb-0 text-success"><?php echo $stats['active']; ?></h4>
+                        <h4 class="mb-0 text-success"><?php echo $stats['active'] ?? 0; ?></h4>
                     </div>
                     <div class="stat-icon bg-success bg-opacity-10 text-success">
                         <i class="fas fa-check-circle"></i>
@@ -171,7 +168,7 @@ $branches = $conn->query("SELECT * FROM branches ORDER BY branch_name");
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <p class="text-muted mb-1">Inactive Committees</p>
-                        <h4 class="mb-0 text-danger"><?php echo $stats['inactive']; ?></h4>
+                        <h4 class="mb-0 text-danger"><?php echo $stats['inactive'] ?? 0; ?></h4>
                     </div>
                     <div class="stat-icon bg-danger bg-opacity-10 text-danger">
                         <i class="fas fa-times-circle"></i>
@@ -249,8 +246,8 @@ $branches = $conn->query("SELECT * FROM branches ORDER BY branch_name");
                             <th>Committee Name</th>
                             <th>Branch</th>
                             <th>Field Officer</th>
-                            <th>Meeting</th>
-                            <th>Members</th>
+                            <th>Meeting Schedule</th>
+                            <th>Formed Date</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -262,20 +259,14 @@ $branches = $conn->query("SELECT * FROM branches ORDER BY branch_name");
                             <td>#<?php echo $row['committee_id']; ?></td>
                             <td>
                                 <strong><?php echo htmlspecialchars($row['committee_name']); ?></strong>
-                                <br>
-                                <small class="text-muted">Formed: <?php echo date('d M Y', strtotime($row['formed_date'])); ?></small>
                             </td>
                             <td><?php echo htmlspecialchars($row['branch_name'] ?? 'N/A'); ?></td>
                             <td><?php echo htmlspecialchars($row['officer_name'] ?? 'N/A'); ?></td>
                             <td>
-                                <span class="badge bg-info"><?php echo $row['meeting_day']; ?></span>
+                                <span class="badge bg-info badge-day"><?php echo $row['meeting_day']; ?></span>
                                 <span class="badge bg-secondary"><?php echo date('h:i A', strtotime($row['meeting_time'])); ?></span>
                             </td>
-                            <td>
-                                <span class="badge bg-primary rounded-pill">
-                                    <i class="fas fa-users me-1"></i><?php echo $row['member_count'] ?? 0; ?>
-                                </span>
-                            </td>
+                            <td><?php echo date('d M Y', strtotime($row['formed_date'])); ?></td>
                             <td>
                                 <?php if ($row['is_active']): ?>
                                 <span class="badge bg-success">Active</span>
@@ -292,14 +283,14 @@ $branches = $conn->query("SELECT * FROM branches ORDER BY branch_name");
                                    class="btn btn-sm btn-outline-success btn-action" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a href="members.php?committee_id=<?php echo $row['committee_id']; ?>" 
-                                   class="btn btn-sm btn-outline-info btn-action" title="Manage Members">
-                                    <i class="fas fa-users"></i>
-                                </a>
                                 <button onclick="toggleStatus(<?php echo $row['committee_id']; ?>, <?php echo $row['is_active']; ?>)" 
                                         class="btn btn-sm btn-outline-<?php echo $row['is_active'] ? 'warning' : 'success'; ?> btn-action" 
                                         title="<?php echo $row['is_active'] ? 'Deactivate' : 'Activate'; ?>">
                                     <i class="fas fa-<?php echo $row['is_active'] ? 'pause' : 'play'; ?>"></i>
+                                </button>
+                                <button onclick="deleteCommittee(<?php echo $row['committee_id']; ?>)" 
+                                        class="btn btn-sm btn-outline-danger btn-action" title="Delete">
+                                    <i class="fas fa-trash"></i>
                                 </button>
                             </td>
                         </tr>
@@ -328,6 +319,12 @@ function toggleStatus(id, currentStatus) {
     const action = currentStatus ? 'deactivate' : 'activate';
     if (confirm(`Are you sure you want to ${action} this committee?`)) {
         window.location.href = `toggle-status.php?id=${id}&status=${currentStatus ? 0 : 1}`;
+    }
+}
+
+function deleteCommittee(id) {
+    if (confirm('Are you sure you want to delete this committee? This action cannot be undone.')) {
+        window.location.href = `delete.php?id=${id}`;
     }
 }
 </script>
