@@ -17,12 +17,17 @@ if ($committee_id > 0 && $member_id > 0) {
     $stmt->bind_param("ii", $member_id, $committee_id);
     
     if ($stmt->execute()) {
-        header("Location: assign-member.php?committee_id=$committee_id&success=removed");
+        // Success - redirect back with success message
+        header("Location: assign-member.php?committee_id=" . $committee_id . "&success=removed");
+        exit();
+    } else {
+        // Error - redirect back with error message
+        header("Location: assign-member.php?committee_id=" . $committee_id . "&error=remove_failed");
         exit();
     }
+} else {
+    // Invalid parameters - redirect back
+    header("Location: assign-member.php?committee_id=" . $committee_id);
+    exit();
 }
-
-// If something went wrong, go back
-header("Location: assign-member.php?committee_id=$committee_id");
-exit();
 ?>
