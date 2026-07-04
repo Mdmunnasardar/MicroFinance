@@ -29,7 +29,8 @@ if (!isset($_SESSION['user_id'])) {
     
     <!-- Dashboard CSS -->
     <link rel="stylesheet" href="assets/css/dashboard.css">
-
+    
+     <link rel="stylesheet" href="../assets/css/committees.css">
    
 </head>
 <body>
