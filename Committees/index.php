@@ -44,13 +44,18 @@ if (!empty($day_filter)) {
 
 $where_clause = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
 
-// Main query
+// Main query with member count (using members table directly)
 $sql = "
-SELECT c.*, b.branch_name, u.full_name AS officer_name
+SELECT c.*, 
+       b.branch_name, 
+       u.full_name AS officer_name,
+       COUNT(m.member_id) as member_count
 FROM committees c
 LEFT JOIN branches b ON c.branch_id = b.branch_id
 LEFT JOIN users u ON c.field_officer_id = u.user_id
+LEFT JOIN members m ON c.committee_id = m.committee_id AND m.is_active = 1
 $where_clause
+GROUP BY c.committee_id
 ORDER BY c.committee_id DESC
 ";
 
@@ -74,75 +79,105 @@ $stats = $stats_result->fetch_assoc();
 
 // Get branches for filter
 $branches = $conn->query("SELECT * FROM branches ORDER BY branch_name");
-
-// Get officers for filter
-$officers = $conn->query("SELECT * FROM users WHERE role = 'field_officer' ORDER BY full_name");
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Committee List - MicroFinance</title>
+    <title>Committees - MicroFinance</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        body { background: #f0f2f5; }
         .stat-card {
             background: white;
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            border-left: 4px solid #4f46e5;
         }
         .stat-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
         }
+        .stat-card.green { border-left-color: #22c55e; }
+        .stat-card.red { border-left-color: #ef4444; }
         .stat-icon {
-            width: 50px;
-            height: 50px;
+            width: 48px;
+            height: 48px;
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 20px;
         }
         .table th {
-            background-color: #f8f9fa;
+            background: #f8fafc;
             font-weight: 600;
+            color: #1e293b;
+            border-bottom: 2px solid #e2e8f0;
         }
+        .table td { vertical-align: middle; }
         .btn-action {
-            padding: 4px 8px;
-            margin: 0 2px;
+            padding: 5px 10px;
+            margin: 0 3px;
+            border-radius: 6px;
         }
         .badge-day {
-            font-size: 0.85rem;
-            padding: 5px 12px;
+            padding: 6px 14px;
+            font-weight: 500;
+        }
+        .filter-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+        .page-header {
+            background: white;
+            padding: 20px 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+        .member-badge {
+            background: #eef2ff;
+            color: #4f46e5;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
         }
     </style>
 </head>
 
-<body class="bg-light">
+<body>
 
-<div class="container-fluid px-4 mt-4">
+<div class="container-fluid px-4 py-4">
 
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap">
         <div>
-            <h3><i class="fas fa-users-cog text-primary me-2"></i>Committee Management</h3>
-            <p class="text-muted mb-0">Manage all committees, branches, and field officers</p>
+            <h4 class="mb-1 fw-bold">
+                <i class="fas fa-users-cog text-primary me-2"></i>Committees
+            </h4>
+            <p class="text-muted mb-0 small">Manage all committees and their members</p>
         </div>
         <a href="add.php" class="btn btn-primary">
             <i class="fas fa-plus-circle me-2"></i>Add Committee
         </a>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="row mb-4 g-3">
-        <div class="col-md-4">
+    <!-- Statistics -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
             <div class="stat-card">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1">Total Committees</p>
-                        <h4 class="mb-0"><?php echo $stats['total'] ?? 0; ?></h4>
+                        <p class="text-muted mb-1 small fw-bold">Total Committees</p>
+                        <h3 class="mb-0"><?php echo $stats['total'] ?? 0; ?></h3>
                     </div>
                     <div class="stat-icon bg-primary bg-opacity-10 text-primary">
                         <i class="fas fa-building"></i>
@@ -150,12 +185,12 @@ $officers = $conn->query("SELECT * FROM users WHERE role = 'field_officer' ORDER
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="stat-card">
+        <div class="col-md-3">
+            <div class="stat-card green">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1">Active Committees</p>
-                        <h4 class="mb-0 text-success"><?php echo $stats['active'] ?? 0; ?></h4>
+                        <p class="text-muted mb-1 small fw-bold">Active</p>
+                        <h3 class="mb-0 text-success"><?php echo $stats['active'] ?? 0; ?></h3>
                     </div>
                     <div class="stat-icon bg-success bg-opacity-10 text-success">
                         <i class="fas fa-check-circle"></i>
@@ -163,12 +198,12 @@ $officers = $conn->query("SELECT * FROM users WHERE role = 'field_officer' ORDER
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="stat-card">
+        <div class="col-md-3">
+            <div class="stat-card red">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1">Inactive Committees</p>
-                        <h4 class="mb-0 text-danger"><?php echo $stats['inactive'] ?? 0; ?></h4>
+                        <p class="text-muted mb-1 small fw-bold">Inactive</p>
+                        <h3 class="mb-0 text-danger"><?php echo $stats['inactive'] ?? 0; ?></h3>
                     </div>
                     <div class="stat-icon bg-danger bg-opacity-10 text-danger">
                         <i class="fas fa-times-circle"></i>
@@ -176,63 +211,81 @@ $officers = $conn->query("SELECT * FROM users WHERE role = 'field_officer' ORDER
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Search & Filter -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <form method="GET" class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label fw-bold small">Search</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
-                        <input type="text" name="search" class="form-control" 
-                               placeholder="Committee name..." 
-                               value="<?php echo htmlspecialchars($search); ?>">
+        <div class="col-md-3">
+            <div class="stat-card" style="border-left-color: #8b5cf6;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small fw-bold">Total Members</p>
+                        <h3 class="mb-0 text-purple">
+                            <?php
+                            $total_members = $conn->query("SELECT COUNT(*) as total FROM members WHERE is_active = 1")->fetch_assoc();
+                            echo $total_members['total'] ?? 0;
+                            ?>
+                        </h3>
+                    </div>
+                    <div class="stat-icon bg-purple bg-opacity-10 text-purple">
+                        <i class="fas fa-users"></i>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label fw-bold small">Branch</label>
-                    <select name="branch_id" class="form-select">
-                        <option value="">All Branches</option>
-                        <?php while($b = $branches->fetch_assoc()): ?>
-                        <option value="<?php echo $b['branch_id']; ?>" 
-                            <?php echo $branch_filter == $b['branch_id'] ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($b['branch_name']); ?>
-                        </option>
-                        <?php endwhile; ?>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label fw-bold small">Status</label>
-                    <select name="status" class="form-select">
-                        <option value="">All</option>
-                        <option value="1" <?php echo $status_filter === '1' ? 'selected' : ''; ?>>Active</option>
-                        <option value="0" <?php echo $status_filter === '0' ? 'selected' : ''; ?>>Inactive</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label fw-bold small">Meeting Day</label>
-                    <select name="meeting_day" class="form-select">
-                        <option value="">All Days</option>
-                        <?php 
-                        $days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-                        foreach($days as $day): 
-                        ?>
-                        <option value="<?php echo $day; ?>" 
-                            <?php echo $day_filter == $day ? 'selected' : ''; ?>>
-                            <?php echo $day; ?>
-                        </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-filter me-2"></i>Filter
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-card">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-bold small text-secondary">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                    <input type="text" name="search" class="form-control border-start-0 ps-0" 
+                           placeholder="Committee name..." 
+                           value="<?php echo htmlspecialchars($search); ?>">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold small text-secondary">Branch</label>
+                <select name="branch_id" class="form-select">
+                    <option value="">All Branches</option>
+                    <?php while($b = $branches->fetch_assoc()): ?>
+                    <option value="<?php echo $b['branch_id']; ?>" 
+                        <?php echo $branch_filter == $b['branch_id'] ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($b['branch_name']); ?>
+                    </option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold small text-secondary">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All</option>
+                    <option value="1" <?php echo $status_filter === '1' ? 'selected' : ''; ?>>Active</option>
+                    <option value="0" <?php echo $status_filter === '0' ? 'selected' : ''; ?>>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold small text-secondary">Meeting Day</label>
+                <select name="meeting_day" class="form-select">
+                    <option value="">All Days</option>
+                    <?php 
+                    $days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+                    foreach($days as $day): 
+                    ?>
+                    <option value="<?php echo $day; ?>" 
+                        <?php echo $day_filter == $day ? 'selected' : ''; ?>>
+                        <?php echo $day; ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-2"></i>Filter
+                </button>
+            </div>
+        </form>
     </div>
 
     <!-- Committee Table -->
@@ -242,31 +295,46 @@ $officers = $conn->query("SELECT * FROM users WHERE role = 'field_officer' ORDER
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th style="width: 60px;">#</th>
                             <th>Committee Name</th>
                             <th>Branch</th>
                             <th>Field Officer</th>
-                            <th>Meeting Schedule</th>
-                            <th>Formed Date</th>
+                            <th>Meeting</th>
+                            <th>Members</th>
                             <th>Status</th>
-                            <th>Actions</th>
+                            <th style="width: 200px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if ($result->num_rows > 0): ?>
                         <?php while($row = $result->fetch_assoc()): ?>
                         <tr>
-                            <td>#<?php echo $row['committee_id']; ?></td>
+                            <td>
+                                <span class="badge bg-light text-dark"><?php echo $row['committee_id']; ?></span>
+                            </td>
                             <td>
                                 <strong><?php echo htmlspecialchars($row['committee_name']); ?></strong>
+                                <br>
+                                <small class="text-muted">Formed: <?php echo date('d M Y', strtotime($row['formed_date'])); ?></small>
                             </td>
-                            <td><?php echo htmlspecialchars($row['branch_name'] ?? 'N/A'); ?></td>
-                            <td><?php echo htmlspecialchars($row['officer_name'] ?? 'N/A'); ?></td>
+                            <td>
+                                <i class="fas fa-building text-primary me-1"></i>
+                                <?php echo htmlspecialchars($row['branch_name'] ?? 'N/A'); ?>
+                            </td>
+                            <td>
+                                <i class="fas fa-user-tie text-success me-1"></i>
+                                <?php echo htmlspecialchars($row['officer_name'] ?? 'N/A'); ?>
+                            </td>
                             <td>
                                 <span class="badge bg-info badge-day"><?php echo $row['meeting_day']; ?></span>
                                 <span class="badge bg-secondary"><?php echo date('h:i A', strtotime($row['meeting_time'])); ?></span>
                             </td>
-                            <td><?php echo date('d M Y', strtotime($row['formed_date'])); ?></td>
+                            <td>
+                                <span class="member-badge">
+                                    <i class="fas fa-users me-1"></i>
+                                    <?php echo $row['member_count'] ?? 0; ?>
+                                </span>
+                            </td>
                             <td>
                                 <?php if ($row['is_active']): ?>
                                 <span class="badge bg-success">Active</span>
