@@ -36,10 +36,9 @@ if (!$user) {
     exit();
 }
 
-// Get statistics based on role
+// Get statistics based on user role
 $stats = [];
 if ($user['role'] == 'field_officer') {
-    // Field Officer Stats
     $stats_sql = "
     SELECT 
         COUNT(DISTINCT c.committee_id) as total_committees,
@@ -132,27 +131,36 @@ include "includes/header.php";
                 </div>
             </div>
 
-            <!-- Actions -->
+            <!-- Actions - ROLE BASED -->
             <div class="profile-actions">
                 <?php if ($user_id == $current_user_id): ?>
-                <a href="profile/edit.php" class="btn btn-primary">
-                    <i class="fas fa-edit"></i> Edit Profile
-                </a>
-                <a href="profile/change-password.php" class="btn btn-secondary">
-                    <i class="fas fa-key"></i> Change Password
-                </a>
-                <?php endif; ?>
-                
-                <?php if (in_array($current_user_role, ['admin', 'branch_manager']) && $user_id != $current_user_id): ?>
-                <a href="profile/edit.php?id=<?php echo $user_id; ?>" class="btn btn-primary">
-                    <i class="fas fa-edit"></i> Edit User
-                </a>
+                    <!-- OWN PROFILE - Show edit options -->
+                    <a href="profile/edit.php" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </a>
+                    <a href="profile/change-password.php" class="btn btn-secondary">
+                        <i class="fas fa-key"></i> Change Password
+                    </a>
                 <?php endif; ?>
                 
                 <?php if ($current_user_role == 'admin' && $user_id != $current_user_id): ?>
-                <button onclick="deleteUser(<?php echo $user_id; ?>)" class="btn btn-danger">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
+                    <!-- ADMIN VIEWING OTHER USER - Full access -->
+                    <a href="profile/edit.php?id=<?php echo $user_id; ?>" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Edit User
+                    </a>
+                    <button onclick="deleteUser(<?php echo $user_id; ?>)" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                <?php endif; ?>
+                
+                <?php if ($current_user_role == 'branch_manager' && $user_id != $current_user_id && $user['role'] == 'field_officer'): ?>
+                    <!-- BRANCH MANAGER VIEWING FIELD OFFICER -->
+                    <a href="profile/edit.php?id=<?php echo $user_id; ?>" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Edit Officer
+                    </a>
+                    <a href="Committees/officers/view.php?id=<?php echo $user_id; ?>" class="btn btn-info">
+                        <i class="fas fa-users-cog"></i> View Committees
+                    </a>
                 <?php endif; ?>
                 
                 <a href="dashboard.php" class="btn btn-secondary">
@@ -163,7 +171,7 @@ include "includes/header.php";
     </div>
 
     <!-- ==========================================
-         STATISTICS (Field Officer Only)
+         STATISTICS - Only for Field Officers
          ========================================== -->
     <?php if ($user['role'] == 'field_officer'): ?>
     <div class="stat-grid animate-slide-up" style="animation-delay: 0.1s">
@@ -272,9 +280,10 @@ include "includes/header.php";
             </div>
         </div>
 
-        <!-- Sidebar (1 column) -->
+        <!-- Sidebar (1 column) - ROLE BASED -->
         <div style="grid-column: span 1;">
-            <!-- Work Links (Field Officer) -->
+            
+            <!-- FIELD OFFICER - Work Links -->
             <?php if ($user['role'] == 'field_officer'): ?>
             <div class="detail-section animate-slide-up" style="animation-delay: 0.2s">
                 <h4 class="section-title">
@@ -321,7 +330,7 @@ include "includes/header.php";
             </div>
             <?php endif; ?>
 
-            <!-- Admin Actions -->
+            <!-- ADMIN ACTIONS - Only for Admin viewing other users -->
             <?php if ($current_user_role == 'admin' && $user_id != $current_user_id): ?>
             <div class="detail-section animate-slide-up" style="animation-delay: 0.25s">
                 <h4 class="section-title">
@@ -339,6 +348,31 @@ include "includes/header.php";
                     </button>
                     <button onclick="changeRole(<?php echo $user_id; ?>)" class="btn btn-secondary btn-block">
                         <i class="fas fa-exchange-alt"></i> Change Role
+                    </button>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- BRANCH MANAGER ACTIONS - Viewing Field Officer -->
+            <?php if ($current_user_role == 'branch_manager' && $user_id != $current_user_id && $user['role'] == 'field_officer'): ?>
+            <div class="detail-section animate-slide-up" style="animation-delay: 0.25s">
+                <h4 class="section-title">
+                    <i class="fas fa-user-cog"></i> Management
+                </h4>
+                <div class="space-y-2">
+                    <a href="profile/edit.php?id=<?php echo $user_id; ?>" class="btn btn-primary btn-block">
+                        <i class="fas fa-edit"></i> Edit Officer
+                    </a>
+                    <a href="Committees/officers/view.php?id=<?php echo $user_id; ?>" class="btn btn-success btn-block">
+                        <i class="fas fa-users-cog"></i> View Committees
+                    </a>
+                    <a href="field-officer/dashboard.php?officer_id=<?php echo $user_id; ?>" class="btn btn-info btn-block">
+                        <i class="fas fa-chart-bar"></i> View Dashboard
+                    </a>
+                    <button onclick="toggleOfficerStatus(<?php echo $user_id; ?>, <?php echo $user['is_active']; ?>)" 
+                            class="btn <?php echo $user['is_active'] ? 'btn-warning' : 'btn-success'; ?> btn-block">
+                        <i class="fas fa-<?php echo $user['is_active'] ? 'pause' : 'play'; ?>"></i>
+                        <?php echo $user['is_active'] ? 'Deactivate' : 'Activate'; ?>
                     </button>
                 </div>
             </div>
@@ -375,6 +409,13 @@ function changeRole(id) {
     const newRole = prompt('Enter new role (admin, branch_manager, field_officer, member):');
     if (newRole && roles.includes(newRole)) {
         window.location.href = 'profile/change-role.php?id=' + id + '&role=' + newRole;
+    }
+}
+
+function toggleOfficerStatus(id, currentStatus) {
+    const action = currentStatus ? 'deactivate' : 'activate';
+    if (confirm(`Are you sure you want to ${action} this officer?`)) {
+        window.location.href = 'Committees/officers/toggle-status.php?id=' + id + '&status=' + (currentStatus ? 0 : 1);
     }
 }
 </script>
