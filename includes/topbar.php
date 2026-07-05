@@ -1,5 +1,5 @@
 <?php
-// includes/topbar.php - Top Navigation Bar with Profile Link
+// includes/topbar.php - Top Navigation Bar with Profile
 ?>
 
 <!-- Top Navigation Bar -->
@@ -10,7 +10,7 @@
             <i class="fas fa-bars"></i>
         </button>
         
-        <!-- Page Title (dynamic) -->
+        <!-- Page Title -->
         <div class="topbar-title">
             <span id="pageTitle">Dashboard</span>
         </div>
@@ -74,19 +74,38 @@
             <button class="user-btn" id="userMenuToggle">
                 <div class="user-avatar">
                     <?php 
-                    // Get user avatar or initials
-                    $user_name = $_SESSION['full_name'] ?? 'User';
-                    $avatar = $_SESSION['avatar'] ?? null;
+                    // Get user details from session
+                    $user_name = $_SESSION['name'] ?? 'User';
+                    $user_role = $_SESSION['role'] ?? 'user';
+                    $user_id = $_SESSION['user_id'] ?? 0;
                     
-                    if ($avatar && file_exists("uploads/avatars/" . $avatar)) {
-                        echo '<img src="uploads/avatars/' . $avatar . '" alt="Avatar">';
-                    } else {
-                        $initial = strtoupper(substr($user_name, 0, 2));
-                        if (strpos($user_name, ' ') !== false) {
-                            $names = explode(' ', $user_name);
-                            $initial = strtoupper(substr($names[0], 0, 1) . substr(end($names), 0, 1));
+                    // Get avatar from database
+                    $avatar = null;
+                    if ($user_id > 0) {
+                        $avatar_sql = "SELECT avatar FROM users WHERE user_id = ?";
+                        $stmt = $conn->prepare($avatar_sql);
+                        $stmt->bind_param("i", $user_id);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+                        if ($result->num_rows > 0) {
+                            $avatar_row = $result->fetch_assoc();
+                            $avatar = $avatar_row['avatar'];
                         }
-                        echo '<span class="avatar-text" style="background: var(--primary-gradient); color: white;">' . $initial . '</span>';
+                    }
+                    
+                    // Get initials from name
+                    $initials = strtoupper(substr($user_name, 0, 2));
+                    if (strpos($user_name, ' ') !== false) {
+                        $names = explode(' ', $user_name);
+                        $initials = strtoupper(substr($names[0], 0, 1) . substr(end($names), 0, 1));
+                    }
+                    
+                    // Check if avatar exists and file exists
+                    if ($avatar && file_exists("uploads/avatars/" . $avatar)) {
+                        echo '<img src="uploads/avatars/' . $avatar . '" alt="Avatar" class="avatar-img">';
+                    } else {
+                        // Show initials with gradient background
+                        echo '<span class="avatar-text" style="background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-weight: 600; font-size: 16px; border-radius: 50%;">' . $initials . '</span>';
                     }
                     ?>
                 </div>
@@ -108,9 +127,9 @@
                     <div class="user-avatar-large">
                         <?php 
                         if ($avatar && file_exists("uploads/avatars/" . $avatar)) {
-                            echo '<img src="uploads/avatars/' . $avatar . '" alt="Avatar">';
+                            echo '<img src="uploads/avatars/' . $avatar . '" alt="Avatar" class="avatar-img">';
                         } else {
-                            echo '<span class="avatar-text" style="background: var(--primary-gradient); color: white; font-size: 24px;">' . $initial . '</span>';
+                            echo '<span class="avatar-text" style="background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-weight: 700; font-size: 24px; border-radius: 50%;">' . $initials . '</span>';
                         }
                         ?>
                     </div>
@@ -121,7 +140,6 @@
                 </div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-body">
-                    <!-- PROFILE LINK - THIS IS WHAT YOU NEED -->
                     <a href="profile.php" class="dropdown-item">
                         <i class="fas fa-user-circle"></i>
                         <span>My Profile</span>
@@ -136,7 +154,6 @@
                     </a>
                     <div class="dropdown-divider"></div>
                     
-                    <!-- Role-based quick links -->
                     <?php if ($role == 'field_officer'): ?>
                     <a href="field-officer/dashboard.php" class="dropdown-item">
                         <i class="fas fa-chart-bar"></i>
@@ -170,18 +187,17 @@
     </div>
 </nav>
 
-<!-- ==========================================
-     TOPBAR STYLES
-     ========================================== -->
 <style>
-/* Topbar Styles */
+/* ==========================================
+   TOPBAR STYLES
+   ========================================== */
 .topbar {
     background: white;
     padding: 12px 28px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--gray-200);
+    border-bottom: 1px solid #e2e8f0;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -200,21 +216,21 @@
     background: none;
     border: none;
     font-size: 20px;
-    color: var(--gray-600);
+    color: #64748b;
     cursor: pointer;
     padding: 8px;
-    border-radius: var(--radius-sm);
-    transition: var(--transition);
+    border-radius: 8px;
+    transition: 0.3s ease;
 }
 
 .topbar-toggle:hover {
-    background: var(--gray-100);
+    background: #f1f5f9;
 }
 
 .topbar-title {
     font-size: 18px;
     font-weight: 600;
-    color: var(--gray-800);
+    color: #1e293b;
 }
 
 .topbar-right {
@@ -233,23 +249,23 @@
 .topbar-search i {
     position: absolute;
     left: 14px;
-    color: var(--gray-400);
+    color: #94a3b8;
     font-size: 14px;
 }
 
 .topbar-search input {
     padding: 8px 14px 8px 40px;
-    border: 2px solid var(--gray-200);
-    border-radius: var(--radius-sm);
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
     font-size: 14px;
     width: 220px;
-    transition: var(--transition);
-    background: var(--gray-50);
+    transition: 0.3s ease;
+    background: #f8fafc;
 }
 
 .topbar-search input:focus {
     outline: none;
-    border-color: var(--primary);
+    border-color: #4f46e5;
     background: white;
     box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08);
     width: 280px;
@@ -265,22 +281,22 @@
     background: none;
     border: none;
     font-size: 20px;
-    color: var(--gray-600);
+    color: #64748b;
     cursor: pointer;
     padding: 8px;
-    border-radius: var(--radius-sm);
-    transition: var(--transition);
+    border-radius: 8px;
+    transition: 0.3s ease;
 }
 
 .notification-btn:hover {
-    background: var(--gray-100);
+    background: #f1f5f9;
 }
 
 .notification-badge {
     position: absolute;
     top: 4px;
     right: 4px;
-    background: var(--danger);
+    background: #ef4444;
     color: white;
     font-size: 10px;
     font-weight: 700;
@@ -305,12 +321,12 @@
     border: none;
     cursor: pointer;
     padding: 4px 12px 4px 4px;
-    border-radius: var(--radius-sm);
-    transition: var(--transition);
+    border-radius: 8px;
+    transition: 0.3s ease;
 }
 
 .user-btn:hover {
-    background: var(--gray-50);
+    background: #f1f5f9;
 }
 
 .user-avatar {
@@ -319,9 +335,10 @@
     border-radius: 50%;
     overflow: hidden;
     flex-shrink: 0;
+    background: #eef2ff;
 }
 
-.user-avatar img {
+.user-avatar .avatar-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -335,6 +352,7 @@
     justify-content: center;
     font-size: 16px;
     font-weight: 700;
+    border-radius: 50%;
 }
 
 .user-info {
@@ -346,20 +364,20 @@
     display: block;
     font-size: 14px;
     font-weight: 600;
-    color: var(--gray-800);
+    color: #1e293b;
 }
 
 .user-role {
     display: block;
     font-size: 11px;
-    color: var(--gray-500);
+    color: #94a3b8;
     text-transform: capitalize;
 }
 
 .user-arrow {
-    color: var(--gray-400);
+    color: #94a3b8;
     font-size: 12px;
-    transition: var(--transition);
+    transition: 0.3s ease;
 }
 
 .user-btn.active .user-arrow {
@@ -373,9 +391,9 @@
     right: 0;
     width: 320px;
     background: white;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-xl);
-    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+    border: 1px solid #e2e8f0;
     display: none;
     overflow: hidden;
     z-index: 1000;
@@ -399,9 +417,10 @@
     border-radius: 50%;
     overflow: hidden;
     flex-shrink: 0;
+    background: #eef2ff;
 }
 
-.user-dropdown .user-avatar-large img {
+.user-dropdown .user-avatar-large .avatar-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -415,24 +434,25 @@
     justify-content: center;
     font-size: 20px;
     font-weight: 700;
+    border-radius: 50%;
 }
 
 .user-dropdown .dropdown-user-name {
     font-weight: 600;
-    color: var(--gray-800);
+    color: #1e293b;
     margin: 0;
 }
 
 .user-dropdown .dropdown-user-role {
     font-size: 12px;
-    color: var(--gray-500);
+    color: #94a3b8;
     margin: 0;
     text-transform: capitalize;
 }
 
 .user-dropdown .dropdown-divider {
     height: 1px;
-    background: var(--gray-200);
+    background: #e2e8f0;
     margin: 0 16px;
 }
 
@@ -445,38 +465,38 @@
     align-items: center;
     gap: 12px;
     padding: 10px 20px;
-    color: var(--gray-700);
+    color: #475569;
     text-decoration: none;
-    transition: var(--transition);
+    transition: 0.3s ease;
     font-size: 14px;
 }
 
 .user-dropdown .dropdown-item:hover {
-    background: var(--gray-50);
-    color: var(--primary);
+    background: #f8fafc;
+    color: #4f46e5;
 }
 
 .user-dropdown .dropdown-item i {
     width: 20px;
     text-align: center;
-    color: var(--gray-500);
+    color: #94a3b8;
 }
 
 .user-dropdown .dropdown-item:hover i {
-    color: var(--primary);
+    color: #4f46e5;
 }
 
 .user-dropdown .dropdown-item.logout {
-    color: var(--danger);
+    color: #ef4444;
 }
 
 .user-dropdown .dropdown-item.logout:hover {
-    background: var(--danger-bg);
-    color: var(--danger);
+    background: #fee2e2;
+    color: #dc2626;
 }
 
 .user-dropdown .dropdown-item.logout i {
-    color: var(--danger);
+    color: #ef4444;
 }
 
 /* Notification Dropdown */
@@ -486,9 +506,9 @@
     right: 0;
     width: 360px;
     background: white;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-xl);
-    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+    border: 1px solid #e2e8f0;
     display: none;
     overflow: hidden;
     z-index: 1000;
@@ -504,17 +524,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--gray-200);
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .notification-dropdown .dropdown-header span {
     font-weight: 600;
-    color: var(--gray-800);
+    color: #1e293b;
 }
 
 .notification-dropdown .dropdown-header a {
     font-size: 12px;
-    color: var(--primary);
+    color: #4f46e5;
     text-decoration: none;
 }
 
@@ -528,12 +548,12 @@
     display: flex;
     gap: 12px;
     padding: 12px 20px;
-    transition: var(--transition);
+    transition: 0.3s ease;
     cursor: pointer;
 }
 
 .notification-item:hover {
-    background: var(--gray-50);
+    background: #f8fafc;
 }
 
 .notification-item .notification-icon {
@@ -548,40 +568,40 @@
 }
 
 .notification-item .notification-icon.warning {
-    background: var(--warning-bg);
-    color: var(--warning);
+    background: #fef3c7;
+    color: #f59e0b;
 }
 
 .notification-item .notification-icon.success {
-    background: var(--success-bg);
-    color: var(--success);
+    background: #d1fae5;
+    color: #10b981;
 }
 
 .notification-item .notification-icon.info {
-    background: var(--primary-bg);
-    color: var(--primary);
+    background: #eef2ff;
+    color: #4f46e5;
 }
 
 .notification-item .notification-text {
     font-size: 13px;
-    color: var(--gray-700);
+    color: #475569;
     margin: 0;
 }
 
 .notification-item .notification-time {
     font-size: 11px;
-    color: var(--gray-400);
+    color: #94a3b8;
 }
 
 .notification-dropdown .dropdown-footer {
     padding: 12px 20px;
-    border-top: 1px solid var(--gray-200);
+    border-top: 1px solid #e2e8f0;
     text-align: center;
 }
 
 .notification-dropdown .dropdown-footer a {
     font-size: 13px;
-    color: var(--primary);
+    color: #4f46e5;
     text-decoration: none;
 }
 
@@ -648,21 +668,8 @@
         right: -80px;
     }
 }
-
-/* Notification badge pulse */
-.notification-badge.pulse {
-    animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-}
 </style>
 
-<!-- ==========================================
-     TOPBAR JAVASCRIPT
-     ========================================== -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // User Dropdown Toggle
@@ -675,7 +682,6 @@ document.addEventListener('DOMContentLoaded', function() {
             userDropdown.classList.toggle('show');
             this.classList.toggle('active');
             
-            // Close notification dropdown if open
             const notifDropdown = document.getElementById('notificationDropdown');
             if (notifDropdown) notifDropdown.classList.remove('show');
         });
@@ -690,7 +696,6 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             notifDropdown.classList.toggle('show');
             
-            // Close user dropdown if open
             if (userDropdown) userDropdown.classList.remove('show');
             if (userBtn) userBtn.classList.remove('active');
         });
