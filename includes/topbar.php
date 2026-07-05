@@ -1,5 +1,5 @@
 <?php
-// includes/topbar.php - Top Navigation Bar with Profile
+// includes/topbar.php - Top Navigation Bar with REAL Database Search
 ?>
 
 <!-- Top Navigation Bar -->
@@ -17,25 +17,26 @@
     </div>
     
     <div class="topbar-right">
-        <!-- Search Box -->
+        <!-- Search Box - REAL DATABASE SEARCH -->
         <div class="topbar-search">
             <i class="fas fa-search"></i>
-            <input type="text" placeholder="Search..." id="globalSearch">
+            <input type="text" placeholder="Search members, committees..." id="globalSearch" autocomplete="off">
+            <div class="search-results" id="searchResults"></div>
         </div>
         
         <!-- Notifications -->
         <div class="topbar-notifications">
             <button class="notification-btn" id="notificationToggle">
                 <i class="fas fa-bell"></i>
-                <span class="notification-badge">3</span>
+                <span class="notification-badge" id="notifBadge">3</span>
             </button>
             <div class="notification-dropdown" id="notificationDropdown">
                 <div class="dropdown-header">
                     <span>Notifications</span>
-                    <a href="#">Mark all read</a>
+                    <a href="#" id="markAllRead">Mark all read</a>
                 </div>
-                <div class="dropdown-body">
-                    <div class="notification-item">
+                <div class="dropdown-body" id="notificationList">
+                    <div class="notification-item unread">
                         <div class="notification-icon warning">
                             <i class="fas fa-exclamation-triangle"></i>
                         </div>
@@ -44,7 +45,7 @@
                             <span class="notification-time">2 hours ago</span>
                         </div>
                     </div>
-                    <div class="notification-item">
+                    <div class="notification-item unread">
                         <div class="notification-icon success">
                             <i class="fas fa-check-circle"></i>
                         </div>
@@ -74,12 +75,10 @@
             <button class="user-btn" id="userMenuToggle">
                 <div class="user-avatar">
                     <?php 
-                    // Get user details from session
                     $user_name = $_SESSION['name'] ?? 'User';
                     $user_role = $_SESSION['role'] ?? 'user';
                     $user_id = $_SESSION['user_id'] ?? 0;
                     
-                    // Get avatar from database
                     $avatar = null;
                     if ($user_id > 0) {
                         $avatar_sql = "SELECT avatar FROM users WHERE user_id = ?";
@@ -93,18 +92,15 @@
                         }
                     }
                     
-                    // Get initials from name
                     $initials = strtoupper(substr($user_name, 0, 2));
                     if (strpos($user_name, ' ') !== false) {
                         $names = explode(' ', $user_name);
                         $initials = strtoupper(substr($names[0], 0, 1) . substr(end($names), 0, 1));
                     }
                     
-                    // Check if avatar exists and file exists
                     if ($avatar && file_exists("uploads/avatars/" . $avatar)) {
                         echo '<img src="uploads/avatars/' . $avatar . '" alt="Avatar" class="avatar-img">';
                     } else {
-                        // Show initials with gradient background
                         echo '<span class="avatar-text" style="background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-weight: 600; font-size: 16px; border-radius: 50%;">' . $initials . '</span>';
                     }
                     ?>
@@ -239,7 +235,9 @@
     gap: 16px;
 }
 
-/* Search */
+/* ==========================================
+   SEARCH
+   ========================================== */
 .topbar-search {
     position: relative;
     display: flex;
@@ -251,6 +249,7 @@
     left: 14px;
     color: #94a3b8;
     font-size: 14px;
+    pointer-events: none;
 }
 
 .topbar-search input {
@@ -261,6 +260,11 @@
     width: 220px;
     transition: 0.3s ease;
     background: #f8fafc;
+    color: #1e293b;
+}
+
+.topbar-search input::placeholder {
+    color: #94a3b8;
 }
 
 .topbar-search input:focus {
@@ -271,7 +275,126 @@
     width: 280px;
 }
 
-/* Notifications */
+/* Search Results */
+.search-results {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+    border: 1px solid #e2e8f0;
+    display: none;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.search-results.show {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+.search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    text-decoration: none;
+    color: #1e293b;
+    transition: 0.2s ease;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+}
+
+.search-result-item:hover {
+    background: #f8fafc;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item .result-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.search-result-item .result-icon.member {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.search-result-item .result-icon.committee {
+    background: #d1fae5;
+    color: #10b981;
+}
+
+.search-result-item .result-icon.officer {
+    background: #fef3c7;
+    color: #f59e0b;
+}
+
+.search-result-item .result-icon.branch {
+    background: #ede9fe;
+    color: #8b5cf6;
+}
+
+.search-result-item .result-info {
+    flex: 1;
+}
+
+.search-result-item .result-info .result-name {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.search-result-item .result-info .result-detail {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.search-result-item .result-badge {
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.search-loading {
+    padding: 20px;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.search-loading i {
+    margin-right: 8px;
+}
+
+.search-empty {
+    padding: 20px;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.search-empty i {
+    font-size: 24px;
+    color: #cbd5e1;
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* ==========================================
+   NOTIFICATIONS
+   ========================================== */
 .topbar-notifications {
     position: relative;
 }
@@ -294,21 +417,136 @@
 
 .notification-badge {
     position: absolute;
-    top: 4px;
-    right: 4px;
+    top: 2px;
+    right: 2px;
     background: #ef4444;
     color: white;
     font-size: 10px;
     font-weight: 700;
-    width: 18px;
+    min-width: 18px;
     height: 18px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0 4px;
 }
 
-/* User Profile */
+.notification-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 380px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+    border: 1px solid #e2e8f0;
+    display: none;
+    overflow: hidden;
+    z-index: 1000;
+}
+
+.notification-dropdown.show {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+.notification-dropdown .dropdown-header {
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.notification-dropdown .dropdown-header span {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 14px;
+}
+
+.notification-dropdown .dropdown-header a {
+    font-size: 12px;
+    color: #4f46e5;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.notification-dropdown .dropdown-body {
+    max-height: 350px;
+    overflow-y: auto;
+    padding: 4px 0;
+}
+
+.notification-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 20px;
+    transition: 0.3s ease;
+    cursor: pointer;
+    border-bottom: 1px solid #f8fafc;
+}
+
+.notification-item:hover {
+    background: #f8fafc;
+}
+
+.notification-item.unread {
+    background: #f8fafc;
+    border-left: 3px solid #4f46e5;
+}
+
+.notification-item .notification-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px;
+}
+
+.notification-item .notification-icon.warning {
+    background: #fef3c7;
+    color: #f59e0b;
+}
+
+.notification-item .notification-icon.success {
+    background: #d1fae5;
+    color: #10b981;
+}
+
+.notification-item .notification-icon.info {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.notification-item .notification-text {
+    font-size: 13px;
+    color: #1e293b;
+    margin: 0;
+}
+
+.notification-item .notification-time {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.notification-dropdown .dropdown-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+}
+
+.notification-dropdown .dropdown-footer a {
+    font-size: 13px;
+    color: #4f46e5;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* User Dropdown */
 .topbar-user {
     position: relative;
 }
@@ -384,7 +622,6 @@
     transform: rotate(180deg);
 }
 
-/* User Dropdown */
 .user-dropdown {
     position: absolute;
     top: calc(100% + 8px);
@@ -499,112 +736,6 @@
     color: #ef4444;
 }
 
-/* Notification Dropdown */
-.notification-dropdown {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    width: 360px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.12);
-    border: 1px solid #e2e8f0;
-    display: none;
-    overflow: hidden;
-    z-index: 1000;
-}
-
-.notification-dropdown.show {
-    display: block;
-    animation: slideDown 0.3s ease;
-}
-
-.notification-dropdown .dropdown-header {
-    padding: 16px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.notification-dropdown .dropdown-header span {
-    font-weight: 600;
-    color: #1e293b;
-}
-
-.notification-dropdown .dropdown-header a {
-    font-size: 12px;
-    color: #4f46e5;
-    text-decoration: none;
-}
-
-.notification-dropdown .dropdown-body {
-    max-height: 300px;
-    overflow-y: auto;
-    padding: 8px 0;
-}
-
-.notification-item {
-    display: flex;
-    gap: 12px;
-    padding: 12px 20px;
-    transition: 0.3s ease;
-    cursor: pointer;
-}
-
-.notification-item:hover {
-    background: #f8fafc;
-}
-
-.notification-item .notification-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    font-size: 14px;
-}
-
-.notification-item .notification-icon.warning {
-    background: #fef3c7;
-    color: #f59e0b;
-}
-
-.notification-item .notification-icon.success {
-    background: #d1fae5;
-    color: #10b981;
-}
-
-.notification-item .notification-icon.info {
-    background: #eef2ff;
-    color: #4f46e5;
-}
-
-.notification-item .notification-text {
-    font-size: 13px;
-    color: #475569;
-    margin: 0;
-}
-
-.notification-item .notification-time {
-    font-size: 11px;
-    color: #94a3b8;
-}
-
-.notification-dropdown .dropdown-footer {
-    padding: 12px 20px;
-    border-top: 1px solid #e2e8f0;
-    text-align: center;
-}
-
-.notification-dropdown .dropdown-footer a {
-    font-size: 13px;
-    color: #4f46e5;
-    text-decoration: none;
-}
-
 /* Animations */
 @keyframes slideDown {
     from {
@@ -639,6 +770,12 @@
         width: 180px;
     }
     
+    .search-results {
+        width: 300px;
+        left: auto;
+        right: -80px;
+    }
+    
     .user-info {
         display: none;
     }
@@ -653,26 +790,46 @@
     }
     
     .notification-dropdown {
-        width: 300px;
+        width: 320px;
         right: -40px;
     }
 }
 
 @media (max-width: 480px) {
-    .topbar-search {
-        display: none;
+    .topbar-search input {
+        width: 120px;
+    }
+    
+    .topbar-search input:focus {
+        width: 140px;
+    }
+    
+    .search-results {
+        width: 280px;
+        right: -100px;
     }
     
     .user-dropdown {
         width: 260px;
         right: -80px;
     }
+    
+    .notification-dropdown {
+        width: 280px;
+        right: -60px;
+    }
 }
 </style>
 
+<!-- ==========================================
+   TOPBAR JAVASCRIPT - REAL DATABASE SEARCH
+   ========================================== -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // User Dropdown Toggle
+    
+    // ==========================================
+    // 1. USER DROPDOWN TOGGLE
+    // ==========================================
     const userBtn = document.getElementById('userMenuToggle');
     const userDropdown = document.getElementById('userDropdown');
     
@@ -687,7 +844,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Notification Dropdown Toggle
+    // ==========================================
+    // 2. NOTIFICATION DROPDOWN TOGGLE
+    // ==========================================
     const notifBtn = document.getElementById('notificationToggle');
     const notifDropdown = document.getElementById('notificationDropdown');
     
@@ -696,12 +855,191 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             notifDropdown.classList.toggle('show');
             
+            // Mark as read when opened
+            const unreadItems = notifDropdown.querySelectorAll('.notification-item.unread');
+            if (unreadItems.length > 0) {
+                setTimeout(() => {
+                    unreadItems.forEach(item => {
+                        item.classList.remove('unread');
+                    });
+                    const badge = document.getElementById('notifBadge');
+                    if (badge) {
+                        const remaining = notifDropdown.querySelectorAll('.notification-item.unread').length;
+                        if (remaining === 0) {
+                            badge.style.display = 'none';
+                        } else {
+                            badge.textContent = remaining;
+                        }
+                    }
+                }, 2000);
+            }
+            
             if (userDropdown) userDropdown.classList.remove('show');
             if (userBtn) userBtn.classList.remove('active');
         });
     }
     
-    // Close dropdowns when clicking outside
+    // ==========================================
+    // 3. MARK ALL NOTIFICATIONS AS READ
+    // ==========================================
+    const markAllRead = document.getElementById('markAllRead');
+    if (markAllRead) {
+        markAllRead.addEventListener('click', function(e) {
+            e.preventDefault();
+            const unreadItems = document.querySelectorAll('.notification-item.unread');
+            unreadItems.forEach(item => {
+                item.classList.remove('unread');
+            });
+            const badge = document.getElementById('notifBadge');
+            if (badge) {
+                badge.style.display = 'none';
+            }
+        });
+    }
+    
+    // ==========================================
+    // 4. REAL DATABASE SEARCH
+    // ==========================================
+    const searchInput = document.getElementById('globalSearch');
+    const searchResults = document.getElementById('searchResults');
+    let searchTimeout;
+    
+    if (searchInput && searchResults) {
+        
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                searchResults.classList.remove('show');
+                return;
+            }
+            
+            // Show loading
+            searchResults.innerHTML = '<div class="search-loading"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+            searchResults.classList.add('show');
+            
+            searchTimeout = setTimeout(function() {
+                performSearch(query);
+            }, 300);
+        });
+        
+        // Close search on Escape
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                searchResults.classList.remove('show');
+                this.blur();
+            }
+        });
+        
+        // Close search on outside click
+        document.addEventListener('click', function(e) {
+            const searchContainer = searchInput.closest('.topbar-search');
+            if (!searchContainer.contains(e.target)) {
+                searchResults.classList.remove('show');
+            }
+        });
+    }
+    
+    // ==========================================
+    // 5. PERFORM SEARCH - REAL DATABASE QUERY
+    // ==========================================
+    function performSearch(query) {
+        // Make AJAX request to search endpoint
+        fetch(`search.php?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                displaySearchResults(data);
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                searchResults.innerHTML = `
+                    <div class="search-empty">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Error searching. Please try again.
+                    </div>
+                `;
+            });
+    }
+    
+    // ==========================================
+    // 6. DISPLAY SEARCH RESULTS
+    // ==========================================
+    function displaySearchResults(data) {
+        const totalResults = data.members.length + data.committees.length + data.officers.length;
+        
+        if (totalResults === 0) {
+            searchResults.innerHTML = `
+                <div class="search-empty">
+                    <i class="fas fa-search"></i>
+                    No results found for "<strong>${searchInput.value}</strong>"
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        
+        // Members
+        if (data.members.length > 0) {
+            data.members.forEach(item => {
+                html += `
+                    <a href="members/view.php?id=${item.member_id}" class="search-result-item">
+                        <div class="result-icon member">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="result-info">
+                            <div class="result-name">${item.full_name}</div>
+                            <div class="result-detail">${item.member_code}</div>
+                        </div>
+                        <span class="result-badge">Member</span>
+                    </a>
+                `;
+            });
+        }
+        
+        // Committees
+        if (data.committees.length > 0) {
+            data.committees.forEach(item => {
+                html += `
+                    <a href="Committees/view.php?id=${item.committee_id}" class="search-result-item">
+                        <div class="result-icon committee">
+                            <i class="fas fa-users-cog"></i>
+                        </div>
+                        <div class="result-info">
+                            <div class="result-name">${item.committee_name}</div>
+                            <div class="result-detail">${item.branch_name || 'N/A'}</div>
+                        </div>
+                        <span class="result-badge">Committee</span>
+                    </a>
+                `;
+            });
+        }
+        
+        // Officers
+        if (data.officers.length > 0) {
+            data.officers.forEach(item => {
+                html += `
+                    <a href="profile.php?id=${item.user_id}" class="search-result-item">
+                        <div class="result-icon officer">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div class="result-info">
+                            <div class="result-name">${item.full_name}</div>
+                            <div class="result-detail">${item.phone || 'No phone'}</div>
+                        </div>
+                        <span class="result-badge">Officer</span>
+                    </a>
+                `;
+            });
+        }
+        
+        searchResults.innerHTML = html;
+    }
+    
+    // ==========================================
+    // 7. CLOSE DROPDOWNS ON OUTSIDE CLICK
+    // ==========================================
     document.addEventListener('click', function(e) {
         if (userDropdown && !userDropdown.contains(e.target) && !userBtn?.contains(e.target)) {
             userDropdown.classList.remove('show');
@@ -713,7 +1051,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Sidebar Toggle
+    // ==========================================
+    // 8. SIDEBAR TOGGLE
+    // ==========================================
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebar = document.getElementById('sidebar');
     
@@ -723,6 +1063,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    console.log('✅ Topbar loaded successfully');
+    console.log('✅ Topbar loaded with REAL database search');
 });
 </script>
