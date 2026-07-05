@@ -945,9 +945,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // 5. PERFORM SEARCH - REAL DATABASE QUERY
     // ==========================================
     function performSearch(query) {
-        // Make AJAX request to search endpoint
-        fetch(`search.php?q=${encodeURIComponent(query)}`)
-            .then(response => response.json())
+        // Make AJAX request to API folder
+        fetch(`api/search.php?q=${encodeURIComponent(query)}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 displaySearchResults(data);
             })
@@ -966,7 +971,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // 6. DISPLAY SEARCH RESULTS
     // ==========================================
     function displaySearchResults(data) {
-        const totalResults = data.members.length + data.committees.length + data.officers.length;
+        // Check if data has the expected structure
+        const members = data.members || [];
+        const committees = data.committees || [];
+        const officers = data.officers || [];
+        const totalResults = members.length + committees.length + officers.length;
         
         if (totalResults === 0) {
             searchResults.innerHTML = `
@@ -981,16 +990,16 @@ document.addEventListener('DOMContentLoaded', function() {
         let html = '';
         
         // Members
-        if (data.members.length > 0) {
-            data.members.forEach(item => {
+        if (members.length > 0) {
+            members.forEach(item => {
                 html += `
                     <a href="members/view.php?id=${item.member_id}" class="search-result-item">
                         <div class="result-icon member">
                             <i class="fas fa-user"></i>
                         </div>
                         <div class="result-info">
-                            <div class="result-name">${item.full_name}</div>
-                            <div class="result-detail">${item.member_code}</div>
+                            <div class="result-name">${escapeHtml(item.full_name)}</div>
+                            <div class="result-detail">${escapeHtml(item.member_code)}</div>
                         </div>
                         <span class="result-badge">Member</span>
                     </a>
@@ -999,16 +1008,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Committees
-        if (data.committees.length > 0) {
-            data.committees.forEach(item => {
+        if (committees.length > 0) {
+            committees.forEach(item => {
                 html += `
                     <a href="Committees/view.php?id=${item.committee_id}" class="search-result-item">
                         <div class="result-icon committee">
                             <i class="fas fa-users-cog"></i>
                         </div>
                         <div class="result-info">
-                            <div class="result-name">${item.committee_name}</div>
-                            <div class="result-detail">${item.branch_name || 'N/A'}</div>
+                            <div class="result-name">${escapeHtml(item.committee_name)}</div>
+                            <div class="result-detail">${escapeHtml(item.branch_name || 'N/A')}</div>
                         </div>
                         <span class="result-badge">Committee</span>
                     </a>
@@ -1017,16 +1026,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Officers
-        if (data.officers.length > 0) {
-            data.officers.forEach(item => {
+        if (officers.length > 0) {
+            officers.forEach(item => {
                 html += `
                     <a href="profile.php?id=${item.user_id}" class="search-result-item">
                         <div class="result-icon officer">
                             <i class="fas fa-user-tie"></i>
                         </div>
                         <div class="result-info">
-                            <div class="result-name">${item.full_name}</div>
-                            <div class="result-detail">${item.phone || 'No phone'}</div>
+                            <div class="result-name">${escapeHtml(item.full_name)}</div>
+                            <div class="result-detail">${escapeHtml(item.phone || 'No phone')}</div>
                         </div>
                         <span class="result-badge">Officer</span>
                     </a>
@@ -1038,7 +1047,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // ==========================================
-    // 7. CLOSE DROPDOWNS ON OUTSIDE CLICK
+    // 7. ESCAPE HTML (Security)
+    // ==========================================
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // ==========================================
+    // 8. CLOSE DROPDOWNS ON OUTSIDE CLICK
     // ==========================================
     document.addEventListener('click', function(e) {
         if (userDropdown && !userDropdown.contains(e.target) && !userBtn?.contains(e.target)) {
@@ -1052,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // ==========================================
-    // 8. SIDEBAR TOGGLE
+    // 9. SIDEBAR TOGGLE
     // ==========================================
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebar = document.getElementById('sidebar');
@@ -1063,6 +1082,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    console.log('✅ Topbar loaded with REAL database search');
+    console.log('✅ Topbar loaded with REAL database search (API folder)');
 });
 </script>
