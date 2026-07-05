@@ -24,11 +24,11 @@
             <div class="search-results" id="searchResults"></div>
         </div>
         
-        <!-- Notifications -->
+        <!-- Notifications - DYNAMIC -->
         <div class="topbar-notifications">
             <button class="notification-btn" id="notificationToggle">
                 <i class="fas fa-bell"></i>
-                <span class="notification-badge" id="notifBadge">3</span>
+                <span class="notification-badge" id="notifBadge">0</span>
             </button>
             <div class="notification-dropdown" id="notificationDropdown">
                 <div class="dropdown-header">
@@ -36,32 +36,8 @@
                     <a href="#" id="markAllRead">Mark all read</a>
                 </div>
                 <div class="dropdown-body" id="notificationList">
-                    <div class="notification-item unread">
-                        <div class="notification-icon warning">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div>
-                            <p class="notification-text">Loan payment due for John Doe</p>
-                            <span class="notification-time">2 hours ago</span>
-                        </div>
-                    </div>
-                    <div class="notification-item unread">
-                        <div class="notification-icon success">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div>
-                            <p class="notification-text">Member Sarah Johnson joined</p>
-                            <span class="notification-time">5 hours ago</span>
-                        </div>
-                    </div>
-                    <div class="notification-item">
-                        <div class="notification-icon info">
-                            <i class="fas fa-info-circle"></i>
-                        </div>
-                        <div>
-                            <p class="notification-text">New savings deposit received</p>
-                            <span class="notification-time">1 day ago</span>
-                        </div>
+                    <div class="search-loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading notifications...
                     </div>
                 </div>
                 <div class="dropdown-footer">
@@ -822,7 +798,7 @@
 </style>
 
 <!-- ==========================================
-   TOPBAR JAVASCRIPT - REAL DATABASE SEARCH
+   TOPBAR JAVASCRIPT - COMPLETE
    ========================================== -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -855,25 +831,6 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             notifDropdown.classList.toggle('show');
             
-            // Mark as read when opened
-            const unreadItems = notifDropdown.querySelectorAll('.notification-item.unread');
-            if (unreadItems.length > 0) {
-                setTimeout(() => {
-                    unreadItems.forEach(item => {
-                        item.classList.remove('unread');
-                    });
-                    const badge = document.getElementById('notifBadge');
-                    if (badge) {
-                        const remaining = notifDropdown.querySelectorAll('.notification-item.unread').length;
-                        if (remaining === 0) {
-                            badge.style.display = 'none';
-                        } else {
-                            badge.textContent = remaining;
-                        }
-                    }
-                }, 2000);
-            }
-            
             if (userDropdown) userDropdown.classList.remove('show');
             if (userBtn) userBtn.classList.remove('active');
         });
@@ -898,7 +855,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // ==========================================
-    // 4. REAL DATABASE SEARCH
+    // 4. SEARCH FUNCTIONALITY
     // ==========================================
     const searchInput = document.getElementById('globalSearch');
     const searchResults = document.getElementById('searchResults');
@@ -915,7 +872,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Show loading
             searchResults.innerHTML = '<div class="search-loading"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
             searchResults.classList.add('show');
             
@@ -924,7 +880,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 300);
         });
         
-        // Close search on Escape
         searchInput.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 searchResults.classList.remove('show');
@@ -932,7 +887,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Close search on outside click
         document.addEventListener('click', function(e) {
             const searchContainer = searchInput.closest('.topbar-search');
             if (!searchContainer.contains(e.target)) {
@@ -942,15 +896,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // ==========================================
-    // 5. PERFORM SEARCH - REAL DATABASE QUERY
+    // 5. PERFORM SEARCH
     // ==========================================
     function performSearch(query) {
-        // Make AJAX request to API folder
         fetch(`api/search.php?q=${encodeURIComponent(query)}`)
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
+                if (!response.ok) throw new Error('Network error');
                 return response.json();
             })
             .then(data => {
@@ -971,7 +922,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // 6. DISPLAY SEARCH RESULTS
     // ==========================================
     function displaySearchResults(data) {
-        // Check if data has the expected structure
         const members = data.members || [];
         const committees = data.committees || [];
         const officers = data.officers || [];
@@ -989,65 +939,50 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let html = '';
         
-        // Members
-        if (members.length > 0) {
-            members.forEach(item => {
-                html += `
-                    <a href="members/view.php?id=${item.member_id}" class="search-result-item">
-                        <div class="result-icon member">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="result-info">
-                            <div class="result-name">${escapeHtml(item.full_name)}</div>
-                            <div class="result-detail">${escapeHtml(item.member_code)}</div>
-                        </div>
-                        <span class="result-badge">Member</span>
-                    </a>
-                `;
-            });
-        }
+        members.forEach(item => {
+            html += `
+                <a href="members/view.php?id=${item.member_id}" class="search-result-item">
+                    <div class="result-icon member"><i class="fas fa-user"></i></div>
+                    <div class="result-info">
+                        <div class="result-name">${escapeHtml(item.full_name)}</div>
+                        <div class="result-detail">${escapeHtml(item.member_code)}</div>
+                    </div>
+                    <span class="result-badge">Member</span>
+                </a>
+            `;
+        });
         
-        // Committees
-        if (committees.length > 0) {
-            committees.forEach(item => {
-                html += `
-                    <a href="Committees/view.php?id=${item.committee_id}" class="search-result-item">
-                        <div class="result-icon committee">
-                            <i class="fas fa-users-cog"></i>
-                        </div>
-                        <div class="result-info">
-                            <div class="result-name">${escapeHtml(item.committee_name)}</div>
-                            <div class="result-detail">${escapeHtml(item.branch_name || 'N/A')}</div>
-                        </div>
-                        <span class="result-badge">Committee</span>
-                    </a>
-                `;
-            });
-        }
+        committees.forEach(item => {
+            html += `
+                <a href="Committees/view.php?id=${item.committee_id}" class="search-result-item">
+                    <div class="result-icon committee"><i class="fas fa-users-cog"></i></div>
+                    <div class="result-info">
+                        <div class="result-name">${escapeHtml(item.committee_name)}</div>
+                        <div class="result-detail">${escapeHtml(item.branch_name || 'N/A')}</div>
+                    </div>
+                    <span class="result-badge">Committee</span>
+                </a>
+            `;
+        });
         
-        // Officers
-        if (officers.length > 0) {
-            officers.forEach(item => {
-                html += `
-                    <a href="profile.php?id=${item.user_id}" class="search-result-item">
-                        <div class="result-icon officer">
-                            <i class="fas fa-user-tie"></i>
-                        </div>
-                        <div class="result-info">
-                            <div class="result-name">${escapeHtml(item.full_name)}</div>
-                            <div class="result-detail">${escapeHtml(item.phone || 'No phone')}</div>
-                        </div>
-                        <span class="result-badge">Officer</span>
-                    </a>
-                `;
-            });
-        }
+        officers.forEach(item => {
+            html += `
+                <a href="profile.php?id=${item.user_id}" class="search-result-item">
+                    <div class="result-icon officer"><i class="fas fa-user-tie"></i></div>
+                    <div class="result-info">
+                        <div class="result-name">${escapeHtml(item.full_name)}</div>
+                        <div class="result-detail">${escapeHtml(item.phone || 'No phone')}</div>
+                    </div>
+                    <span class="result-badge">Officer</span>
+                </a>
+            `;
+        });
         
         searchResults.innerHTML = html;
     }
     
     // ==========================================
-    // 7. ESCAPE HTML (Security)
+    // 7. ESCAPE HTML
     // ==========================================
     function escapeHtml(text) {
         if (!text) return '';
@@ -1057,7 +992,93 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // ==========================================
-    // 8. CLOSE DROPDOWNS ON OUTSIDE CLICK
+    // 8. LOAD NOTIFICATIONS
+    // ==========================================
+    function loadNotifications() {
+        const notificationList = document.getElementById('notificationList');
+        const badge = document.getElementById('notifBadge');
+        
+        if (!notificationList) return;
+        
+        fetch('api/notifications.php')
+            .then(response => response.json())
+            .then(data => {
+                displayNotifications(data, notificationList, badge);
+            })
+            .catch(error => {
+                console.error('Notification error:', error);
+                notificationList.innerHTML = `
+                    <div class="search-empty">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Error loading notifications.
+                    </div>
+                `;
+            });
+    }
+    
+    // ==========================================
+    // 9. DISPLAY NOTIFICATIONS
+    // ==========================================
+    function displayNotifications(data, notificationList, badge) {
+        const notifications = data.notifications || [];
+        const unreadCount = data.unread_count || 0;
+        
+        if (badge) {
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        
+        if (notifications.length === 0) {
+            notificationList.innerHTML = `
+                <div class="search-empty">
+                    <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                    No notifications
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        notifications.forEach(notification => {
+            const iconClass = notification.icon || 'info';
+            const isUnread = notification.unread ? 'unread' : '';
+            const link = notification.link || '#';
+            
+            html += `
+                <a href="${link}" class="notification-item ${isUnread}">
+                    <div class="notification-icon ${iconClass}">
+                        <i class="fas ${getIconClass(iconClass)}"></i>
+                    </div>
+                    <div>
+                        <p class="notification-text">${escapeHtml(notification.text)}</p>
+                        <span class="notification-time">${escapeHtml(notification.time)}</span>
+                    </div>
+                </a>
+            `;
+        });
+        
+        notificationList.innerHTML = html;
+    }
+    
+    // ==========================================
+    // 10. GET ICON CLASS
+    // ==========================================
+    function getIconClass(icon) {
+        const icons = {
+            'warning': 'fa-exclamation-triangle',
+            'success': 'fa-check-circle',
+            'info': 'fa-info-circle',
+            'primary': 'fa-bell'
+        };
+        return icons[icon] || 'fa-bell';
+    }
+    
+    // ==========================================
+    // 11. CLOSE DROPDOWNS ON OUTSIDE CLICK
     // ==========================================
     document.addEventListener('click', function(e) {
         if (userDropdown && !userDropdown.contains(e.target) && !userBtn?.contains(e.target)) {
@@ -1071,7 +1092,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // ==========================================
-    // 9. SIDEBAR TOGGLE
+    // 12. SIDEBAR TOGGLE
     // ==========================================
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebar = document.getElementById('sidebar');
@@ -1082,6 +1103,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    console.log('✅ Topbar loaded with REAL database search (API folder)');
+    // ==========================================
+    // 13. LOAD NOTIFICATIONS ON PAGE LOAD
+    // ==========================================
+    loadNotifications();
+    
+    console.log('✅ Topbar loaded with dynamic notifications');
 });
 </script>
