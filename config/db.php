@@ -12,4 +12,6 @@ if ($conn->connect_error) {
     die("DB Connection Failed: " . $conn->connect_error);
 }
 echo "";
+// Set timezone
+date_default_timezone_set('Asia/Dhaka');
 ?>
