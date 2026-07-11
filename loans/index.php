@@ -2,6 +2,7 @@
 session_start();
 include "../config/db.php";
 
+// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../index.php");
     exit();
@@ -34,8 +35,8 @@ LEFT JOIN members m ON l.member_id = m.member_id
 $where_clause
 ";
 $total_result = $conn->query($count_sql);
-$total_loans = $total_result->fetch_assoc()['total'] ?? 0;
-$total_pages = ceil($total_loans / $per_page);
+$total_loans = $total_result ? $total_result->fetch_assoc()['total'] : 0;
+$total_pages = $total_loans > 0 ? ceil($total_loans / $per_page) : 1;
 
 // Get loans
 $sql = "
@@ -64,11 +65,13 @@ SELECT
     SUM(total_paid) as total_paid
 FROM loans
 ";
-$stats = $conn->query($stats_sql)->fetch_assoc();
+$stats_result = $conn->query($stats_sql);
+$stats = $stats_result ? $stats_result->fetch_assoc() : [];
 
 $total_amount = $stats['total_amount'] ?? 0;
 $total_paid = $stats['total_paid'] ?? 0;
 $total_due = $total_amount - $total_paid;
+$overdue_count = $stats['overdue'] ?? 0;
 
 include "../includes/header.php";
 include "../includes/sidebar.php";
@@ -82,15 +85,15 @@ include "../includes/topbar.php";
         
         <!-- Page Header -->
         <div class="dashboard-top">
-            <div class="welcome-section" data-aos="fade-right">
+            <div class="welcome-section">
                 <h1>Loan Management</h1>
                 <p>Manage all loans, track payments, and monitor portfolio health</p>
             </div>
-            <div class="quick-actions" data-aos="fade-left">
+            <div class="quick-actions">
                 <a href="add.php" class="btn-quick btn-quick-primary">
                     <i class="fa-solid fa-plus"></i> New Loan
                 </a>
-                <a href="#" class="btn-quick btn-quick-info" onclick="exportData()">
+                <a href="#" class="btn-quick btn-quick-info" onclick="alert('Export functionality coming soon!')">
                     <i class="fa-solid fa-download"></i> Export
                 </a>
             </div>
@@ -98,32 +101,32 @@ include "../includes/topbar.php";
 
         <!-- Statistics Cards -->
         <div class="loan-stats-grid">
-            <div class="loan-stat-card" style="--stat-color: #4f46e5;">
+            <div class="loan-stat-card">
                 <div class="stat-icon blue"><i class="fa-solid fa-hand-holding-dollar"></i></div>
                 <div class="stat-value"><?php echo formatCurrency($total_amount); ?></div>
                 <div class="stat-label">Total Portfolio</div>
                 <div class="stat-trend up"><i class="fa-solid fa-arrow-up"></i> 12.5%</div>
             </div>
             
-            <div class="loan-stat-card" style="--stat-color: #22c55e;">
+            <div class="loan-stat-card">
                 <div class="stat-icon green"><i class="fa-solid fa-check-circle"></i></div>
                 <div class="stat-value"><?php echo formatCurrency($total_paid); ?></div>
                 <div class="stat-label">Total Collected</div>
                 <div class="stat-trend up"><i class="fa-solid fa-arrow-up"></i> 8.2%</div>
             </div>
             
-            <div class="loan-stat-card" style="--stat-color: #ef4444;">
+            <div class="loan-stat-card">
                 <div class="stat-icon red"><i class="fa-solid fa-clock"></i></div>
                 <div class="stat-value"><?php echo formatCurrency($total_due); ?></div>
                 <div class="stat-label">Total Outstanding</div>
                 <div class="stat-trend down"><i class="fa-solid fa-arrow-down"></i> 3.1%</div>
             </div>
             
-            <div class="loan-stat-card" style="--stat-color: #8b5cf6;">
+            <div class="loan-stat-card">
                 <div class="stat-icon purple"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                <div class="stat-value"><?php echo $stats['overdue'] ?? 0; ?></div>
+                <div class="stat-value"><?php echo $overdue_count; ?></div>
                 <div class="stat-label">Overdue Loans</div>
-                <div class="stat-trend down"><i class="fa-solid fa-arrow-down"></i> Need Attention</div>
+                <div class="stat-trend down"><i class="fa-solid fa-arrow-down"></i> Needs Attention</div>
             </div>
         </div>
 
@@ -179,7 +182,7 @@ include "../includes/topbar.php";
                                 $paid_percent = $row['total_payable'] > 0 ? ($row['total_paid'] / $row['total_payable']) * 100 : 0;
                                 $progress_color = $paid_percent >= 70 ? '#22c55e' : ($paid_percent >= 40 ? '#f59e0b' : '#ef4444');
                                 $initials = getInitials($row['full_name']);
-                                $colors = ['#4f46e5', '#7c3aed', '#2563eb', '#0891b2', '#059669', '#d97706', '#dc2626', '#7c3aed'];
+                                $colors = ['#4f46e5', '#7c3aed', '#2563eb', '#0891b2', '#059669', '#d97706', '#dc2626'];
                                 $color = $colors[($row['member_id'] ?? 1) % count($colors)];
                             ?>
                             <tr>
@@ -293,19 +296,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
     let searchTimeout;
     
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            const search = this.value.trim();
-            const url = new URL(window.location);
-            if (search) {
-                url.searchParams.set('search', search);
-            } else {
-                url.searchParams.delete('search');
-            }
-            window.location.href = url;
-        }, 500);
-    });
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const search = this.value.trim();
+                const url = new URL(window.location);
+                if (search) {
+                    url.searchParams.set('search', search);
+                } else {
+                    url.searchParams.delete('search');
+                }
+                window.location.href = url;
+            }, 500);
+        });
+    }
     
     // Filter buttons
     document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -328,11 +333,6 @@ function goToPage(page) {
     const url = new URL(window.location);
     url.searchParams.set('page', page);
     window.location.href = url;
-}
-
-function exportData() {
-    // Implement export functionality
-    alert('Export functionality will be implemented here');
 }
 </script>
 
