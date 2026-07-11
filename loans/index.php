@@ -527,13 +527,11 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
         }
         
         /* ========== TABLE CELL COLORS - DEEP & VISUAL ========== */
-        /* ID Column */
         .table tbody td:first-child {
             color: #7DB0FF !important;
             font-weight: 800;
         }
         
-        /* CODE Column */
         .table tbody td:nth-child(2) {
             color: #6BA3FF !important;
             font-weight: 700;
@@ -541,9 +539,6 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             text-shadow: 0 0 30px rgba(79, 140, 255, 0.15);
         }
         
-        /* MEMBER Name - Already set above with !important */
-        
-        /* PRINCIPAL Column - Changed to Blue */
         .table tbody td:nth-child(4) {
             color: #7DB0FF !important;
             font-weight: 700;
@@ -551,7 +546,6 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             text-shadow: 0 0 20px rgba(79, 140, 255, 0.1);
         }
         
-        /* RATE Column */
         .table tbody td:nth-child(5) {
             color: #00D4FF !important;
             font-weight: 700;
@@ -559,7 +553,6 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             text-shadow: 0 0 30px rgba(0, 212, 255, 0.15);
         }
         
-        /* TOTAL Column */
         .table tbody td:nth-child(6) {
             color: #7DB0FF !important;
             font-weight: 700;
@@ -567,7 +560,6 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             text-shadow: 0 0 30px rgba(79, 140, 255, 0.15);
         }
         
-        /* PAID Column */
         .table tbody td:nth-child(7) {
             color: #69F0AE !important;
             font-weight: 700;
@@ -575,13 +567,11 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             text-shadow: 0 0 30px rgba(0, 230, 118, 0.1);
         }
         
-        /* INSTALLMENT Column */
         .table tbody td:nth-child(8) {
             color: #B8C8E8 !important;
             font-weight: 600;
         }
         
-        /* DISBURSEMENT & MATURITY Columns */
         .table tbody td:nth-child(10),
         .table tbody td:nth-child(11) {
             color: #8AA8D0 !important;
@@ -867,7 +857,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
                             <!-- CODE -->
                             <td><?php echo $row['loan_code']; ?></td>
                             
-                            <!-- MEMBER - Name now in Blue -->
+                            <!-- MEMBER -->
                             <td>
                                 <div style="display: flex; flex-direction: column; gap: 1px;">
                                     <span class="member-name"><?php echo $row['full_name']; ?></span>
@@ -877,7 +867,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
                                 </div>
                             </td>
                             
-                            <!-- PRINCIPAL - Now in Blue -->
+                            <!-- PRINCIPAL -->
                             <td>৳ <?php echo number_format($row['principal_amount'], 2); ?></td>
                             
                             <!-- RATE -->
@@ -924,7 +914,8 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
                                     <a href="delete.php?id=<?php echo $row['loan_id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('⚠️ Are you sure you want to delete this loan?')" title="Delete Loan" style="padding: 4px 10px; font-size: 10px;">
                                         <i class="fas fa-trash"></i>
                                     </a>
-                                    <a href="#" class="btn btn-secondary btn-sm" title="View Details" style="padding: 4px 10px; font-size: 10px;">
+                                    <!-- ====== FIXED VIEW BUTTON ====== -->
+                                    <a href="view.php?id=<?php echo $row['loan_id']; ?>" class="btn btn-secondary btn-sm" title="View Details" style="padding: 4px 10px; font-size: 10px;">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                 </div>
