@@ -13,7 +13,6 @@ $id = $_GET['id'];
 $data = $conn->query("SELECT * FROM loans WHERE loan_id=$id")->fetch_assoc();
 
 if(isset($_POST['update'])){
-
     $loan_code = $_POST['loan_code'];
     $principal = $_POST['principal_amount'];
     $rate = $_POST['interest_rate'];
@@ -42,7 +41,6 @@ if(isset($_POST['update'])){
     ";
 
     $conn->query($sql);
-
     header("Location: index.php");
     exit();
 }
@@ -53,63 +51,110 @@ if(isset($_POST['update'])){
 <head>
 <title>Edit Loan</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="loans.css" rel="stylesheet">
 </head>
+<body>
 
-<body class="bg-light">
+<div class="container">
+    <div class="form-wrapper">
+        <div class="form-title">
+            <i class="fas fa-edit"></i>
+            Edit Loan #<?php echo $data['loan_code']; ?>
+        </div>
+        
+        <form method="POST">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-barcode"></i> Loan Code
+                    </label>
+                    <input type="text" name="loan_code" class="form-control" 
+                           value="<?php echo $data['loan_code']; ?>" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-money-bill-wave"></i> Principal Amount
+                    </label>
+                    <input type="number" name="principal_amount" class="form-control" 
+                           value="<?php echo $data['principal_amount']; ?>" required>
+                </div>
+            </div>
 
-<div class="container mt-4">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-percent"></i> Interest Rate
+                    </label>
+                    <input type="number" step="0.01" name="interest_rate" class="form-control" 
+                           value="<?php echo $data['interest_rate']; ?>" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-calculator"></i> Interest Type
+                    </label>
+                    <select name="interest_type" class="form-control">
+                        <option value="flat" <?php if($data['interest_type']=='flat') echo 'selected'; ?>>Flat Rate</option>
+                        <option value="reducing_balance" <?php if($data['interest_type']=='reducing_balance') echo 'selected'; ?>>Reducing Balance</option>
+                    </select>
+                </div>
+            </div>
 
-<h3>Edit Loan</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-clock"></i> Loan Term (Months)
+                    </label>
+                    <input type="number" name="loan_term_months" class="form-control" 
+                           value="<?php echo $data['loan_term_months']; ?>" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-calendar-alt"></i> Installment Type
+                    </label>
+                    <select name="installment_type" class="form-control">
+                        <option value="monthly" <?php if($data['installment_type']=='monthly') echo 'selected'; ?>>Monthly</option>
+                        <option value="weekly" <?php if($data['installment_type']=='weekly') echo 'selected'; ?>>Weekly</option>
+                    </select>
+                </div>
+            </div>
 
-<form method="POST">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-info-circle"></i> Loan Purpose
+                    </label>
+                    <input type="text" name="purpose" class="form-control" 
+                           value="<?php echo $data['purpose']; ?>">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-flag"></i> Status
+                    </label>
+                    <select name="status" class="form-control">
+                        <option value="active" <?php if($data['status']=='active') echo 'selected'; ?>>Active</option>
+                        <option value="closed" <?php if($data['status']=='closed') echo 'selected'; ?>>Closed</option>
+                        <option value="overdue" <?php if($data['status']=='overdue') echo 'selected'; ?>>Overdue</option>
+                        <option value="written_off" <?php if($data['status']=='written_off') echo 'selected'; ?>>Written Off</option>
+                    </select>
+                </div>
+            </div>
 
-<!-- Loan Code -->
-<input type="text" name="loan_code" class="form-control mb-2"
-value="<?php echo $data['loan_code']; ?>" required>
-
-<!-- Principal -->
-<input type="number" name="principal_amount" class="form-control mb-2"
-value="<?php echo $data['principal_amount']; ?>" required>
-
-<!-- Interest -->
-<input type="number" step="0.01" name="interest_rate" class="form-control mb-2"
-value="<?php echo $data['interest_rate']; ?>" required>
-
-<!-- Interest Type -->
-<select name="interest_type" class="form-control mb-2">
-    <option value="flat" <?php if($data['interest_type']=='flat') echo 'selected'; ?>>Flat</option>
-    <option value="reducing_balance" <?php if($data['interest_type']=='reducing_balance') echo 'selected'; ?>>Reducing Balance</option>
-</select>
-
-<!-- Term -->
-<input type="number" name="loan_term_months" class="form-control mb-2"
-value="<?php echo $data['loan_term_months']; ?>" required>
-
-<!-- Installment Type -->
-<select name="installment_type" class="form-control mb-2">
-    <option value="monthly" <?php if($data['installment_type']=='monthly') echo 'selected'; ?>>Monthly</option>
-    <option value="weekly" <?php if($data['installment_type']=='weekly') echo 'selected'; ?>>Weekly</option>
-</select>
-
-<!-- Purpose -->
-<input type="text" name="purpose" class="form-control mb-2"
-value="<?php echo $data['purpose']; ?>">
-
-<!-- Status -->
-<select name="status" class="form-control mb-2">
-    <option value="active" <?php if($data['status']=='active') echo 'selected'; ?>>Active</option>
-    <option value="closed" <?php if($data['status']=='closed') echo 'selected'; ?>>Closed</option>
-    <option value="overdue" <?php if($data['status']=='overdue') echo 'selected'; ?>>Overdue</option>
-    <option value="written_off" <?php if($data['status']=='written_off') echo 'selected'; ?>>Written Off</option>
-</select>
-
-<button type="submit" name="update" class="btn btn-success w-100">
-Update Loan
-</button>
-
-</form>
-
+            <button type="submit" name="update" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 16px;">
+                <i class="fas fa-save"></i> Update Loan
+            </button>
+            
+            <a href="index.php" class="btn btn-secondary" style="width: 100%; margin-top: 10px; padding: 12px;">
+                <i class="fas fa-arrow-left"></i> Back to Loan List
+            </a>
+        </form>
+    </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
