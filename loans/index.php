@@ -43,13 +43,15 @@ $recent_sql = "SELECT COUNT(*) as recent FROM loans WHERE created_at >= DATE_SUB
 $recent_result = $conn->query($recent_sql);
 $recent = $recent_result->fetch_assoc();
 $recent_count = $recent['recent'];
+
+// Collection rate
+$collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
     <title>Loan Management System</title>
-    <!-- Required Meta Tags -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
@@ -62,53 +64,24 @@ $recent_count = $recent['recent'];
     <!-- Google Fonts - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- Custom CSS - CRITICAL: This MUST be loaded -->
+    <!-- Custom CSS -->
     <link href="../assets/css/loans.css" rel="stylesheet">
     
-    <!-- Fallback: If CSS doesn't load, use inline critical styles -->
     <style>
-        /* Critical fallback styles */
-        body { background: #0A0E27; color: #fff; font-family: 'Inter', sans-serif; }
+        /* Critical fallback styles - ensures text is always visible */
+        body { 
+            background: linear-gradient(135deg, #060A1F 0%, #0F1535 100%); 
+            color: #FFFFFF; 
+            font-family: 'Inter', sans-serif;
+        }
         .container { max-width: 1440px; margin: 0 auto; padding: 0 20px; }
-        .page-header { 
-            background: rgba(255,255,255,0.08); 
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 20px;
-            padding: 32px 48px;
-            margin-bottom: 32px;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 24px;
-            margin-bottom: 32px;
-        }
-        .stat-card {
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 12px;
-            padding: 24px 32px;
-        }
-        .table-wrapper {
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 20px;
-            overflow: hidden;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #6C63FF 0%, #4A42CC 100%);
-            color: #fff;
-            padding: 10px 24px;
-            border-radius: 8px;
-            border: none;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .stat-value { color: #FFFFFF !important; }
+        .stat-label { color: #B8C5E0 !important; }
+        .table { color: #FFFFFF !important; }
+        .table tbody td { color: #B8C5E0 !important; }
+        .table thead th { color: #B8C5E0 !important; }
+        .table tbody td strong { color: #FFFFFF !important; }
+        .text-muted-custom { color: #B8C5E0 !important; }
     </style>
 </head>
 <body>
@@ -175,8 +148,9 @@ $recent_count = $recent['recent'];
         </div>
         <div class="stat-label">Overdue Loans</div>
         <div class="stat-value"><?php echo $total_overdue; ?></div>
-        <div class="stat-change negative">
-            <i class="fas fa-arrow-up"></i> Needs Attention
+        <div class="stat-change <?php echo $total_overdue > 0 ? 'negative' : 'positive'; ?>">
+            <i class="fas <?php echo $total_overdue > 0 ? 'fa-arrow-up' : 'fa-check'; ?>"></i> 
+            <?php echo $total_overdue > 0 ? 'Needs Attention' : 'All Good'; ?>
         </div>
     </div>
     
@@ -185,7 +159,7 @@ $recent_count = $recent['recent'];
             <i class="fas fa-chart-line"></i>
         </div>
         <div class="stat-label">Collection Rate</div>
-        <div class="stat-value"><?php echo $total_amount > 0 ? number_format(($total_paid/$total_amount)*100, 1) : 0; ?>%</div>
+        <div class="stat-value"><?php echo number_format($collection_rate, 1); ?>%</div>
         <div class="stat-change positive">
             <i class="fas fa-clock"></i> <?php echo $recent_count; ?> New (7 days)
         </div>
@@ -221,57 +195,58 @@ $recent_count = $recent['recent'];
                     ?>
                         <tr style="animation-delay: <?php echo $delay; ?>s">
                             <td>
-                                <strong style="color: var(--primary-light, #8B83FF);">#<?php echo $row['loan_id']; ?></strong>
+                                <strong style="color: #A89BFF;">#<?php echo $row['loan_id']; ?></strong>
                             </td>
                             <td>
-                                <span style="font-weight: 600; color: var(--primary-light, #8B83FF);">
+                                <span style="font-weight: 600; color: #A89BFF;">
                                     <?php echo $row['loan_code']; ?>
                                 </span>
                             </td>
                             <td>
                                 <div style="display: flex; flex-direction: column; gap: 2px;">
-                                    <span style="font-weight: 600; color: var(--white, #FFFFFF);">
+                                    <span style="font-weight: 600; color: #FFFFFF;">
                                         <?php echo $row['full_name']; ?>
                                     </span>
-                                    <span style="font-size: 11px; color: var(--gray, #6B7A9C);">
-                                        <i class="fas fa-id-card"></i> <?php echo $row['member_code']; ?>
+                                    <span style="font-size: 11px; color: #8899BB;">
+                                        <i class="fas fa-id-card" style="color: #7C6FFF;"></i> 
+                                        <?php echo $row['member_code']; ?>
                                     </span>
                                 </div>
                             </td>
-                            <td style="font-weight: 600; color: var(--white, #FFFFFF);">
+                            <td style="font-weight: 600; color: #FFFFFF;">
                                 ৳ <?php echo number_format($row['principal_amount'], 2); ?>
                             </td>
-                            <td style="color: var(--secondary, #00D4FF);">
+                            <td style="color: #00D4FF; font-weight: 500;">
                                 <?php echo $row['interest_rate']; ?>%
                             </td>
-                            <td style="font-weight: 600; color: var(--primary-light, #8B83FF);">
+                            <td style="font-weight: 600; color: #A89BFF;">
                                 ৳ <?php echo number_format($row['total_payable'], 2); ?>
                             </td>
-                            <td style="color: var(--success, #00E676);">
+                            <td style="color: #69F0AE; font-weight: 500;">
                                 ৳ <?php echo number_format($row['total_paid'], 2); ?>
                             </td>
-                            <td style="color: var(--gray-light, #A8B5D1);">
+                            <td style="color: #B8C5E0;">
                                 ৳ <?php echo number_format($row['installment_amount'], 2); ?>
                             </td>
                             <td>
                                 <?php
                                 $status_config = [
-                                    'active' => ['class' => 'badge-success', 'icon' => 'fa-check-circle'],
-                                    'closed' => ['class' => 'badge-primary', 'icon' => 'fa-check-double'],
-                                    'overdue' => ['class' => 'badge-danger', 'icon' => 'fa-exclamation-triangle'],
-                                    'written_off' => ['class' => 'badge-dark', 'icon' => 'fa-times-circle']
+                                    'active' => ['class' => 'badge-success', 'icon' => 'fa-check-circle', 'label' => 'Active'],
+                                    'closed' => ['class' => 'badge-primary', 'icon' => 'fa-check-double', 'label' => 'Closed'],
+                                    'overdue' => ['class' => 'badge-danger', 'icon' => 'fa-exclamation-triangle', 'label' => 'Overdue'],
+                                    'written_off' => ['class' => 'badge-dark', 'icon' => 'fa-times-circle', 'label' => 'Written Off']
                                 ];
                                 $config = isset($status_config[$row['status']]) ? $status_config[$row['status']] : $status_config['active'];
                                 ?>
                                 <span class="badge <?php echo $config['class']; ?>">
                                     <i class="fas <?php echo $config['icon']; ?>"></i>
-                                    <?php echo ucfirst($row['status']); ?>
+                                    <?php echo $config['label']; ?>
                                 </span>
                             </td>
-                            <td style="font-size: 12px; color: var(--gray-light, #A8B5D1);">
+                            <td style="font-size: 12px; color: #B8C5E0;">
                                 <?php echo date('d M Y', strtotime($row['disbursement_date'])); ?>
                             </td>
-                            <td style="font-size: 12px; color: var(--gray-light, #A8B5D1);">
+                            <td style="font-size: 12px; color: #B8C5E0;">
                                 <?php echo date('d M Y', strtotime($row['maturity_date'])); ?>
                             </td>
                             <td>
@@ -304,7 +279,7 @@ $recent_count = $recent['recent'];
                                     <i class="fas fa-inbox"></i>
                                 </div>
                                 <h5>No Loans Found</h5>
-                                <p>Start by creating your first loan application</p>
+                                <p style="color: #B8C5E0;">Start by creating your first loan application</p>
                                 <a href="add.php" class="btn btn-primary">
                                     <i class="fas fa-plus-circle"></i> Create First Loan
                                 </a>
@@ -333,6 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let current = 0;
             const increment = numeric / 40;
             const isCurrency = text.includes('৳');
+            const isPercent = text.includes('%');
             const timer = setInterval(() => {
                 current += increment;
                 if (current >= numeric) {
@@ -341,6 +317,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 if (isCurrency) {
                     el.textContent = '৳ ' + current.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                } else if (isPercent) {
+                    el.textContent = current.toFixed(1) + '%';
                 } else {
                     el.textContent = Math.round(current).toLocaleString();
                 }
