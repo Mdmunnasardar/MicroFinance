@@ -32,6 +32,6 @@ if (!isset($_SESSION['user_id'])) {
     <link rel="stylesheet" href="assets/css/members.css">
     <!-- Committees CSS -->
      <link rel="stylesheet" href="../assets/css/committees.css">
-   
+     <link rel="stylesheet" href="../assets/css/loans.css">
 </head>
 <body>
