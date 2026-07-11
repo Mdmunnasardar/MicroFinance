@@ -9,8 +9,10 @@ if (!isset($_SESSION['user_id'])) {
 
 $id = $_GET['id'];
 
+// Delete the loan
 $conn->query("DELETE FROM loans WHERE loan_id=$id");
 
-header("Location: index.php");
+// Redirect with success message
+header("Location: index.php?deleted=1");
 exit();
 ?>
