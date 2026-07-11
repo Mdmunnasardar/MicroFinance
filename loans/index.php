@@ -38,7 +38,6 @@ while($row = $result->fetch_assoc()) {
 }
 $result->data_seek(0);
 
-// Get recent activity
 $recent_sql = "SELECT COUNT(*) as recent FROM loans WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
 $recent_result = $conn->query($recent_sql);
 $recent = $recent_result->fetch_assoc();
@@ -54,17 +53,12 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
-        /* ========== COMPLETE STYLING - DIRECTLY IN PAGE ========== */
+        /* ========== BLUE THEME ========== */
         * {
             margin: 0;
             padding: 0;
@@ -76,23 +70,71 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             min-height: 100vh;
             font-family: 'Inter', sans-serif;
             padding: 20px;
-            color: #FFFFFF;
+            color: #E8F0FE;
+            position: relative;
+        }
+        
+        /* Floating Orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.10;
+            pointer-events: none;
+            z-index: 0;
+            animation: floatOrb 12s ease-in-out infinite;
+        }
+        
+        @keyframes floatOrb {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(40px, -40px) scale(1.1); }
+            66% { transform: translate(-30px, 30px) scale(0.9); }
+        }
+        
+        .orb-1 {
+            width: 500px;
+            height: 500px;
+            background: rgba(79, 140, 255, 0.08);
+            top: -150px;
+            right: -100px;
+            animation-delay: 0s;
+        }
+        
+        .orb-2 {
+            width: 400px;
+            height: 400px;
+            background: rgba(0, 212, 255, 0.06);
+            bottom: -100px;
+            left: -100px;
+            animation-delay: -3s;
+        }
+        
+        .orb-3 {
+            width: 300px;
+            height: 300px;
+            background: rgba(79, 140, 255, 0.05);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -5s;
         }
         
         .container {
             max-width: 1440px;
             margin: 0 auto;
             padding: 0 20px;
+            position: relative;
+            z-index: 1;
         }
         
-        /* Header */
+        /* ========== HEADER ========== */
         .page-header {
-            background: rgba(20, 35, 60, 0.85);
+            background: rgba(20, 35, 60, 0.92);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 20px;
-            padding: 32px 48px;
-            margin-bottom: 32px;
+            border: 1px solid rgba(79, 140, 255, 0.08);
+            border-radius: 16px;
+            padding: 28px 40px;
+            margin-bottom: 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -100,6 +142,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             gap: 16px;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
         
         .page-header::before {
@@ -109,15 +152,14 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, #4F8CFF, #00D4AA, #4F8CFF);
+            background: linear-gradient(90deg, #4F8CFF, #00D4FF, #4F8CFF);
             background-size: 200% 100%;
-            animation: gradientMove 3s ease infinite;
+            animation: shimmerBlue 4s ease infinite;
         }
         
-        @keyframes gradientMove {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        @keyframes shimmerBlue {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
         }
         
         .header-left {
@@ -129,36 +171,41 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
         }
         
         .header-icon {
-            width: 56px;
-            height: 56px;
+            width: 52px;
+            height: 52px;
             background: linear-gradient(135deg, #4F8CFF, #2D6CD4);
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 24px;
             color: #FFFFFF;
-            box-shadow: 0 0 40px rgba(79, 140, 255, 0.3);
-            animation: pulseGlow 3s ease-in-out infinite;
+            box-shadow: 0 0 40px rgba(79, 140, 255, 0.2);
+            animation: pulseBlue 3s ease-in-out infinite;
         }
         
-        @keyframes pulseGlow {
-            0%, 100% { opacity: 0.8; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.05); }
+        @keyframes pulseBlue {
+            0%, 100% { box-shadow: 0 0 40px rgba(79, 140, 255, 0.2); }
+            50% { box-shadow: 0 0 60px rgba(79, 140, 255, 0.4); }
         }
         
         .header-title {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 800;
+            color: #E8F0FE;
+            letter-spacing: -0.5px;
+        }
+        
+        .header-title span {
             background: linear-gradient(135deg, #4F8CFF, #7DB0FF);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         
         .header-subtitle {
-            font-size: 14px;
-            color: #C8D6E8;
-            margin-top: 4px;
+            font-size: 13px;
+            color: #8AA0C8;
+            margin-top: 2px;
             display: block;
         }
         
@@ -175,12 +222,12 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             z-index: 1;
         }
         
-        /* Buttons */
+        /* ========== BUTTONS ========== */
         .btn {
-            padding: 10px 24px;
+            padding: 10px 22px;
             border-radius: 8px;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
             border: none;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -188,90 +235,92 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             align-items: center;
             gap: 8px;
             text-decoration: none;
+            letter-spacing: 0.3px;
         }
         
         .btn-primary {
             background: linear-gradient(135deg, #4F8CFF, #2D6CD4);
             color: #FFFFFF;
-            box-shadow: 0 4px 20px rgba(79, 140, 255, 0.3);
+            box-shadow: 0 4px 20px rgba(79, 140, 255, 0.25);
         }
         
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 35px rgba(79, 140, 255, 0.4);
+            box-shadow: 0 8px 30px rgba(79, 140, 255, 0.35);
             color: #FFFFFF;
         }
         
         .btn-success {
             background: linear-gradient(135deg, #00E676, #00C853);
-            color: #FFFFFF;
-            box-shadow: 0 4px 20px rgba(0, 230, 118, 0.3);
+            color: #0B1120;
+            box-shadow: 0 4px 20px rgba(0, 230, 118, 0.25);
         }
         
         .btn-success:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 35px rgba(0, 230, 118, 0.4);
-            color: #FFFFFF;
+            box-shadow: 0 8px 30px rgba(0, 230, 118, 0.35);
+            color: #0B1120;
         }
         
         .btn-warning {
-            background: linear-gradient(135deg, #FFB300, #FF8F00);
-            color: #FFFFFF;
-            box-shadow: 0 4px 20px rgba(255, 179, 0, 0.3);
+            background: linear-gradient(135deg, #FFD54F, #FFB300);
+            color: #0B1120;
+            box-shadow: 0 4px 20px rgba(255, 213, 79, 0.2);
         }
         
         .btn-warning:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 35px rgba(255, 179, 0, 0.4);
-            color: #FFFFFF;
+            box-shadow: 0 8px 30px rgba(255, 213, 79, 0.3);
+            color: #0B1120;
         }
         
         .btn-danger {
-            background: linear-gradient(135deg, #FF5252, #D32F2F);
+            background: linear-gradient(135deg, #EF5350, #C62828);
             color: #FFFFFF;
-            box-shadow: 0 4px 20px rgba(255, 82, 82, 0.3);
+            box-shadow: 0 4px 20px rgba(239, 83, 80, 0.25);
         }
         
         .btn-danger:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 35px rgba(255, 82, 82, 0.4);
+            box-shadow: 0 8px 30px rgba(239, 83, 80, 0.35);
             color: #FFFFFF;
         }
         
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            color: #C8D6E8;
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.04);
+            color: #8AA0C8;
+            border: 1px solid rgba(79, 140, 255, 0.08);
         }
         
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #FFFFFF;
+            background: rgba(255, 255, 255, 0.08);
+            color: #E8F0FE;
         }
         
         .btn-sm {
-            padding: 6px 14px;
-            font-size: 12px;
+            padding: 5px 12px;
+            font-size: 11px;
             border-radius: 6px;
         }
         
-        /* Stats Cards */
+        /* ========== STATS CARDS ========== */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 24px;
-            margin-bottom: 32px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
         }
         
         .stat-card {
-            background: rgba(20, 35, 60, 0.85);
+            background: rgba(20, 35, 60, 0.88);
             backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(79, 140, 255, 0.06);
             border-radius: 12px;
-            padding: 24px 32px;
+            padding: 20px 24px;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         }
         
         .stat-card::before {
@@ -280,16 +329,16 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             top: 0;
             left: 0;
             right: 0;
-            height: 3px;
-            background: linear-gradient(135deg, #4F8CFF, #2D6CD4);
+            height: 2px;
+            background: linear-gradient(90deg, #4F8CFF, #00D4FF);
             opacity: 0;
             transition: all 0.3s ease;
         }
         
         .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-            border-color: rgba(79, 140, 255, 0.3);
+            transform: translateY(-4px);
+            border-color: rgba(79, 140, 255, 0.15);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
         }
         
         .stat-card:hover::before {
@@ -297,35 +346,35 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
         }
         
         .stat-icon {
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            margin-bottom: 16px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 18px;
+            margin-bottom: 12px;
+            background: rgba(79, 140, 255, 0.06);
+            border: 1px solid rgba(79, 140, 255, 0.06);
         }
         
-        .stat-card:nth-child(1) .stat-icon { color: #7DB0FF; }
-        .stat-card:nth-child(2) .stat-icon { color: #69F0AE; }
-        .stat-card:nth-child(3) .stat-icon { color: #FFD54F; }
-        .stat-card:nth-child(4) .stat-icon { color: #5CE0C4; }
+        .stat-card:nth-child(1) .stat-icon { color: #4F8CFF; }
+        .stat-card:nth-child(2) .stat-icon { color: #00E676; }
+        .stat-card:nth-child(3) .stat-icon { color: #FF5252; }
+        .stat-card:nth-child(4) .stat-icon { color: #00D4FF; }
         
         .stat-label {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 500;
-            color: #C8D6E8;
+            color: #8AA0C8;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
+            letter-spacing: 0.6px;
         }
         
         .stat-value {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 700;
-            color: #FFFFFF;
+            color: #E8F0FE;
             margin-top: 4px;
         }
         
@@ -333,33 +382,38 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
-            padding: 4px 14px;
+            padding: 3px 12px;
             border-radius: 20px;
-            margin-top: 8px;
+            margin-top: 6px;
         }
         
         .stat-change.positive {
-            background: rgba(0, 230, 118, 0.12);
-            color: #69F0AE;
-            border: 1px solid rgba(0, 230, 118, 0.08);
+            background: rgba(0, 230, 118, 0.10);
+            color: #00E676;
+            border: 1px solid rgba(0, 230, 118, 0.06);
         }
         
         .stat-change.negative {
-            background: rgba(255, 82, 82, 0.12);
-            color: #FF8A80;
-            border: 1px solid rgba(255, 82, 82, 0.08);
+            background: rgba(255, 82, 82, 0.10);
+            color: #FF5252;
+            border: 1px solid rgba(255, 82, 82, 0.06);
         }
         
-        /* Table */
+        /* ========== TABLE ========== */
         .table-wrapper {
-            background: rgba(20, 35, 60, 0.85);
+            background: rgba(20, 35, 60, 0.88);
             backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 20px;
+            border: 1px solid rgba(79, 140, 255, 0.06);
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .table-wrapper:hover {
+            border-color: rgba(79, 140, 255, 0.10);
         }
         
         .table-responsive {
@@ -371,35 +425,37 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             border-collapse: separate;
             border-spacing: 0;
             margin: 0;
-            font-size: 14px;
-            color: #FFFFFF;
+            font-size: 13px;
+            color: #E8F0FE;
         }
         
         .table thead {
             background: rgba(79, 140, 255, 0.04);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid rgba(79, 140, 255, 0.06);
         }
         
         .table thead th {
-            padding: 18px 20px;
+            padding: 16px 18px;
             font-weight: 600;
-            font-size: 11px;
+            font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.8px;
-            color: #C8D6E8;
+            color: #8AA0C8;
             white-space: nowrap;
             text-align: left;
             border: none;
         }
         
         .table thead th i {
-            color: #7DB0FF;
+            color: #4F8CFF;
             margin-right: 6px;
+            font-size: 11px;
         }
         
         .table tbody tr {
             transition: all 0.3s ease;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(79, 140, 255, 0.02);
+            cursor: default;
         }
         
         .table tbody tr:hover {
@@ -407,115 +463,71 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
         }
         
         .table tbody td {
-            padding: 16px 20px;
+            padding: 14px 18px;
             vertical-align: middle;
             border: none;
-            color: #C8D6E8;
+            color: #8AA0C8;
         }
         
         .table tbody td strong {
-            color: #FFFFFF;
+            color: #E8F0FE;
         }
         
-        /* Badges */
+        /* ========== BADGES ========== */
         .badge {
-            padding: 6px 16px;
+            padding: 5px 14px;
             border-radius: 20px;
             font-weight: 600;
-            font-size: 11px;
+            font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
         
         .badge-success {
-            background: rgba(0, 230, 118, 0.12);
-            color: #69F0AE;
-            border: 1px solid rgba(0, 230, 118, 0.15);
+            background: rgba(0, 230, 118, 0.10);
+            color: #00E676;
+            border: 1px solid rgba(0, 230, 118, 0.10);
         }
         
         .badge-primary {
-            background: rgba(79, 140, 255, 0.12);
+            background: rgba(79, 140, 255, 0.10);
             color: #7DB0FF;
-            border: 1px solid rgba(79, 140, 255, 0.15);
+            border: 1px solid rgba(79, 140, 255, 0.10);
         }
         
         .badge-danger {
-            background: rgba(255, 82, 82, 0.12);
-            color: #FF8A80;
-            border: 1px solid rgba(255, 82, 82, 0.15);
+            background: rgba(255, 82, 82, 0.10);
+            color: #FF5252;
+            border: 1px solid rgba(255, 82, 82, 0.10);
         }
         
         .badge-warning {
-            background: rgba(255, 179, 0, 0.12);
+            background: rgba(255, 215, 0, 0.08);
             color: #FFD54F;
-            border: 1px solid rgba(255, 179, 0, 0.15);
+            border: 1px solid rgba(255, 215, 0, 0.08);
         }
         
         .badge-dark {
             background: rgba(255, 255, 255, 0.04);
-            color: #C8D6E8;
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: #8AA0C8;
+            border: 1px solid rgba(255, 255, 255, 0.04);
         }
         
-        /* Floating Orbs */
-        .orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(100px);
-            opacity: 0.15;
-            pointer-events: none;
-            z-index: 0;
-            animation: float 8s ease-in-out infinite;
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-        }
-        
-        .orb-1 {
-            width: 500px;
-            height: 500px;
-            background: rgba(79, 140, 255, 0.15);
-            top: -150px;
-            right: -150px;
-            animation-delay: 0s;
-        }
-        
-        .orb-2 {
-            width: 350px;
-            height: 350px;
-            background: rgba(0, 212, 170, 0.12);
-            bottom: -50px;
-            left: -50px;
-            animation-delay: -3s;
-        }
-        
-        .orb-3 {
-            width: 250px;
-            height: 250px;
-            background: rgba(79, 140, 255, 0.08);
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            animation-delay: -5s;
-        }
-        
-        /* Animations */
+        /* ========== ANIMATIONS ========== */
         @keyframes slideUp {
-            0% { opacity: 0; transform: translateY(40px); }
+            0% { opacity: 0; transform: translateY(30px); }
             100% { opacity: 1; transform: translateY(0); }
         }
         
-        .page-header { animation: slideUp 0.8s ease; }
-        .stat-card { animation: slideUp 0.8s ease 0.1s both; }
-        .table-wrapper { animation: slideUp 0.8s ease 0.2s both; }
-        .table tbody tr { animation: slideUp 0.6s ease both; }
+        .page-header { animation: slideUp 0.6s ease; }
+        .stat-card { animation: slideUp 0.6s ease 0.05s both; }
+        .table-wrapper { animation: slideUp 0.6s ease 0.1s both; }
+        .table tbody tr { animation: slideUp 0.5s ease both; }
         
-        /* Responsive */
+        /* ========== RESPONSIVE ========== */
         @media (max-width: 768px) {
             .page-header {
                 padding: 20px;
@@ -526,19 +538,64 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
                 flex-direction: column;
                 text-align: center;
             }
-            .header-title { font-size: 24px; }
+            .header-title { font-size: 22px; }
             .header-right { justify-content: center; }
             .stats-grid {
                 grid-template-columns: 1fr 1fr;
-                gap: 16px;
+                gap: 14px;
             }
             .stat-card { padding: 16px; }
-            .stat-value { font-size: 24px; }
+            .stat-value { font-size: 22px; }
         }
         
         @media (max-width: 480px) {
             .stats-grid { grid-template-columns: 1fr; }
-            .header-title { font-size: 20px; }
+            .header-title { font-size: 18px; }
+            .btn { padding: 8px 16px; font-size: 12px; }
+        }
+        
+        /* ========== SCROLLBAR ========== */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(79, 140, 255, 0.02);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #4F8CFF, #00D4FF);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4F8CFF;
+        }
+        
+        /* ========== BACK BUTTON ========== */
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #8AA0C8;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(79, 140, 255, 0.06);
+        }
+        
+        .back-button:hover {
+            color: #7DB0FF;
+            background: rgba(79, 140, 255, 0.06);
+            transform: translateX(-4px);
+        }
+        
+        .back-button i {
+            font-size: 16px;
+            color: #4F8CFF;
         }
     </style>
 </head>
@@ -559,7 +616,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
         </div>
         <div>
             <div class="header-title">
-                Loan Management
+                <span>Loan</span> Management
                 <span class="header-subtitle">
                     <i class="fas fa-users"></i> <?php echo $total_loans; ?> Active Loans
                 </span>
@@ -583,7 +640,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
         <div class="stat-label">Total Portfolio</div>
         <div class="stat-value">৳ <?php echo number_format($total_amount, 2); ?></div>
         <div class="stat-change positive">
-            <i class="fas fa-arrow-up"></i> <?php echo $total_loans; ?> Total Loans
+            <i class="fas fa-arrow-up"></i> <?php echo $total_loans; ?> Loans
         </div>
     </div>
     
@@ -592,7 +649,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
         <div class="stat-label">Active Loans</div>
         <div class="stat-value"><?php echo $total_active; ?></div>
         <div class="stat-change positive">
-            <i class="fas fa-check"></i> <?php echo $total_loans > 0 ? number_format(($total_active/$total_loans)*100, 1) : 0; ?>% Active
+            <i class="fas fa-check"></i> <?php echo $total_loans > 0 ? number_format(($total_active/$total_loans)*100, 1) : 0; ?>%
         </div>
     </div>
     
@@ -601,8 +658,8 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
         <div class="stat-label">Overdue Loans</div>
         <div class="stat-value"><?php echo $total_overdue; ?></div>
         <div class="stat-change <?php echo $total_overdue > 0 ? 'negative' : 'positive'; ?>">
-            <i class="fas <?php echo $total_overdue > 0 ? 'fa-arrow-up' : 'fa-check'; ?>"></i> 
-            <?php echo $total_overdue > 0 ? 'Needs Attention' : 'All Good'; ?>
+            <i class="fas <?php echo $total_overdue > 0 ? 'fa-arrow-up' : 'fa-check'; ?>"></i>
+            <?php echo $total_overdue > 0 ? 'Attention' : 'All Good'; ?>
         </div>
     </div>
     
@@ -611,7 +668,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
         <div class="stat-label">Collection Rate</div>
         <div class="stat-value"><?php echo number_format($collection_rate, 1); ?>%</div>
         <div class="stat-change positive">
-            <i class="fas fa-clock"></i> <?php echo $recent_count; ?> New (7 days)
+            <i class="fas fa-clock"></i> <?php echo $recent_count; ?> New
         </div>
     </div>
 </div>
@@ -623,7 +680,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             <thead>
                 <tr>
                     <th><i class="fas fa-hashtag"></i> ID</th>
-                    <th><i class="fas fa-barcode"></i> Loan Code</th>
+                    <th><i class="fas fa-barcode"></i> Code</th>
                     <th><i class="fas fa-user"></i> Member</th>
                     <th><i class="fas fa-money-bill-wave"></i> Principal</th>
                     <th><i class="fas fa-percent"></i> Rate</th>
@@ -645,20 +702,20 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
                     ?>
                         <tr style="animation-delay: <?php echo $delay; ?>s">
                             <td><strong style="color: #7DB0FF;">#<?php echo $row['loan_id']; ?></strong></td>
-                            <td><span style="font-weight: 600; color: #7DB0FF;"><?php echo $row['loan_code']; ?></span></td>
+                            <td><span style="font-weight: 600; color: #4F8CFF;"><?php echo $row['loan_code']; ?></span></td>
                             <td>
-                                <div style="display: flex; flex-direction: column; gap: 2px;">
-                                    <span style="font-weight: 600; color: #FFFFFF;"><?php echo $row['full_name']; ?></span>
-                                    <span style="font-size: 11px; color: #8AA0C8;">
+                                <div style="display: flex; flex-direction: column; gap: 1px;">
+                                    <span style="font-weight: 600; color: #E8F0FE;"><?php echo $row['full_name']; ?></span>
+                                    <span style="font-size: 10px; color: #8AA0C8;">
                                         <i class="fas fa-id-card" style="color: #4F8CFF;"></i> <?php echo $row['member_code']; ?>
                                     </span>
                                 </div>
                             </td>
-                            <td style="font-weight: 600; color: #FFFFFF;">৳ <?php echo number_format($row['principal_amount'], 2); ?></td>
-                            <td style="color: #5CE0C4; font-weight: 500;"><?php echo $row['interest_rate']; ?>%</td>
+                            <td style="font-weight: 600; color: #E8F0FE;">৳ <?php echo number_format($row['principal_amount'], 2); ?></td>
+                            <td style="color: #00D4FF; font-weight: 500;"><?php echo $row['interest_rate']; ?>%</td>
                             <td style="font-weight: 600; color: #7DB0FF;">৳ <?php echo number_format($row['total_payable'], 2); ?></td>
-                            <td style="color: #69F0AE; font-weight: 500;">৳ <?php echo number_format($row['total_paid'], 2); ?></td>
-                            <td style="color: #C8D6E8;">৳ <?php echo number_format($row['installment_amount'], 2); ?></td>
+                            <td style="color: #00E676; font-weight: 500;">৳ <?php echo number_format($row['total_paid'], 2); ?></td>
+                            <td style="color: #8AA0C8;">৳ <?php echo number_format($row['installment_amount'], 2); ?></td>
                             <td>
                                 <?php
                                 $status_config = [
@@ -674,17 +731,17 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
                                     <?php echo $config['label']; ?>
                                 </span>
                             </td>
-                            <td style="font-size: 12px; color: #C8D6E8;"><?php echo date('d M Y', strtotime($row['disbursement_date'])); ?></td>
-                            <td style="font-size: 12px; color: #C8D6E8;"><?php echo date('d M Y', strtotime($row['maturity_date'])); ?></td>
+                            <td style="font-size: 11px; color: #8AA0C8;"><?php echo date('d M Y', strtotime($row['disbursement_date'])); ?></td>
+                            <td style="font-size: 11px; color: #8AA0C8;"><?php echo date('d M Y', strtotime($row['maturity_date'])); ?></td>
                             <td>
-                                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                    <a href="edit.php?id=<?php echo $row['loan_id']; ?>" class="btn btn-warning btn-sm" data-tooltip="Edit Loan">
+                                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                    <a href="edit.php?id=<?php echo $row['loan_id']; ?>" class="btn btn-warning btn-sm">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="delete.php?id=<?php echo $row['loan_id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('⚠️ Are you sure you want to delete this loan?')">
+                                    <a href="delete.php?id=<?php echo $row['loan_id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('⚠️ Are you sure?')">
                                         <i class="fas fa-trash"></i>
                                     </a>
-                                    <a href="#" class="btn btn-secondary btn-sm" data-tooltip="View Details">
+                                    <a href="#" class="btn btn-secondary btn-sm">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                 </div>
@@ -694,9 +751,9 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
                 <?php else: ?>
                     <tr>
                         <td colspan="12" style="text-align: center; padding: 60px 20px;">
-                            <i class="fas fa-inbox" style="font-size: 64px; color: #8AA0C8; opacity: 0.3; margin-bottom: 16px; display: block;"></i>
-                            <h5 style="color: #FFFFFF;">No Loans Found</h5>
-                            <p style="color: #C8D6E8;">Start by creating your first loan application</p>
+                            <i class="fas fa-inbox" style="font-size: 56px; color: #2D4A7A; opacity: 0.3; margin-bottom: 16px; display: block;"></i>
+                            <h5 style="color: #E8F0FE;">No Loans Found</h5>
+                            <p style="color: #8AA0C8;">Start by creating your first loan application</p>
                             <a href="add.php" class="btn btn-primary" style="margin-top: 16px;">
                                 <i class="fas fa-plus-circle"></i> Create First Loan
                             </a>
@@ -708,18 +765,24 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
     </div>
 </div>
 
+<!-- Back Button -->
+<div style="margin-top: 24px; text-align: center;">
+    <a href="../dashboard.php" class="back-button">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Animate stats
     document.querySelectorAll('.stat-value').forEach(el => {
         const text = el.textContent;
         const numeric = parseFloat(text.replace(/[^0-9.]/g, ''));
         if (!isNaN(numeric) && numeric > 0) {
             let current = 0;
-            const increment = numeric / 40;
+            const increment = numeric / 35;
             const isCurrency = text.includes('৳');
             const isPercent = text.includes('%');
             const timer = setInterval(() => {
