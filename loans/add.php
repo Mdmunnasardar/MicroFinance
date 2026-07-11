@@ -7,77 +7,163 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-$page_title = 'Add New Loan';
-
-// Get members
-$members = $conn->query("SELECT member_id, full_name, member_code FROM members ORDER BY full_name");
-
+// ======================
+// INSERT LOAN
+// ======================
 if (isset($_POST['submit'])) {
-    $loan_code = sanitize($_POST['loan_code']);
-    $member_id = (int)$_POST['member_id'];
-    $principal = (float)$_POST['principal_amount'];
-    $rate = (float)$_POST['interest_rate'];
-    $interest_type = sanitize($_POST['interest_type']);
-    $term = (int)$_POST['loan_term_months'];
-    $installment_type = sanitize($_POST['installment_type']);
-    $disbursement_date = sanitize($_POST['disbursement_date']);
-    $first_installment_date = sanitize($_POST['first_installment_date']);
-    $purpose = sanitize($_POST['purpose']);
-    
-    // Calculate
-    if ($interest_type == 'flat') {
-        $interest = $principal * ($rate / 100);
-        $total_payable = $principal + $interest;
-    } else {
-        $interest = $principal * ($rate / 100);
-        $total_payable = $principal + $interest;
-    }
-    
-    $installment_amount = $term > 0 ? $total_payable / $term : 0;
-    $maturity_date = date('Y-m-d', strtotime($disbursement_date . " + $term months"));
-    
-    // Get branch
-    $member = $conn->query("SELECT branch_id FROM members WHERE member_id = $member_id");
-    $m = $member->fetch_assoc();
-    $branch_id = $m['branch_id'] ?? 1;
-    
-    $sql = "INSERT INTO loans (
-        loan_code, member_id, branch_id, principal_amount, interest_rate,
-        interest_type, loan_term_months, installment_type, installment_amount,
-        total_payable, total_paid, disbursement_date, first_installment_date,
-        maturity_date, status, purpose
-    ) VALUES (
-        '$loan_code', $member_id, $branch_id, $principal, $rate,
-        '$interest_type', $term, '$installment_type', $installment_amount,
-        $total_payable, 0, '$disbursement_date', '$first_installment_date',
-        '$maturity_date', 'active', '$purpose'
-    )";
-    
-    if ($conn->query($sql)) {
-        header("Location: index.php?success=Loan created successfully");
-        exit();
-    } else {
-        $error = "Error: " . $conn->error;
-    }
-}
 
-include "../includes/header.php";
-include "../includes/sidebar.php";
-include "../includes/topbar.php";
+    $loan_code = $_POST['loan_code'];
+    $member_id = $_POST['member_id'];
+
+    $principal = $_POST['principal_amount'];
+    $rate = $_POST['interest_rate'];
+    $interest_type = $_POST['interest_type'];
+
+    $term = $_POST['loan_term_months'];
+    $installment_type = $_POST['installment_type'];
+
+    $disbursement_date = $_POST['disbursement_date'];
+    $first_installment_date = $_POST['first_installment_date'];
+
+    $purpose = $_POST['purpose'];
+
+    // ======================
+    // AUTO CALCULATION
+    // ======================
+
+    // Flat interest
+    if ($interest_type == 'flat') {
+        $interest = ($principal * $rate / 100);
+        $total_payable = $principal + $interest;
+    } else {
+        // reducing balance (simple version)
+        $total_payable = $principal + ($principal * $rate / 100);
+    }
+
+    $installment_amount = $total_payable / $term;
+
+    // Maturity Date
+    $maturity_date = date('Y-m-d', strtotime($disbursement_date . " + $term months"));
+
+    // Get branch from member
+    $member = $conn->query("SELECT branch_id FROM members WHERE member_id=$member_id");
+    $m = $member->fetch_assoc();
+    $branch_id = $m['branch_id'];
+
+    // Insert
+    $sql = "INSERT INTO loans (
+        loan_code,
+        member_id,
+        branch_id,
+        principal_amount,
+        interest_rate,
+        interest_type,
+        loan_term_months,
+        installment_type,
+        installment_amount,
+        total_payable,
+        total_paid,
+        disbursement_date,
+        first_installment_date,
+        maturity_date,
+        status,
+        purpose
+    ) VALUES (
+        '$loan_code',
+        '$member_id',
+        '$branch_id',
+        '$principal',
+        '$rate',
+        '$interest_type',
+        '$term',
+        '$installment_type',
+        '$installment_amount',
+        '$total_payable',
+        0,
+        '$disbursement_date',
+        '$first_installment_date',
+        '$maturity_date',
+        'active',
+        '$purpose'
+    )";
+
+    $conn->query($sql);
+
+    header("Location: index.php");
+    exit();
+}
 ?>
 
-<link rel="stylesheet" href="../assets/css/loans.css">
+<!DOCTYPE html>
+<html>
+<head>
+<title>Add Loan</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
 
-<div class="main-content">
-    <div class="loan-form-container" style="max-width: 800px; margin: 0 auto;">
-        <div class="loan-form-card" style="background: white; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04); overflow: hidden;">
-            <div class="form-header" style="padding: 24px 32px; background: linear-gradient(135deg, #f8fafc, #eef2ff); border-bottom: 1px solid #e2e8f0;">
-                <h3 style="font-size: 20px; font-weight: 700; color: #0f172a; margin: 0;">
-                    <i class="fa-solid fa-plus-circle" style="color: #4f46e5;"></i> Create New Loan
-                </h3>
-                <p style="font-size: 14px; color: #64748b; margin: 4px 0 0;">Fill in the loan details below</p>
-            </div>
-            
-            <div class="form-body" style="padding: 32px;">
-                <?php if (isset($error)): ?>
-                    <div style="background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+<body class="bg-light">
+
+<div class="container mt-4">
+
+<h3>Add Loan</h3>
+
+<form method="POST">
+
+<!-- Loan Code -->
+<input type="text" name="loan_code" class="form-control mb-2" placeholder="Loan Code (L001)" required>
+
+<!-- Member -->
+<select name="member_id" class="form-control mb-2" required>
+<option value="">Select Member</option>
+
+<?php
+$members = $conn->query("SELECT * FROM members");
+while($m = $members->fetch_assoc()) {
+?>
+<option value="<?php echo $m['member_id']; ?>">
+    <?php echo $m['full_name']; ?> (<?php echo $m['member_code']; ?>)
+</option>
+<?php } ?>
+
+</select>
+
+<!-- Principal -->
+<input type="number" name="principal_amount" class="form-control mb-2" placeholder="Principal Amount" required>
+
+<!-- Interest -->
+<input type="number" step="0.01" name="interest_rate" class="form-control mb-2" placeholder="Interest Rate (%)" required>
+
+<!-- Interest Type -->
+<select name="interest_type" class="form-control mb-2">
+    <option value="flat">Flat</option>
+    <option value="reducing_balance">Reducing Balance</option>
+</select>
+
+<!-- Term -->
+<input type="number" name="loan_term_months" class="form-control mb-2" placeholder="Loan Term (months)" required>
+
+<!-- Installment Type -->
+<select name="installment_type" class="form-control mb-2">
+    <option value="monthly">Monthly</option>
+    <option value="weekly">Weekly</option>
+</select>
+
+<!-- Dates -->
+<input type="date" name="disbursement_date" class="form-control mb-2" required>
+
+<input type="date" name="first_installment_date" class="form-control mb-2" required>
+
+<!-- Purpose -->
+<input type="text" name="purpose" class="form-control mb-2" placeholder="Loan Purpose">
+
+<!-- Submit -->
+<button type="submit" name="submit" class="btn btn-success w-100">
+Create Loan
+</button>
+
+</form>
+
+</div>
+
+</body>
+</html>
