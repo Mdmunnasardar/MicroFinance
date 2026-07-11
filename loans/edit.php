@@ -8,8 +8,6 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $id = $_GET['id'];
-
-// GET LOAN
 $data = $conn->query("SELECT * FROM loans WHERE loan_id=$id")->fetch_assoc();
 
 if(isset($_POST['update'])){
@@ -22,7 +20,6 @@ if(isset($_POST['update'])){
     $interest_type = $_POST['interest_type'];
     $installment_type = $_POST['installment_type'];
 
-    // recalc
     $total_payable = $principal + ($principal * $rate / 100);
     $installment_amount = $total_payable / $term;
 
@@ -41,7 +38,7 @@ if(isset($_POST['update'])){
     ";
 
     $conn->query($sql);
-    header("Location: index.php");
+    header("Location: index.php?updated=1");
     exit();
 }
 ?>
@@ -49,21 +46,33 @@ if(isset($_POST['update'])){
 <!DOCTYPE html>
 <html>
 <head>
-<title>Edit Loan</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link href="loans.css" rel="stylesheet">
+    <title>Edit Loan</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- CRITICAL: Load custom CSS -->
+    <link href="../assets/css/loans.css" rel="stylesheet">
 </head>
 <body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
 
 <div class="container">
     <div class="form-wrapper">
         <div class="form-title">
-            <i class="fas fa-edit"></i>
-            Edit Loan #<?php echo $data['loan_code']; ?>
+            <div class="icon">
+                <i class="fas fa-edit"></i>
+            </div>
+            <span>Edit Loan #<?php echo $data['loan_code']; ?></span>
         </div>
         
-        <form method="POST">
+        <form method="POST" id="editForm">
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">
@@ -144,11 +153,13 @@ if(isset($_POST['update'])){
                 </div>
             </div>
 
-            <button type="submit" name="update" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 16px;">
+            <button type="submit" name="update" class="btn btn-primary" 
+                    style="width: 100%; padding: 14px; font-size: 16px; margin-top: var(--space-md);">
                 <i class="fas fa-save"></i> Update Loan
             </button>
             
-            <a href="index.php" class="btn btn-secondary" style="width: 100%; margin-top: 10px; padding: 12px;">
+            <a href="index.php" class="btn btn-secondary" 
+               style="width: 100%; margin-top: var(--space-md); padding: 12px;">
                 <i class="fas fa-arrow-left"></i> Back to Loan List
             </a>
         </form>

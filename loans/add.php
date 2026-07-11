@@ -26,64 +26,34 @@ if (isset($_POST['submit'])) {
     // AUTO CALCULATION
     // ======================
 
-    // Flat interest
     if ($interest_type == 'flat') {
         $interest = ($principal * $rate / 100);
         $total_payable = $principal + $interest;
     } else {
-        // reducing balance (simple version)
         $total_payable = $principal + ($principal * $rate / 100);
     }
 
     $installment_amount = $total_payable / $term;
-
-    // Maturity Date
     $maturity_date = date('Y-m-d', strtotime($disbursement_date . " + $term months"));
 
-    // Get branch from member
     $member = $conn->query("SELECT branch_id FROM members WHERE member_id=$member_id");
     $m = $member->fetch_assoc();
     $branch_id = $m['branch_id'];
 
-    // Insert
     $sql = "INSERT INTO loans (
-        loan_code,
-        member_id,
-        branch_id,
-        principal_amount,
-        interest_rate,
-        interest_type,
-        loan_term_months,
-        installment_type,
-        installment_amount,
-        total_payable,
-        total_paid,
-        disbursement_date,
-        first_installment_date,
-        maturity_date,
-        status,
-        purpose
+        loan_code, member_id, branch_id, principal_amount, interest_rate,
+        interest_type, loan_term_months, installment_type, installment_amount,
+        total_payable, total_paid, disbursement_date, first_installment_date,
+        maturity_date, status, purpose
     ) VALUES (
-        '$loan_code',
-        '$member_id',
-        '$branch_id',
-        '$principal',
-        '$rate',
-        '$interest_type',
-        '$term',
-        '$installment_type',
-        '$installment_amount',
-        '$total_payable',
-        0,
-        '$disbursement_date',
-        '$first_installment_date',
-        '$maturity_date',
-        'active',
-        '$purpose'
+        '$loan_code', '$member_id', '$branch_id', '$principal', '$rate',
+        '$interest_type', '$term', '$installment_type', '$installment_amount',
+        '$total_payable', 0, '$disbursement_date', '$first_installment_date',
+        '$maturity_date', 'active', '$purpose'
     )";
 
     $conn->query($sql);
-    header("Location: index.php");
+    header("Location: index.php?success=1");
     exit();
 }
 ?>
@@ -91,27 +61,40 @@ if (isset($_POST['submit'])) {
 <!DOCTYPE html>
 <html>
 <head>
-<title>Add New Loan</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link href="loans.css" rel="stylesheet">
+    <title>Create New Loan</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- CRITICAL: Load custom CSS -->
+    <link href="../assets/css/loans.css" rel="stylesheet">
 </head>
 <body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
 
 <div class="container">
     <div class="form-wrapper">
         <div class="form-title">
-            <i class="fas fa-plus-circle"></i>
-            Create New Loan
+            <div class="icon">
+                <i class="fas fa-plus-circle"></i>
+            </div>
+            <span>Create New Loan</span>
         </div>
         
-        <form method="POST">
+        <form method="POST" id="loanForm">
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">
                         <i class="fas fa-barcode"></i> Loan Code
                     </label>
-                    <input type="text" name="loan_code" class="form-control" placeholder="e.g., L001" required>
+                    <input type="text" name="loan_code" class="form-control" 
+                           placeholder="e.g., L001" required>
                 </div>
                 
                 <div class="form-group">
@@ -121,7 +104,7 @@ if (isset($_POST['submit'])) {
                     <select name="member_id" class="form-control" required>
                         <option value="">Select Member</option>
                         <?php
-                        $members = $conn->query("SELECT * FROM members");
+                        $members = $conn->query("SELECT * FROM members ORDER BY full_name");
                         while($m = $members->fetch_assoc()) {
                         ?>
                         <option value="<?php echo $m['member_id']; ?>">
@@ -137,14 +120,16 @@ if (isset($_POST['submit'])) {
                     <label class="form-label">
                         <i class="fas fa-money-bill-wave"></i> Principal Amount
                     </label>
-                    <input type="number" name="principal_amount" class="form-control" placeholder="Enter principal amount" required>
+                    <input type="number" name="principal_amount" class="form-control" 
+                           placeholder="Enter principal amount" required>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">
                         <i class="fas fa-percent"></i> Interest Rate
                     </label>
-                    <input type="number" step="0.01" name="interest_rate" class="form-control" placeholder="Enter interest rate" required>
+                    <input type="number" step="0.01" name="interest_rate" class="form-control" 
+                           placeholder="Enter interest rate" required>
                 </div>
             </div>
 
@@ -163,7 +148,8 @@ if (isset($_POST['submit'])) {
                     <label class="form-label">
                         <i class="fas fa-clock"></i> Loan Term (Months)
                     </label>
-                    <input type="number" name="loan_term_months" class="form-control" placeholder="e.g., 12" required>
+                    <input type="number" name="loan_term_months" class="form-control" 
+                           placeholder="e.g., 12" required>
                 </div>
             </div>
 
@@ -198,15 +184,18 @@ if (isset($_POST['submit'])) {
                     <label class="form-label">
                         <i class="fas fa-info-circle"></i> Loan Purpose
                     </label>
-                    <input type="text" name="purpose" class="form-control" placeholder="Enter loan purpose">
+                    <input type="text" name="purpose" class="form-control" 
+                           placeholder="Enter loan purpose">
                 </div>
             </div>
 
-            <button type="submit" name="submit" class="btn btn-success" style="width: 100%; padding: 14px; font-size: 16px;">
+            <button type="submit" name="submit" class="btn btn-success" 
+                    style="width: 100%; padding: 14px; font-size: 16px; margin-top: var(--space-md);">
                 <i class="fas fa-save"></i> Create Loan
             </button>
             
-            <a href="index.php" class="btn btn-secondary" style="width: 100%; margin-top: 10px; padding: 12px;">
+            <a href="index.php" class="btn btn-secondary" 
+               style="width: 100%; margin-top: var(--space-md); padding: 12px;">
                 <i class="fas fa-arrow-left"></i> Back to Loan List
             </a>
         </form>
@@ -214,5 +203,12 @@ if (isset($_POST['submit'])) {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.getElementById('loanForm').addEventListener('submit', function(e) {
+    const btn = this.querySelector('[type="submit"]');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+    btn.disabled = true;
+});
+</script>
 </body>
 </html>
