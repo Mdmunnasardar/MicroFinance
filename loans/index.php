@@ -64,7 +64,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
-        /* ========== COMPLETE STYLING - BLUE THEME ========== */
+        /* ========== COMPLETE STYLING - DEEP BLUE THEME ========== */
         * {
             margin: 0;
             padding: 0;
@@ -151,6 +151,11 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
         .header-title {
             font-size: 30px;
             font-weight: 800;
+            color: #FFFFFF;
+            letter-spacing: -0.5px;
+        }
+        
+        .header-title span {
             background: linear-gradient(135deg, #4F8CFF, #00D4FF);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -354,7 +359,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             border: 1px solid rgba(255, 82, 82, 0.08);
         }
         
-        /* ========== TABLE - FIXED ALIGNMENT ========== */
+        /* ========== TABLE ========== */
         .table-wrapper {
             background: rgba(10, 20, 40, 0.92);
             backdrop-filter: blur(16px);
@@ -402,18 +407,18 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
         }
         
         /* FIXED COLUMN WIDTHS */
-        .table thead th:nth-child(1) { width: 55px; }  /* ID */
-        .table thead th:nth-child(2) { width: 70px; }  /* Code */
-        .table thead th:nth-child(3) { width: 160px; } /* Member */
-        .table thead th:nth-child(4) { width: 90px; }  /* Principal */
-        .table thead th:nth-child(5) { width: 50px; }  /* Rate */
-        .table thead th:nth-child(6) { width: 90px; }  /* Total */
-        .table thead th:nth-child(7) { width: 90px; }  /* Paid */
-        .table thead th:nth-child(8) { width: 90px; }  /* Installment */
-        .table thead th:nth-child(9) { width: 85px; }  /* Status */
-        .table thead th:nth-child(10) { width: 100px; } /* Disbursement */
-        .table thead th:nth-child(11) { width: 100px; } /* Maturity */
-        .table thead th:nth-child(12) { width: 110px; } /* Actions */
+        .table thead th:nth-child(1) { width: 55px; }
+        .table thead th:nth-child(2) { width: 70px; }
+        .table thead th:nth-child(3) { width: 160px; }
+        .table thead th:nth-child(4) { width: 90px; }
+        .table thead th:nth-child(5) { width: 50px; }
+        .table thead th:nth-child(6) { width: 90px; }
+        .table thead th:nth-child(7) { width: 90px; }
+        .table thead th:nth-child(8) { width: 90px; }
+        .table thead th:nth-child(9) { width: 85px; }
+        .table thead th:nth-child(10) { width: 100px; }
+        .table thead th:nth-child(11) { width: 100px; }
+        .table thead th:nth-child(12) { width: 110px; }
         
         .table tbody tr {
             transition: all 0.3s ease;
@@ -428,12 +433,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             padding: 10px 8px;
             vertical-align: middle;
             border: none;
-            color: #7A9BCB;
             word-wrap: break-word;
-        }
-        
-        .table tbody td strong {
-            color: #E8F0FE;
         }
         
         /* ========== ID BADGE ========== */
@@ -473,27 +473,27 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
         }
         
         .badge-success {
-            background: rgba(0, 230, 118, 0.12);
+            background: rgba(0, 230, 118, 0.15);
             color: #69F0AE;
-            border: 1px solid rgba(0, 230, 118, 0.10);
+            border: 1px solid rgba(0, 230, 118, 0.12);
         }
         
         .badge-primary {
-            background: rgba(79, 140, 255, 0.12);
+            background: rgba(79, 140, 255, 0.15);
             color: #7DB0FF;
-            border: 1px solid rgba(79, 140, 255, 0.10);
+            border: 1px solid rgba(79, 140, 255, 0.12);
         }
         
         .badge-danger {
-            background: rgba(255, 82, 82, 0.12);
+            background: rgba(255, 82, 82, 0.15);
             color: #FF8A80;
-            border: 1px solid rgba(255, 82, 82, 0.10);
+            border: 1px solid rgba(255, 82, 82, 0.12);
         }
         
         .badge-warning {
-            background: rgba(255, 213, 79, 0.12);
+            background: rgba(255, 213, 79, 0.15);
             color: #FFD54F;
-            border: 1px solid rgba(255, 213, 79, 0.10);
+            border: 1px solid rgba(255, 213, 79, 0.12);
         }
         
         .badge-dark {
@@ -502,25 +502,130 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             border: 1px solid rgba(79, 140, 255, 0.06);
         }
         
-        /* ========== MEMBER COLUMN ========== */
+        /* ========== MEMBER COLUMN - BLUE COLOR ========== */
         .member-name {
-            font-weight: 600;
-            color: #E8F0FE;
-            font-size: 13px;
+            font-weight: 700;
+            color: #7DB0FF !important;
+            font-size: 14px;
             display: block;
+            text-shadow: 0 0 20px rgba(79, 140, 255, 0.15);
+            letter-spacing: 0.2px;
         }
         
         .member-code {
-            font-size: 10px;
+            font-size: 11px;
             color: #6B8AAA;
             display: block;
-            margin-top: 1px;
+            margin-top: 2px;
+            font-weight: 500;
         }
         
         .member-code i {
             color: #4F8CFF;
-            margin-right: 3px;
+            margin-right: 4px;
             font-size: 10px;
+        }
+        
+        /* ========== TABLE CELL COLORS - DEEP & VISUAL ========== */
+        /* ID Column */
+        .table tbody td:first-child {
+            color: #7DB0FF !important;
+            font-weight: 800;
+        }
+        
+        /* CODE Column */
+        .table tbody td:nth-child(2) {
+            color: #6BA3FF !important;
+            font-weight: 700;
+            font-size: 14px;
+            text-shadow: 0 0 30px rgba(79, 140, 255, 0.15);
+        }
+        
+        /* MEMBER Name - Already set above with !important */
+        
+        /* PRINCIPAL Column - Changed to Blue */
+        .table tbody td:nth-child(4) {
+            color: #7DB0FF !important;
+            font-weight: 700;
+            font-size: 14px;
+            text-shadow: 0 0 20px rgba(79, 140, 255, 0.1);
+        }
+        
+        /* RATE Column */
+        .table tbody td:nth-child(5) {
+            color: #00D4FF !important;
+            font-weight: 700;
+            font-size: 14px;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.15);
+        }
+        
+        /* TOTAL Column */
+        .table tbody td:nth-child(6) {
+            color: #7DB0FF !important;
+            font-weight: 700;
+            font-size: 14px;
+            text-shadow: 0 0 30px rgba(79, 140, 255, 0.15);
+        }
+        
+        /* PAID Column */
+        .table tbody td:nth-child(7) {
+            color: #69F0AE !important;
+            font-weight: 700;
+            font-size: 14px;
+            text-shadow: 0 0 30px rgba(0, 230, 118, 0.1);
+        }
+        
+        /* INSTALLMENT Column */
+        .table tbody td:nth-child(8) {
+            color: #B8C8E8 !important;
+            font-weight: 600;
+        }
+        
+        /* DISBURSEMENT & MATURITY Columns */
+        .table tbody td:nth-child(10),
+        .table tbody td:nth-child(11) {
+            color: #8AA8D0 !important;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        /* ========== BACK BUTTON ========== */
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: #7A9BCB;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            padding: 12px 24px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(79, 140, 255, 0.08);
+        }
+        
+        .back-button:hover {
+            color: #7DB0FF;
+            background: rgba(79, 140, 255, 0.06);
+            transform: translateX(-6px);
+            border-color: rgba(79, 140, 255, 0.15);
+            box-shadow: 0 0 30px rgba(79, 140, 255, 0.08);
+        }
+        
+        .back-button i {
+            font-size: 16px;
+            color: #4F8CFF;
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover i {
+            transform: translateX(-4px) scale(1.1);
+        }
+        
+        .back-button .text {
+            color: #E8F0FE;
+            font-weight: 600;
         }
         
         /* Floating Orbs */
@@ -578,37 +683,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
         .stat-card { animation: slideUp 0.8s ease 0.1s both; }
         .table-wrapper { animation: slideUp 0.8s ease 0.2s both; }
         .table tbody tr { animation: slideUp 0.5s ease both; }
-        
-        /* ========== TABLE CELL COLORS ========== */
-        .table tbody td:first-child strong {
-            color: #7DB0FF !important;
-            font-weight: 800;
-        }
-        
-        .table tbody td:nth-child(2) {
-            color: #7DB0FF !important;
-            font-weight: 700;
-        }
-        
-        .table tbody td:nth-child(4) {
-            color: #E8F0FE !important;
-            font-weight: 600;
-        }
-        
-        .table tbody td:nth-child(5) {
-            color: #00D4FF !important;
-            font-weight: 600;
-        }
-        
-        .table tbody td:nth-child(6) {
-            color: #7DB0FF !important;
-            font-weight: 600;
-        }
-        
-        .table tbody td:nth-child(7) {
-            color: #69F0AE !important;
-            font-weight: 600;
-        }
+        .back-button { animation: slideUp 0.8s ease 0.3s both; }
         
         /* Responsive */
         @media (max-width: 768px) {
@@ -654,6 +729,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
                 padding: 0 6px;
             }
             .member-name { font-size: 12px; }
+            .back-button { padding: 10px 18px; font-size: 13px; }
         }
         
         @media (max-width: 480px) {
@@ -674,6 +750,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             }
             .member-name { font-size: 10px; }
             .member-code { font-size: 8px; }
+            .back-button { padding: 8px 14px; font-size: 12px; }
         }
     </style>
 </head>
@@ -694,7 +771,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
         </div>
         <div>
             <div class="header-title">
-                Loan Management
+                <span>Loan</span> Management
                 <span class="header-subtitle">
                     <i class="fas fa-users"></i> <?php echo $total_loans; ?> Active Loans
                 </span>
@@ -751,7 +828,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
     </div>
 </div>
 
-<!-- Table - FIXED ALIGNMENT -->
+<!-- Table -->
 <div class="table-wrapper">
     <div class="table-responsive">
         <table class="table">
@@ -788,11 +865,9 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
                             </td>
                             
                             <!-- CODE -->
-                            <td style="font-weight: 700; font-size: 13px;">
-                                <?php echo $row['loan_code']; ?>
-                            </td>
+                            <td><?php echo $row['loan_code']; ?></td>
                             
-                            <!-- MEMBER - FIXED: Name and code properly separated -->
+                            <!-- MEMBER - Name now in Blue -->
                             <td>
                                 <div style="display: flex; flex-direction: column; gap: 1px;">
                                     <span class="member-name"><?php echo $row['full_name']; ?></span>
@@ -802,30 +877,20 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
                                 </div>
                             </td>
                             
-                            <!-- PRINCIPAL -->
-                            <td style="font-weight: 600; white-space: nowrap;">
-                                ৳ <?php echo number_format($row['principal_amount'], 2); ?>
-                            </td>
+                            <!-- PRINCIPAL - Now in Blue -->
+                            <td>৳ <?php echo number_format($row['principal_amount'], 2); ?></td>
                             
                             <!-- RATE -->
-                            <td style="font-weight: 600; white-space: nowrap;">
-                                <?php echo $row['interest_rate']; ?>%
-                            </td>
+                            <td><?php echo $row['interest_rate']; ?>%</td>
                             
                             <!-- TOTAL -->
-                            <td style="font-weight: 600; white-space: nowrap;">
-                                ৳ <?php echo number_format($row['total_payable'], 2); ?>
-                            </td>
+                            <td>৳ <?php echo number_format($row['total_payable'], 2); ?></td>
                             
                             <!-- PAID -->
-                            <td style="font-weight: 600; white-space: nowrap;">
-                                ৳ <?php echo number_format($row['total_paid'], 2); ?>
-                            </td>
+                            <td>৳ <?php echo number_format($row['total_paid'], 2); ?></td>
                             
                             <!-- INSTALLMENT -->
-                            <td style="white-space: nowrap;">
-                                ৳ <?php echo number_format($row['installment_amount'], 2); ?>
-                            </td>
+                            <td>৳ <?php echo number_format($row['installment_amount'], 2); ?></td>
                             
                             <!-- STATUS -->
                             <td>
@@ -845,14 +910,10 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
                             </td>
                             
                             <!-- DISBURSEMENT -->
-                            <td style="font-size: 11px; white-space: nowrap;">
-                                <?php echo date('d M Y', strtotime($row['disbursement_date'])); ?>
-                            </td>
+                            <td><?php echo date('d M Y', strtotime($row['disbursement_date'])); ?></td>
                             
                             <!-- MATURITY -->
-                            <td style="font-size: 11px; white-space: nowrap;">
-                                <?php echo date('d M Y', strtotime($row['maturity_date'])); ?>
-                            </td>
+                            <td><?php echo date('d M Y', strtotime($row['maturity_date'])); ?></td>
                             
                             <!-- ACTIONS -->
                             <td>
@@ -885,6 +946,14 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
             </tbody>
         </table>
     </div>
+</div>
+
+<!-- Back Button -->
+<div style="margin-top: 24px; text-align: center;">
+    <a href="../dashboard.php" class="back-button">
+        <i class="fas fa-arrow-left"></i>
+        <span class="text">Back to Dashboard</span>
+    </a>
 </div>
 
 </div>
