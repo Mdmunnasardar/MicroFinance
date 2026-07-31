@@ -163,7 +163,7 @@ include __DIR__ . "/../Views/layouts/header.php";
                     </a>
                 <?php endif; ?>
                 
-                <a href="dashboard.php" class="btn btn-secondary">
+                <a href="dashboard/" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Back
                 </a>
             </div>
