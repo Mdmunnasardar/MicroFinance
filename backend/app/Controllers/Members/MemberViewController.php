@@ -1,7 +1,7 @@
 <?php
 // TODO(cleanup): extract shared member-fetch SQL (lines 1-46) into includes/lib/member.php; reuse from quick_view.php.
 session_start();
-include "../config/db.php";
+include __DIR__ . "/../../Config/db.php";
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../index.php");

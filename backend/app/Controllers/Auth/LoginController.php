@@ -1,6 +1,6 @@
 <?php
 session_start();
-include "config/db.php";
+include __DIR__ . "/../../Config/db.php";
 
 // If already logged in, go to dashboard
 if (isset($_SESSION['user_id'])) {

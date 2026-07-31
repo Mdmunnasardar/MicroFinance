@@ -1,6 +1,6 @@
 <?php
 session_start();
-include "../config/db.php";
+include __DIR__ . "/../../Config/db.php";
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../index.php");
@@ -95,7 +95,7 @@ $current_members = $stmt->get_result();
 
 $success = isset($_GET['success']) ? $_GET['success'] : '';
 
-include "../includes/header.php";
+include __DIR__ . "/../../Views/layouts/header.php";
 ?>
 
 <div class="container mx-auto px-4 py-6 max-w-7xl">
@@ -279,4 +279,4 @@ include "../includes/header.php";
 
 <script src="../assets/js/committees.js"></script>
 
-<?php include "../includes/footer.php"; ?>
+<?php include __DIR__ . "/../../Views/layouts/footer.php"; ?>

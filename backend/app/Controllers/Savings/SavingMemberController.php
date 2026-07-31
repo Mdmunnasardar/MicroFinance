@@ -1,5 +1,5 @@
 <?php
-include "../config/db.php";
+include __DIR__ . "/../../Config/db.php";
 
 $id = $_GET['id'];
 

@@ -1,6 +1,6 @@
 <?php
 session_start();
-include "../config/db.php";
+include __DIR__ . "/../../Config/db.php";
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../index.php");
@@ -50,9 +50,9 @@ if (isset($_POST['submit'])) {
     }
 }
 
-include "../includes/header.php";
-include "../includes/sidebar.php";
-include "../includes/topbar.php";
+include __DIR__ . "/../../Views/layouts/header.php";
+include __DIR__ . "/../../Views/layouts/sidebar.php";
+include __DIR__ . "/../../Views/layouts/topbar.php";
 ?>
 
 <link rel="stylesheet" href="../assets/css/loans.css">
@@ -139,4 +139,4 @@ include "../includes/topbar.php";
     </div>
 </div>
 
-<?php include "../includes/footer.php"; ?>
+<?php include __DIR__ . "/../../Views/layouts/footer.php"; ?>

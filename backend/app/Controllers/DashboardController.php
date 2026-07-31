@@ -1,6 +1,6 @@
 <?php
 session_start();
-include "config/db.php";
+include __DIR__ . "/../Config/db.php";
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: index.php");
@@ -104,14 +104,14 @@ LIMIT 5
 ");
 
 // Include header
-include "includes/header.php";
+include __DIR__ . "/../Views/layouts/header.php";
 
 // Include ALL components
-include "includes/components/stat-card.php";
-include "includes/components/overdue-alert.php";
-include "includes/components/chart-card.php";
-include "includes/components/health-card.php";
-include "includes/components/top-borrower.php";
+include __DIR__ . "/../Views/components/stat-card.php";
+include __DIR__ . "/../Views/components/overdue-alert.php";
+include __DIR__ . "/../Views/components/chart-card.php";
+include __DIR__ . "/../Views/components/health-card.php";
+include __DIR__ . "/../Views/components/top-borrower.php";
 
 // Prepare chart data for JavaScript
 $chartLabels = array_map(function($m) {
@@ -122,10 +122,10 @@ $chartPayData = json_encode($payData);
 ?>
 
 <!-- Include Sidebar -->
-<?php include "includes/sidebar.php"; ?>
+<?php include __DIR__ . "/../Views/layouts/sidebar.php"; ?>
 
 <!-- Include Topbar -->
-<?php include "includes/topbar.php"; ?>
+<?php include __DIR__ . "/../Views/layouts/topbar.php"; ?>
 
 <!-- ========================================
    MAIN CONTENT
@@ -370,4 +370,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-<?php include "includes/footer.php"; ?>
+<?php include __DIR__ . "/../Views/layouts/footer.php"; ?>

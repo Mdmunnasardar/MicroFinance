@@ -1,5 +1,5 @@
 <?php
-include "../config/db.php";
+include __DIR__ . "/../../Config/db.php";
 
 header('Content-Type: text/csv');
 header('Content-Disposition: attachment; filename=members_' . date('Y-m-d') . '.csv');

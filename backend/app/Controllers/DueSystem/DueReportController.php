@@ -1,5 +1,5 @@
 <?php
-include "../config/db.php";
+include __DIR__ . "/../../Config/db.php";
 
 $total = $conn->query("SELECT SUM(principal_amount) as t FROM loans")->fetch_assoc()['t'] ?? 0;
 $paid = $conn->query("SELECT SUM(total_paid) as t FROM loans")->fetch_assoc()['t'] ?? 0;

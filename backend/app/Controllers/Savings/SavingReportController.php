@@ -1,5 +1,5 @@
 <?php
-include "../config/db.php";
+include __DIR__ . "/../../Config/db.php";
 
 $total = $conn->query("SELECT SUM(balance) AS t FROM savings")->fetch_assoc()['t'];
 $count = $conn->query("SELECT COUNT(*) AS t FROM savings")->fetch_assoc()['t'];

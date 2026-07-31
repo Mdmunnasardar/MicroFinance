@@ -1,6 +1,6 @@
 <?php
 session_start();
-include "../config/db.php";
+include __DIR__ . "/../../Config/db.php";
 
 // Authentication check
 if (!isset($_SESSION['user_id'])) {
@@ -101,34 +101,34 @@ $table_data = [
 <body>
 
 <!-- Include Layout Components -->
-<?php include "../includes/header.php"; ?>
-<?php include "../includes/sidebar.php"; ?>
-<?php include "../includes/topbar.php"; ?>
+<?php include __DIR__ . "/../../Views/layouts/header.php"; ?>
+<?php include __DIR__ . "/../../Views/layouts/sidebar.php"; ?>
+<?php include __DIR__ . "/../../Views/layouts/topbar.php"; ?>
 
 <!-- Main Content -->
 <div class="main-content">
     <div class="container mx-auto px-4 py-8">
         
         <!-- Page Header -->
-        <?php include "../includes/components/member/page-header.php"; ?>
+        <?php include __DIR__ . "/../../Views/components/member/page-header.php"; ?>
         
         <!-- Stats Cards -->
-        <?php include "../includes/components/member/stats.php"; ?>
+        <?php include __DIR__ . "/../../Views/components/member/stats.php"; ?>
         
         <!-- Filters -->
-        <?php include "../includes/components/member/filters.php"; ?>
+        <?php include __DIR__ . "/../../Views/components/member/filters.php"; ?>
         
         <!-- Members Table -->
-        <?php include "../includes/components/member/table.php"; ?>
+        <?php include __DIR__ . "/../../Views/components/member/table.php"; ?>
         
     </div>
 </div>
 
 <!-- Quick View Modal -->
-<?php include "../includes/components/member/modal.php"; ?>
+<?php include __DIR__ . "/../../Views/components/member/modal.php"; ?>
 
 <!-- Footer -->
-<?php include "../includes/footer.php"; ?>
+<?php include __DIR__ . "/../../Views/layouts/footer.php"; ?>
 
 <!-- JavaScript -->
 <script src="../assets/js/members.js"></script>

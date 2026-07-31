@@ -1,6 +1,6 @@
 <?php
 session_start();
-include "../config/db.php";
+include __DIR__ . "/../../Config/db.php";
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
@@ -50,7 +50,7 @@ if (isset($_POST['submit'])) {
     }
 }
 
-include "../includes/header.php";
+include __DIR__ . "/../../Views/layouts/header.php";
 ?>
 
 <div class="container mx-auto px-4 py-8 max-w-4xl">
@@ -115,4 +115,4 @@ include "../includes/header.php";
     </div>
 </div>
 
-<?php include "../includes/footer.php"; ?>
+<?php include __DIR__ . "/../../Views/layouts/footer.php"; ?>

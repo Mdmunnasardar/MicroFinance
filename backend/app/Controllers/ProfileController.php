@@ -1,6 +1,6 @@
 <?php
 session_start();
-include "config/db.php";
+include __DIR__ . "/../Config/db.php";
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
@@ -56,7 +56,7 @@ if ($user['role'] == 'field_officer') {
     $stats = $stmt->get_result()->fetch_assoc();
 }
 
-include "includes/header.php";
+include __DIR__ . "/../Views/layouts/header.php";
 ?>
 
 <!DOCTYPE html>
@@ -78,7 +78,7 @@ include "includes/header.php";
             <!-- Avatar -->
             <div class="profile-avatar">
                 <?php if (!empty($user['avatar']) && file_exists("uploads/avatars/" . $user['avatar'])): ?>
-                <img src="uploads/avatars/<?php echo $user['avatar']; ?>" alt="Avatar" class="avatar-img">
+                <img src="../../uploads/avatars/<?php echo $user['avatar']; ?>" alt="Avatar" class="avatar-img">
                 <?php else: ?>
                 <div class="avatar-img" style="background: var(--primary-gradient);">
                     <?php 
@@ -425,4 +425,4 @@ function toggleOfficerStatus(id, currentStatus) {
 </body>
 </html>
 
-<?php include "includes/footer.php"; ?>
+<?php include __DIR__ . "/../Views/layouts/footer.php"; ?>
