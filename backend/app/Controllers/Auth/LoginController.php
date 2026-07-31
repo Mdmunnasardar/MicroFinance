@@ -4,7 +4,7 @@ include __DIR__ . "/../../Config/db.php";
 
 // If already logged in, go to dashboard
 if (isset($_SESSION['user_id'])) {
-    header("Location: dashboard.php");
+    header("Location: dashboard/");
     exit();
 }
 
@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $_SESSION['role'] = $user['role'];
                 $_SESSION['name'] = $user['full_name'];
                 
-                header("Location: dashboard.php");
+                header("Location: dashboard/");
                 exit();
             } else {
                 $error = 'Invalid password';
