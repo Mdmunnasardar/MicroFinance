@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Controllers\JsonApi;
 
 use App\Config\Database;
 use App\Helpers\JsonResponse;
 use App\Helpers\Request;
-use mysqli;
 
 final class AuthController
 {

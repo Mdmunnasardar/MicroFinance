@@ -18,42 +18,37 @@ if ($path === '') {
     $path = '/';
 }
 
-$candidates = [];
-$methodAllowed = false;
+$pathMatched = false;
 foreach ($routes as [$routeMethod, $routePath, $controller, $action, $middleware]) {
-    $params = matchRoute($routeMethod, $method, $routePath, $path);
+    $params = matchPath($routePath, $path);
     if ($params === null) {
         continue;
     }
 
-    if (strtoupper($routeMethod) === $method) {
-        $request->setRouteParams($params);
-        foreach ($middleware as $name) {
-            if ($name === 'auth') {
-                AuthMiddleware::handle();
-            }
-        }
-        (new $controller())->{$action}($request);
-        return;
+    $pathMatched = true;
+
+    if (strtoupper($routeMethod) !== $method) {
+        continue;
     }
 
-    $methodAllowed = true;
+    $request->setRouteParams($params);
+    foreach ($middleware as $name) {
+        if ($name === 'auth') {
+            AuthMiddleware::handle();
+        }
+    }
+    (new $controller())->{$action}($request);
+    return;
 }
 
-if ($methodAllowed) {
+if ($pathMatched) {
     JsonResponse::error('METHOD_NOT_ALLOWED', 'Method not allowed for this endpoint.', 405);
 }
 
 JsonResponse::error('NOT_FOUND', 'No API endpoint matches ' . $method . ' ' . $path, 404);
 
-function matchRoute(string $routeMethod, string $requestMethod, string $routePath, string $requestPath): ?array
+function matchPath(string $routePath, string $requestPath): ?array
 {
-    if ($routeMethod !== 'ANY' && strtoupper($routeMethod) !== $requestMethod && strtoupper($routeMethod) !== '*') {
-        if (strtoupper($routeMethod) !== $requestMethod) {
-            return str_starts_with($routePath, '/api/') ? [] : null;
-        }
-    }
-
     $routeParts = array_values(array_filter(explode('/', $routePath), static fn ($p) => $p !== ''));
     $pathParts = array_values(array_filter(explode('/', $requestPath), static fn ($p) => $p !== ''));
 
