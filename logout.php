@@ -1,6 +1,3 @@
 <?php
-session_start();
-session_destroy();
-header("Location: index.php");
-exit();
-?>
+// Routing shim — real implementation lives at backend/app/Controllers/Auth/LogoutController.php
+require_once __DIR__ . '/backend/app/Controllers/Auth/LogoutController.php';
