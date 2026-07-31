@@ -73,7 +73,7 @@ $branches = $conn->query("SELECT * FROM branches ORDER BY branch_name");
 <div class="container">
 
     <!-- Back to Dashboard -->
-    <a href="../dashboard.php" class="back-btn">
+    <a href="../dashboard/" class="back-btn">
         <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
     </a>
 
