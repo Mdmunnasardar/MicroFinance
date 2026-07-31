@@ -1,4 +1,5 @@
 <?php
+// TODO(cleanup): extract shared member-fetch SQL (lines 1-46) into includes/lib/member.php; reuse from quick_view.php.
 session_start();
 include "../config/db.php";
 

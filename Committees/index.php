@@ -1,4 +1,5 @@
 <?php
+// TODO(cleanup): rename folder 'Committees/' to lowercase 'committees/' after updating all references.
 session_start();
 include "../config/db.php";
 

@@ -64,6 +64,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
+        /* TODO(cleanup): consolidate loans inline CSS (~600 lines) into assets/css/loans.css. */
         /* ========== COMPLETE STYLING - DEEP BLUE THEME ========== */
         * {
             margin: 0;
@@ -885,6 +886,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
                             <!-- STATUS -->
                             <td>
                                 <?php
+                                // TODO(cleanup): extract loan status config to includes/lib/loan_status.php and include from both index.php and view.php.
                                 $status_config = [
                                     'active' => ['class' => 'badge-success', 'icon' => 'fa-check-circle', 'label' => 'Active'],
                                     'closed' => ['class' => 'badge-primary', 'icon' => 'fa-check-double', 'label' => 'Closed'],
