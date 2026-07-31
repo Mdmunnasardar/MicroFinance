@@ -13,7 +13,7 @@ $current = basename($_SERVER['PHP_SELF']);
     </div>
     
     <div class="sidebar-menu">
-        <a href="dashboard.php" class="<?= ($current=="dashboard.php")?'active':''; ?>">
+        <a href="dashboard/" class="<?= str_contains($_SERVER['PHP_SELF'], '/dashboard') ? 'active' : ''; ?>">
             <i class="fa-solid fa-chart-pie"></i>
             Dashboard
         </a>
