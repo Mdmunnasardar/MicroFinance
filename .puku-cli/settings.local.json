@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(for f:*)",
+      "Bash(do C:/xampp/php/php.exe -l \"$f\")",
+      "Bash(done)",
+      "Bash(python:*)"
+    ]
+  }
+}
