@@ -32,7 +32,7 @@ $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 
 if (!$user) {
-    header("Location: dashboard.php");
+    header("Location: dashboard/");
     exit();
 }
 
