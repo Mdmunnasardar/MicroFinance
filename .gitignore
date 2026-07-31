@@ -13,3 +13,6 @@ backend/storage/logs/*.log
 # OS
 Thumbs.db
 .DS_Store
+
+.puku-cli
+.node_modules
