@@ -14,7 +14,7 @@ $current_user_role = $_SESSION['role'] ?? '';
 // Check permissions - only admins and branch managers can view others
 if ($user_id != $current_user_id) {
     if (!in_array($current_user_role, ['admin', 'branch_manager'])) {
-        header("Location: dashboard.php");
+        header("Location: dashboard/");
         exit();
     }
 }

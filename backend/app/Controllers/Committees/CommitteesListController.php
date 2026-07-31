@@ -102,7 +102,7 @@ include __DIR__ . "/../../Views/layouts/header.php";
             </div>
         </div>
         <div class="header-actions">
-            <a href="../dashboard.php" class="btn btn-secondary">
+            <a href="../dashboard/" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Dashboard
             </a>
             <a href="add.php" class="btn btn-primary">

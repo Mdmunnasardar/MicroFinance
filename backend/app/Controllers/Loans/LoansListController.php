@@ -943,7 +943,7 @@ $collection_rate = $total_amount > 0 ? ($total_paid / $total_amount) * 100 : 0;
 
 <!-- Back Button -->
 <div style="margin-top: 24px; text-align: center;">
-    <a href="../dashboard.php" class="back-button">
+    <a href="../dashboard/" class="back-button">
         <i class="fas fa-arrow-left"></i>
         <span class="text">Back to Dashboard</span>
     </a>
