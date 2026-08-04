@@ -7,7 +7,8 @@
       "Bash(python:*)",
       "Read(//tmp/puku/**)",
       "Bash(ls /workspace)",
-      "Bash(php:*)"
+      "Bash(php:*)",
+      "Bash(find /c/xampp/htdocs/MicroFinance -name *.sql -not -path */node_modules/*)"
     ]
   }
 }

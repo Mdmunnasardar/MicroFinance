@@ -5,13 +5,13 @@ const legacyBase = 'http://localhost/MicroFinance';
 
 const internalLinks = [
   { to: '/', label: 'Dashboard', icon: '📊', end: true },
+  { to: '/installments', label: 'Installments', icon: '💳' },
 ];
 
 const legacyLinks = [
   { to: `${legacyBase}/members/`, label: 'Members', icon: '👥' },
   { to: `${legacyBase}/Committees/`, label: 'Committees', icon: '🧩' },
   { to: `${legacyBase}/loans/`, label: 'Loans', icon: '💰' },
-  { to: `${legacyBase}/installments/`, label: 'Installments', icon: '💳' },
   { to: `${legacyBase}/savings/`, label: 'Savings', icon: '🐖' },
   { to: `${legacyBase}/due_system/`, label: 'Due System', icon: '⏰' },
 ];

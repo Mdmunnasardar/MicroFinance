@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 const titleMap = {
   '/': 'Dashboard',
+  '/installments': 'Installments',
 };
 
 export default function Topbar() {
