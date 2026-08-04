@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 include __DIR__ . "/../../Config/db.php";
 
 // If already logged in, go to dashboard
@@ -13,24 +15,30 @@ $error = '';
 // Handle login form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = trim($_POST['username'] ?? '');
-    $password = trim($_POST['password'] ?? '');
-    
+    $password = $_POST['password'] ?? '';
+
     if (empty($username) || empty($password)) {
         $error = 'Please enter username and password';
     } else {
-        $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
+        $stmt = $conn->prepare("SELECT user_id, username, password_hash, full_name, role, is_active FROM users WHERE username = ? LIMIT 1");
         $stmt->bind_param("s", $username);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($result->num_rows > 0) {
             $user = $result->fetch_assoc();
-            
-            if (password_verify($password, $user['password_hash'])) {
+
+            if ((int)$user['is_active'] !== 1) {
+                $error = 'Your account is inactive. Please contact the administrator.';
+            } elseif (password_verify($password, $user['password_hash'])) {
+                // Prevent session fixation: regenerate session ID on successful login
+                session_regenerate_id(true);
+
                 $_SESSION['user_id'] = $user['user_id'];
+                $_SESSION['username'] = $user['username'];
                 $_SESSION['role'] = $user['role'];
                 $_SESSION['name'] = $user['full_name'];
-                
+
                 header("Location: dashboard.php");
                 exit();
             } else {

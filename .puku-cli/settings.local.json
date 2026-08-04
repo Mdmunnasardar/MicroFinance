@@ -4,7 +4,10 @@
       "Bash(for f:*)",
       "Bash(do C:/xampp/php/php.exe -l \"$f\")",
       "Bash(done)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Read(//tmp/puku/**)",
+      "Bash(ls /workspace)",
+      "Bash(php:*)"
     ]
   }
 }
