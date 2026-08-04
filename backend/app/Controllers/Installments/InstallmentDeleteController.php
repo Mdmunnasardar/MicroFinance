@@ -44,8 +44,8 @@ WHERE loan_id=$loan_id
 
 // 4. (OPTIONAL) RESET INSTALLMENT STATUS SAFE WAY
 $conn->query("
-UPDATE loan_installments
-SET status='pending', paid_date=NULL
+UPDATE installments
+SET status='pending', paid_date=NULL, paid_amount=0
 WHERE loan_id=$loan_id
 ");
 

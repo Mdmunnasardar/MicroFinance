@@ -40,8 +40,8 @@ if(isset($_POST['submit'])){
 
     // 4. UPDATE INSTALLMENT (AUTO MARK NEXT ONE PAID)
     $inst = $conn->query("
-        SELECT installment_id
-        FROM loan_installments
+        SELECT installment_id, due_amount, paid_amount
+        FROM installments
         WHERE loan_id=$loan_id AND status='pending'
         ORDER BY installment_no ASC
         LIMIT 1
@@ -49,11 +49,14 @@ if(isset($_POST['submit'])){
 
     if($inst && $inst->num_rows > 0){
         $i = $inst->fetch_assoc();
+        $paid_amount = (float)$i['paid_amount'] + (float)$amount;
+        $status = $paid_amount >= (float)$i['due_amount'] ? 'paid' : 'pending';
+        $paid_date_value = $status === 'paid' ? "'$payment_date'" : 'NULL';
 
         $conn->query("
-            UPDATE loan_installments
-            SET status='paid', paid_date='$payment_date'
-            WHERE installment_id=".$i['installment_id']."
+            UPDATE installments
+            SET paid_amount='$paid_amount', status='$status', paid_date=$paid_date_value
+            WHERE installment_id=".(int)$i['installment_id']."
         ");
     }
 
