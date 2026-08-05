@@ -5,8 +5,10 @@ const STATUS_LABEL = {
   overdue: 'Overdue',
 };
 
-const formatMoney = (value) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(Number(value) || 0);
+const formatMoney = (value) => {
+  const n = Number(value) || 0;
+  return `৳ ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 
 const formatDate = (value) => {
   if (!value) return '—';

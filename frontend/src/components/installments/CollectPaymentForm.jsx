@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-const formatMoney = (value) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(Number(value) || 0);
+const formatMoney = (value) => {
+  const n = Number(value) || 0;
+  return `৳ ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 
 const initials = (value) => {
   if (!value) return 'FO';
@@ -173,8 +175,8 @@ export default function CollectPaymentForm({ open, installment, busy, error, col
             </span>
           </div>
           <div className="inst-balance-amount">
-            <span className="inst-balance-currency" aria-hidden>$</span>
-            <span className="inst-balance-num">{remaining.toFixed(2)}</span>
+            <span className="inst-balance-currency" aria-hidden>৳</span>
+            <span className="inst-balance-num">{remaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div className="inst-balance-meta">
             <span><strong>{formatMoney(due)}</strong> due</span>
@@ -259,7 +261,7 @@ export default function CollectPaymentForm({ open, installment, busy, error, col
               <label className="inst-field">
                 <span className="inst-field-label">Amount collected today</span>
                 <div className={`inst-currency-input inst-currency-input-lg ${overLimit ? 'is-error' : ''}`}>
-                  <span className="inst-currency-prefix" aria-hidden>$</span>
+                  <span className="inst-currency-prefix" aria-hidden>৳</span>
                   <input
                     type="number"
                     min="0"

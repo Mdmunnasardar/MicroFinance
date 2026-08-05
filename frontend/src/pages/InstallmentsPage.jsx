@@ -22,7 +22,8 @@ function buildStats(items) {
 }
 
 function formatMoney(value) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(Number(value) || 0);
+  const n = Number(value) || 0;
+  return `৳ ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 const heroIcons = {
@@ -330,13 +331,22 @@ export default function InstallmentsPage() {
             <span className="inst-page-stat-label">Collected</span>
             <span className="inst-page-stat-value">{formatMoney(stats.paidTotal)}</span>
           </div>
-          <a className="inst-page-cta" href="./collect-payment">
+          <button
+            type="button"
+            className="inst-page-cta"
+            onClick={() => {
+              const next = items.find((it) => it.status !== 'paid') || items[0];
+              if (next) openCollect(next);
+            }}
+            disabled={loading || items.length === 0}
+            title={items.length === 0 ? 'No installments available' : 'Record a payment for the next pending installment'}
+          >
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <rect x="2" y="6" width="20" height="12" rx="2" />
               <circle cx="12" cy="12" r="2" />
             </svg>
             <span>Collect Payment</span>
-          </a>
+          </button>
         </div>
       </header>
 
@@ -562,8 +572,8 @@ export default function InstallmentsPage() {
                       </span>
                     </div>
                     <div className="inst-balance-amount">
-                      <span className="inst-balance-currency" aria-hidden>$</span>
-                      <span className="inst-balance-num">{(Number(detailsInstallment.balance) || 0).toFixed(2)}</span>
+                      <span className="inst-balance-currency" aria-hidden>৳</span>
+                      <span className="inst-balance-num">{(Number(detailsInstallment.balance) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                     <div className="inst-balance-meta">
                       <span><strong>{formatMoney(detailsInstallment.dueAmount)}</strong> due</span>
