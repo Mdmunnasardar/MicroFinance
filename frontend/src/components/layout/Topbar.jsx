@@ -11,6 +11,11 @@ const titleMap = {
   '/loans': 'Loans',
   '/loans/new': 'Create Loan',
   '/installments': 'Installments',
+  '/savings': 'Savings',
+  '/savings/new': 'Add Savings',
+  '/savings/deposit': 'Deposit Savings',
+  '/savings/withdraw': 'Withdraw Savings',
+  '/savings/transactions': 'Savings Transactions',
 };
 
 // Legacy endpoints used by PHP topbar.php (these work; the /api/* JSON

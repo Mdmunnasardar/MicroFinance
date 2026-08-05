@@ -62,15 +62,19 @@ return [
     ['DELETE', '/api/installments/{id}',                             \App\Controllers\JsonApi\InstallmentsController::class, 'destroy', ['auth']],
 
     // Savings
+    // Static sub-routes (/api/savings/member/{id}, /api/savings/deposits,
+    // /api/savings/withdrawals, /api/savings/transactions) MUST come before
+    // the dynamic /api/savings/{id} route, otherwise the {id} placeholder
+    // captures them and returns NOT_FOUND.
     ['GET',    '/api/savings',                                       \App\Controllers\JsonApi\SavingsController::class, 'index',         ['auth']],
     ['POST',   '/api/savings',                                       \App\Controllers\JsonApi\SavingsController::class, 'store',         ['auth']],
-    ['GET',    '/api/savings/{id}',                                  \App\Controllers\JsonApi\SavingsController::class, 'show',          ['auth']],
-    ['PUT',    '/api/savings/{id}',                                  \App\Controllers\JsonApi\SavingsController::class, 'update',        ['auth']],
-    ['DELETE', '/api/savings/{id}',                                  \App\Controllers\JsonApi\SavingsController::class, 'destroy',       ['auth']],
     ['GET',    '/api/savings/member/{memberId}',                     \App\Controllers\JsonApi\SavingsController::class, 'byMember',      ['auth']],
     ['POST',   '/api/savings/deposits',                              \App\Controllers\JsonApi\SavingsController::class, 'deposit',       ['auth']],
     ['POST',   '/api/savings/withdrawals',                           \App\Controllers\JsonApi\SavingsController::class, 'withdraw',      ['auth']],
     ['GET',    '/api/savings/transactions',                          \App\Controllers\JsonApi\SavingsController::class, 'transactions',  ['auth']],
+    ['GET',    '/api/savings/{id}',                                  \App\Controllers\JsonApi\SavingsController::class, 'show',          ['auth']],
+    ['PUT',    '/api/savings/{id}',                                  \App\Controllers\JsonApi\SavingsController::class, 'update',        ['auth']],
+    ['DELETE', '/api/savings/{id}',                                  \App\Controllers\JsonApi\SavingsController::class, 'destroy',       ['auth']],
 
     // Due system
     ['GET',    '/api/due-system',                                    \App\Controllers\JsonApi\DueSystemController::class, 'index',     ['auth']],

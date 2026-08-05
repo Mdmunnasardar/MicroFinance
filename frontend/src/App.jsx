@@ -16,6 +16,10 @@ import LoanFormPage from './pages/LoanFormPage';
 import LoanViewPage from './pages/LoanViewPage';
 import LoanPaymentPage from './pages/LoanPaymentPage';
 import NotFoundPage from './pages/NotFoundPage';
+import SavingsPage from './pages/SavingsPage';
+import SavingsFormPage from './pages/SavingsFormPage';
+import SavingsTransactionPage from './pages/SavingsTransactionPage';
+import SavingsTransactionsPage from './pages/SavingsTransactionsPage';
 
 export default function App() {
   return (
@@ -39,6 +43,11 @@ export default function App() {
         <Route path="/loans/:id/edit" element={<LoanFormPage mode="edit" />} />
         <Route path="/loans/:id/payment" element={<LoanPaymentPage />} />
         <Route path="/loans/:id" element={<LoanViewPage />} />
+        <Route path="/savings" element={<SavingsPage />} />
+        <Route path="/savings/new" element={<SavingsFormPage />} />
+        <Route path="/savings/deposit" element={<SavingsTransactionPage mode="deposit" />} />
+        <Route path="/savings/withdraw" element={<SavingsTransactionPage mode="withdraw" />} />
+        <Route path="/savings/transactions" element={<SavingsTransactionsPage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />
