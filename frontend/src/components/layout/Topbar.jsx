@@ -16,6 +16,9 @@ const titleMap = {
   '/savings/deposit': 'Deposit Savings',
   '/savings/withdraw': 'Withdraw Savings',
   '/savings/transactions': 'Savings Transactions',
+  '/due-system': 'Due System',
+  '/due-system/overdue': 'Overdue Loans',
+  '/due-system/report': 'Due Report',
 };
 
 // Legacy endpoints used by PHP topbar.php (these work; the /api/* JSON

@@ -10,11 +10,10 @@ const internalLinks = [
   { to: '/loans', label: 'Loans', icon: 'fa-solid fa-money-bill-wave', end: true },
   { to: '/savings', label: 'Savings', icon: 'fa-solid fa-piggy-bank', end: true },
   { to: '/installments', label: 'Installments', icon: 'fa-solid fa-credit-card', end: true },
+  { to: '/due-system', label: 'Due System', icon: 'fa-solid fa-clock', end: true },
 ];
 
-const legacyLinks = [
-  { to: `${legacyBase}/due_system/`, label: 'Due System', icon: 'fa-solid fa-clock' },
-];
+const legacyLinks = [];
 
 export default function Sidebar() {
   const { logout } = useAuth();

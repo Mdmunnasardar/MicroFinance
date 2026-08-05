@@ -77,7 +77,11 @@ return [
     ['DELETE', '/api/savings/{id}',                                  \App\Controllers\JsonApi\SavingsController::class, 'destroy',       ['auth']],
 
     // Due system
+    // Static sub-routes (/api/due-system/overdue, /api/due-system/report)
+    // MUST come before the dynamic /api/due-system/{id} route.
     ['GET',    '/api/due-system',                                    \App\Controllers\JsonApi\DueSystemController::class, 'index',     ['auth']],
+    ['GET',    '/api/due-system/overdue',                            \App\Controllers\JsonApi\DueSystemController::class, 'overdue',   ['auth']],
+    ['GET',    '/api/due-system/report',                             \App\Controllers\JsonApi\DueSystemController::class, 'report',    ['auth']],
     ['GET',    '/api/due-system/{id}',                               \App\Controllers\JsonApi\DueSystemController::class, 'show',      ['auth']],
     ['POST',   '/api/due-system/{id}/collect',                       \App\Controllers\JsonApi\DueSystemController::class, 'collect',   ['auth']],
 ];
