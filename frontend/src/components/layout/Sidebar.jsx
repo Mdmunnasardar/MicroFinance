@@ -7,11 +7,11 @@ const internalLinks = [
   { to: '/', label: 'Dashboard', icon: 'fa-solid fa-chart-pie', end: true },
   { to: '/members', label: 'Members', icon: 'fa-solid fa-users', end: true },
   { to: '/committees', label: 'Committees', icon: 'fa-solid fa-layer-group', end: true },
+  { to: '/loans', label: 'Loans', icon: 'fa-solid fa-money-bill-wave', end: true },
   { to: '/installments', label: 'Installments', icon: 'fa-solid fa-credit-card', end: true },
 ];
 
 const legacyLinks = [
-  { to: `${legacyBase}/loans/`, label: 'Loans', icon: 'fa-solid fa-money-bill-wave' },
   { to: `${legacyBase}/savings/`, label: 'Savings', icon: 'fa-solid fa-piggy-bank' },
   { to: `${legacyBase}/due_system/`, label: 'Due System', icon: 'fa-solid fa-clock' },
 ];

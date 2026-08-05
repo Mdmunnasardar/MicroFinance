@@ -11,6 +11,10 @@ import CommitteesPage from './pages/CommitteesPage';
 import CommitteeFormPage from './pages/CommitteeFormPage';
 import CommitteeViewPage from './pages/CommitteeViewPage';
 import CommitteeMembersPage from './pages/CommitteeMembersPage';
+import LoansPage from './pages/LoansPage';
+import LoanFormPage from './pages/LoanFormPage';
+import LoanViewPage from './pages/LoanViewPage';
+import LoanPaymentPage from './pages/LoanPaymentPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
@@ -30,6 +34,11 @@ export default function App() {
         <Route path="/committees/:id/edit" element={<CommitteeFormPage mode="edit" />} />
         <Route path="/committees/:id/members" element={<CommitteeMembersPage />} />
         <Route path="/committees/:id" element={<CommitteeViewPage />} />
+        <Route path="/loans" element={<LoansPage />} />
+        <Route path="/loans/new" element={<LoanFormPage mode="create" />} />
+        <Route path="/loans/:id/edit" element={<LoanFormPage mode="edit" />} />
+        <Route path="/loans/:id/payment" element={<LoanPaymentPage />} />
+        <Route path="/loans/:id" element={<LoanViewPage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

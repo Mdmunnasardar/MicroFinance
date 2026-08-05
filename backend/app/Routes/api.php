@@ -52,6 +52,7 @@ return [
     ['PUT',    '/api/loans/{id}',                                    \App\Controllers\JsonApi\LoansController::class, 'update',        ['auth']],
     ['DELETE', '/api/loans/{id}',                                    \App\Controllers\JsonApi\LoansController::class, 'destroy',       ['auth']],
     ['POST',   '/api/loans/{id}/status',                             \App\Controllers\JsonApi\LoansController::class, 'updateStatus',  ['auth']],
+    ['POST',   '/api/loans/{id}/payments',                           \App\Controllers\JsonApi\LoansController::class, 'recordPayment', ['auth']],
 
     // Installments
     ['GET',    '/api/installments',                                  \App\Controllers\JsonApi\InstallmentsController::class, 'index',   ['auth']],
