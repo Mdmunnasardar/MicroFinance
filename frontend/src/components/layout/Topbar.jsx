@@ -4,6 +4,8 @@ import { useAuth } from '../../hooks/useAuth';
 
 const titleMap = {
   '/': 'Dashboard',
+  '/members': 'Members',
+  '/members/new': 'Add Member',
   '/installments': 'Installments',
 };
 
@@ -32,7 +34,13 @@ export default function Topbar() {
   const location = useLocation();
   const { user } = useAuth();
 
-  const title = location.pathname.startsWith('/members/') ? 'Member Profile' : (titleMap[location.pathname] || 'MicroFinance');
+  const computeTitle = () => {
+    const { pathname } = location;
+    if (pathname.startsWith('/members/') && pathname.endsWith('/edit')) return 'Edit Member';
+    if (/^\/members\/\d+$/.test(pathname)) return 'Member Profile';
+    return titleMap[pathname] || 'MicroFinance';
+  };
+  const title = computeTitle();
   const userName = user?.name || 'User';
   const userRole = user?.role || 'user';
   const userId = user?.id ?? 0;

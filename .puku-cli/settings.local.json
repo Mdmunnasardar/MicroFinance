@@ -110,7 +110,8 @@
       "Bash(\"C:/xampp/mysql/bin/mysql.exe\" --version)",
       "Bash(\"C:/xampp/mysql/bin/mysql.exe\" -u root -e \"SHOW DATABASES;\")",
       "Bash(./mysql.exe -u root -e \"SHOW DATABASES;\")",
-      "Bash(xxd)"
+      "Bash(xxd)",
+      "Bash(ls \"C:\\\\xampp\\\\htdocs\\\\MicroFinance\\\\frontend\\\\src\\\\pages 2>/dev/null || ls /c/xampp/htdocs/MicroFinance/frontend/src/pages/ 2>/dev/null || find / -type d -name MicroFinance\")"
     ]
   }
 }

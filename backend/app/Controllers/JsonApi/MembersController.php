@@ -12,10 +12,287 @@ use mysqli_stmt;
 
 final class MembersController
 {
-    public function index(Request $request): never { JsonResponse::notImplemented('GET /api/members'); }
-    public function store(Request $request): never { JsonResponse::notImplemented('POST /api/members'); }
-    public function update(Request $request): never { JsonResponse::notImplemented('PUT /api/members/{id}'); }
-    public function destroy(Request $request): never { JsonResponse::notImplemented('DELETE /api/members/{id}'); }
+    /**
+     * GET /api/members — list with stats, pagination and filters.
+     * Mirrors backend/app/Controllers/Members/MembersListController.php
+     * but uses prepared statements and adds pagination + stats in one payload.
+     */
+    public function index(Request $request): never
+    {
+        $conn = Database::connection();
+
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = min(100, max(1, (int) $request->query('per_page', 25)));
+        $offset = ($page - 1) * $perPage;
+
+        $search = trim((string) $request->query('search', ''));
+        $branch = trim((string) $request->query('branch', ''));
+        $status = trim((string) $request->query('status', ''));
+
+        // Build dynamic WHERE for the listing query
+        $where = ' WHERE 1 ';
+        $types = '';
+        $values = [];
+        if ($search !== '') {
+            $where .= ' AND (m.full_name LIKE ? OR m.member_code LIKE ? OR m.phone LIKE ? OR m.national_id LIKE ?)';
+            $like = '%' . $search . '%';
+            $types .= 'ssss';
+            array_push($values, $like, $like, $like, $like);
+        }
+        if ($branch !== '') {
+            $where .= ' AND m.branch_id = ?';
+            $types .= 'i';
+            $values[] = (int) $branch;
+        }
+        if ($status !== '' && ($status === '0' || $status === '1')) {
+            $where .= ' AND m.is_active = ?';
+            $types .= 'i';
+            $values[] = (int) $status;
+        }
+
+        // Count total (with same filters)
+        $countSql = 'SELECT COUNT(*) AS t FROM members m ' . $where;
+        $countStmt = $this->prepare($conn, $countSql, $types, $values);
+        $countStmt->execute();
+        $total = (int) ($countStmt->get_result()->fetch_assoc()['t'] ?? 0);
+        $countStmt->close();
+
+        // Fetch page
+        $listSql = 'SELECT m.*, c.committee_name, b.branch_name '
+                 . 'FROM members m '
+                 . 'LEFT JOIN committees c ON m.committee_id = c.committee_id '
+                 . 'LEFT JOIN branches b ON m.branch_id = b.branch_id '
+                 . $where
+                 . ' ORDER BY m.member_id DESC LIMIT ? OFFSET ?';
+        $listTypes = $types . 'ii';
+        $listValues = [...$values, $perPage, $offset];
+        $listStmt = $this->prepare($conn, $listSql, $listTypes, $listValues);
+        $listStmt->execute();
+        $rows = $listStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $listStmt->close();
+
+        // Stats (independent of filters — same as PHP index.php lines 16-19)
+        $totalMembers = (int) ($conn->query('SELECT COUNT(*) AS t FROM members')->fetch_assoc()['t'] ?? 0);
+        $activeMembers = (int) ($conn->query('SELECT COUNT(*) AS t FROM members WHERE is_active=1')->fetch_assoc()['t'] ?? 0);
+        $inactiveMembers = (int) ($conn->query('SELECT COUNT(*) AS t FROM members WHERE is_active=0')->fetch_assoc()['t'] ?? 0);
+        $totalLoans = (float) ($conn->query('SELECT COALESCE(SUM(principal_amount),0) AS t FROM loans')->fetch_assoc()['t'] ?? 0);
+
+        // Branch list for filter dropdown
+        $branches = $conn->query('SELECT branch_id, branch_name FROM branches ORDER BY branch_name')->fetch_all(MYSQLI_ASSOC);
+        $committees = $conn->query('SELECT committee_id, committee_name FROM committees ORDER BY committee_name')->fetch_all(MYSQLI_ASSOC);
+
+        $lastPage = (int) max(1, ceil($total / $perPage));
+
+        JsonResponse::success($rows, 200, [
+            'page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'last_page' => $lastPage,
+            'stats' => [
+                'total_members' => $totalMembers,
+                'active_members' => $activeMembers,
+                'inactive_members' => $inactiveMembers,
+                'total_loans' => $totalLoans,
+            ],
+            'filters' => [
+                'branches' => $branches,
+                'committees' => $committees,
+            ],
+        ]);
+    }
+
+    /**
+     * POST /api/members — create a member.
+     * Mirrors backend/app/Controllers/Members/MemberCreateController.php.
+     */
+    public function store(Request $request): never
+    {
+        $conn = Database::connection();
+
+        $payload = $request->body();
+        $memberCode = trim((string) ($payload['member_code'] ?? ''));
+        $fullName = trim((string) ($payload['full_name'] ?? ''));
+        $phone = trim((string) ($payload['phone'] ?? ''));
+        $joinDate = trim((string) ($payload['join_date'] ?? ''));
+
+        if ($memberCode === '' || $fullName === '' || $phone === '' || $joinDate === '') {
+            JsonResponse::error('VALIDATION_ERROR', 'full_name, member_code, phone and join_date are required.', 422);
+        }
+
+        $committeeId = $this->nullableInt($payload['committee_id'] ?? null);
+        $branchId = $this->nullableInt($payload['branch_id'] ?? null);
+
+        // committee_id and branch_id are NOT NULL columns in the members table.
+        // Reject empty selections with a clear validation error instead of an
+        // opaque 500 from a strict-mode SQL failure.
+        if ($committeeId === null) {
+            JsonResponse::error('VALIDATION_ERROR', 'committee_id is required.', 422, ['fields' => ['committee_id' => 'required']]);
+        }
+        if ($branchId === null) {
+            JsonResponse::error('VALIDATION_ERROR', 'branch_id is required.', 422, ['fields' => ['branch_id' => 'required']]);
+        }
+
+        $isActive = !empty($payload['is_active']) ? 1 : 0;
+
+        $sql = 'INSERT INTO members (member_code, full_name, phone, dob, address, national_id, guarantor_name, guarantor_phone, committee_id, branch_id, join_date, is_active) '
+             . 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        // Field order:
+        //   1 member_code     s
+        //   2 full_name       s
+        //   3 phone           s
+        //   4 dob             s
+        //   5 address         s
+        //   6 national_id     s
+        //   7 guarantor_name  s
+        //   8 guarantor_phone s
+        //   9 committee_id    i (nullable)
+        //  10 branch_id       i (nullable)
+        //  11 join_date       s
+        //  12 is_active       i
+        $types = 'ssssssssiisi';
+        $values = [
+            $memberCode,
+            $fullName,
+            $phone,
+            (string) ($payload['dob'] ?? ''),
+            (string) ($payload['address'] ?? ''),
+            (string) ($payload['national_id'] ?? ''),
+            (string) ($payload['guarantor_name'] ?? ''),
+            (string) ($payload['guarantor_phone'] ?? ''),
+            $committeeId,
+            $branchId,
+            $joinDate,
+            $isActive,
+        ];
+
+        $stmt = $this->prepare($conn, $sql, $types, $values);
+        if (!$stmt->execute()) {
+            $err = $stmt->error;
+            $stmt->close();
+            JsonResponse::error('DB_ERROR', 'Failed to create member: ' . $err, 500);
+        }
+        $newId = $stmt->insert_id;
+        $stmt->close();
+
+        // Return the freshly-created row in the same shape as show()
+        $fetchStmt = $conn->prepare('SELECT m.*, c.committee_name, b.branch_name FROM members m LEFT JOIN committees c ON m.committee_id = c.committee_id LEFT JOIN branches b ON m.branch_id = b.branch_id WHERE m.member_id = ? LIMIT 1');
+        $fetchStmt->bind_param('i', $newId);
+        $fetchStmt->execute();
+        $row = $fetchStmt->get_result()->fetch_assoc();
+        $fetchStmt->close();
+
+        JsonResponse::success(['member' => $row], 201);
+    }
+
+    /**
+     * PUT /api/members/{id} — update a member.
+     * Mirrors backend/app/Controllers/Members/MemberUpdateController.php.
+     */
+    public function update(Request $request): never
+    {
+        $memberId = $this->idOrFail($request);
+
+        $conn = Database::connection();
+
+        $exists = $conn->prepare('SELECT member_id FROM members WHERE member_id = ? LIMIT 1');
+        $exists->bind_param('i', $memberId);
+        $exists->execute();
+        if (!$exists->get_result()->fetch_assoc()) {
+            $exists->close();
+            JsonResponse::error('NOT_FOUND', 'Member not found.', 404);
+        }
+        $exists->close();
+
+        $payload = $request->body();
+        $memberCode = trim((string) ($payload['member_code'] ?? ''));
+        $fullName = trim((string) ($payload['full_name'] ?? ''));
+        $phone = trim((string) ($payload['phone'] ?? ''));
+        $joinDate = trim((string) ($payload['join_date'] ?? ''));
+
+        if ($memberCode === '' || $fullName === '' || $phone === '' || $joinDate === '') {
+            JsonResponse::error('VALIDATION_ERROR', 'full_name, member_code, phone and join_date are required.', 422);
+        }
+
+        $committeeId = $this->nullableInt($payload['committee_id'] ?? null);
+        $branchId = $this->nullableInt($payload['branch_id'] ?? null);
+
+        if ($committeeId === null) {
+            JsonResponse::error('VALIDATION_ERROR', 'committee_id is required.', 422, ['fields' => ['committee_id' => 'required']]);
+        }
+        if ($branchId === null) {
+            JsonResponse::error('VALIDATION_ERROR', 'branch_id is required.', 422, ['fields' => ['branch_id' => 'required']]);
+        }
+
+        $isActive = !empty($payload['is_active']) ? 1 : 0;
+
+        $sql = 'UPDATE members SET member_code=?, full_name=?, phone=?, dob=?, address=?, national_id=?, guarantor_name=?, guarantor_phone=?, committee_id=?, branch_id=?, join_date=?, is_active=? WHERE member_id=?';
+        // Field order matches store() above; final WHERE member_id=? is an 'i'.
+        $types = 'ssssssssiisii';
+        $values = [
+            $memberCode,
+            $fullName,
+            $phone,
+            (string) ($payload['dob'] ?? ''),
+            (string) ($payload['address'] ?? ''),
+            (string) ($payload['national_id'] ?? ''),
+            (string) ($payload['guarantor_name'] ?? ''),
+            (string) ($payload['guarantor_phone'] ?? ''),
+            $committeeId,
+            $branchId,
+            $joinDate,
+            $isActive,
+            $memberId,
+        ];
+
+        $stmt = $this->prepare($conn, $sql, $types, $values);
+        if (!$stmt->execute()) {
+            $err = $stmt->error;
+            $stmt->close();
+            JsonResponse::error('DB_ERROR', 'Failed to update member: ' . $err, 500);
+        }
+        $stmt->close();
+
+        JsonResponse::success(['member_id' => $memberId]);
+    }
+
+    /**
+     * DELETE /api/members/{id} — delete a member.
+     * Mirrors backend/app/Controllers/Members/MemberDeleteController.php.
+     * Adds a safety guard: members with existing loans cannot be deleted.
+     */
+    public function destroy(Request $request): never
+    {
+        $memberId = $this->idOrFail($request);
+
+        $conn = Database::connection();
+
+        $exists = $conn->prepare('SELECT member_id FROM members WHERE member_id = ? LIMIT 1');
+        $exists->bind_param('i', $memberId);
+        $exists->execute();
+        if (!$exists->get_result()->fetch_assoc()) {
+            $exists->close();
+            JsonResponse::error('NOT_FOUND', 'Member not found.', 404);
+        }
+        $exists->close();
+
+        // Safety guard — refuse to delete a member with existing loans.
+        $loans = $conn->prepare('SELECT 1 FROM loans WHERE member_id = ? LIMIT 1');
+        $loans->bind_param('i', $memberId);
+        $loans->execute();
+        if ($loans->get_result()->fetch_assoc()) {
+            $loans->close();
+            JsonResponse::error('MEMBER_HAS_LOANS', 'Cannot delete member with existing loans.', 409);
+        }
+        $loans->close();
+
+        $del = $conn->prepare('DELETE FROM members WHERE member_id = ?');
+        $del->bind_param('i', $memberId);
+        $del->execute();
+        $del->close();
+
+        JsonResponse::success(['member_id' => $memberId]);
+    }
+
     public function transactions(Request $request): never { JsonResponse::notImplemented('GET /api/members/{id}/transactions'); }
     public function loans(Request $request): never { JsonResponse::notImplemented('GET /api/members/{id}/loans'); }
     public function savings(Request $request): never { JsonResponse::notImplemented('GET /api/members/{id}/savings'); }
@@ -195,6 +472,21 @@ final class MembersController
             'query' => $rawQuery,
             'limit' => $limit,
         ]);
+    }
+
+    private function idOrFail(Request $request): int
+    {
+        $memberId = (int) $request->param('id', 0);
+        if ($memberId <= 0) {
+            JsonResponse::error('VALIDATION_ERROR', 'Member id is required.', 422);
+        }
+        return $memberId;
+    }
+
+    private function nullableInt($value): ?int
+    {
+        if ($value === null || $value === '' || $value === '0') return null;
+        return (int) $value;
     }
 
     private function prepare(mysqli $conn, string $sql, string $types, array $values): mysqli_stmt
