@@ -6,6 +6,8 @@ const titleMap = {
   '/': 'Dashboard',
   '/members': 'Members',
   '/members/new': 'Add Member',
+  '/committees': 'Committees',
+  '/committees/new': 'Add Committee',
   '/installments': 'Installments',
 };
 
@@ -38,6 +40,9 @@ export default function Topbar() {
     const { pathname } = location;
     if (pathname.startsWith('/members/') && pathname.endsWith('/edit')) return 'Edit Member';
     if (/^\/members\/\d+$/.test(pathname)) return 'Member Profile';
+    if (pathname.startsWith('/committees/') && pathname.endsWith('/edit')) return 'Edit Committee';
+    if (pathname.endsWith('/members') && pathname.startsWith('/committees/')) return 'Manage Members';
+    if (/^\/committees\/\d+$/.test(pathname)) return 'Committee Details';
     return titleMap[pathname] || 'MicroFinance';
   };
   const title = computeTitle();
