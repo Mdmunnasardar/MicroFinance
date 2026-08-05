@@ -116,11 +116,17 @@
                         <i class="fas fa-user-circle"></i>
                         <span>My Profile</span>
                     </a>
-                    <a href="profile/edit.php" class="dropdown-item">
+                    <?php
+                    // Edit Profile and Change Password are React-only flows.
+                    // The legacy PHP shims have been retired — link users
+                    // straight into the SPA so we don't 404.
+                    $spa_base = '/MicroFinance/';
+                    ?>
+                    <a href="<?php echo $spa_base; ?>profile/edit" class="dropdown-item">
                         <i class="fas fa-user-edit"></i>
                         <span>Edit Profile</span>
                     </a>
-                    <a href="profile/change-password.php" class="dropdown-item">
+                    <a href="<?php echo $spa_base; ?>profile/change-password" class="dropdown-item">
                         <i class="fas fa-key"></i>
                         <span>Change Password</span>
                     </a>

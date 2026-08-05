@@ -91,14 +91,6 @@ include __DIR__ . "/../Views/layouts/header.php";
                     ?>
                 </div>
                 <?php endif; ?>
-                <?php if ($user_id == $current_user_id): ?>
-                <div class="avatar-badge" onclick="document.getElementById('avatarUpload').click()" title="Change Avatar">
-                    <i class="fas fa-camera"></i>
-                </div>
-                <form id="avatarForm" method="POST" action="profile/upload-avatar.php" enctype="multipart/form-data" style="display:none;">
-                    <input type="file" id="avatarUpload" name="avatar" accept="image/*" onchange="document.getElementById('avatarForm').submit()">
-                </form>
-                <?php endif; ?>
             </div>
 
             <!-- Info -->
@@ -131,38 +123,12 @@ include __DIR__ . "/../Views/layouts/header.php";
                 </div>
             </div>
 
-            <!-- Actions - ROLE BASED -->
+            <!-- Actions - ROLE BASED
+                 Edit Profile and Change Password are handled via the React
+                 SPA (see /profile/edit and /profile/change-password). Legacy
+                 self-service controls were removed when the PHP shims were
+                 deleted. -->
             <div class="profile-actions">
-                <?php if ($user_id == $current_user_id): ?>
-                    <!-- OWN PROFILE - Show edit options -->
-                    <a href="profile/edit.php" class="btn btn-primary">
-                        <i class="fas fa-edit"></i> Edit Profile
-                    </a>
-                    <a href="profile/change-password.php" class="btn btn-secondary">
-                        <i class="fas fa-key"></i> Change Password
-                    </a>
-                <?php endif; ?>
-                
-                <?php if ($current_user_role == 'admin' && $user_id != $current_user_id): ?>
-                    <!-- ADMIN VIEWING OTHER USER - Full access -->
-                    <a href="profile/edit.php?id=<?php echo $user_id; ?>" class="btn btn-primary">
-                        <i class="fas fa-edit"></i> Edit User
-                    </a>
-                    <button onclick="deleteUser(<?php echo $user_id; ?>)" class="btn btn-danger">
-                        <i class="fas fa-trash"></i> Delete
-                    </button>
-                <?php endif; ?>
-                
-                <?php if ($current_user_role == 'branch_manager' && $user_id != $current_user_id && $user['role'] == 'field_officer'): ?>
-                    <!-- BRANCH MANAGER VIEWING FIELD OFFICER -->
-                    <a href="profile/edit.php?id=<?php echo $user_id; ?>" class="btn btn-primary">
-                        <i class="fas fa-edit"></i> Edit Officer
-                    </a>
-                    <a href="Committees/officers/view.php?id=<?php echo $user_id; ?>" class="btn btn-info">
-                        <i class="fas fa-users-cog"></i> View Committees
-                    </a>
-                <?php endif; ?>
-                
                 <a href="dashboard.php" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Back
                 </a>
@@ -330,16 +296,18 @@ include __DIR__ . "/../Views/layouts/header.php";
             </div>
             <?php endif; ?>
 
-            <!-- ADMIN ACTIONS - Only for Admin viewing other users -->
+            <!-- ADMIN ACTIONS - Only for Admin viewing other users
+                 "Edit User" was removed (legacy shim deleted). Remaining
+                 actions are still operated via legacy profile/delete.php,
+                 profile/reset-password.php, profile/force-logout.php and
+                 profile/change-role.php — these shims are out of scope for
+                 the current cleanup task. -->
             <?php if ($current_user_role == 'admin' && $user_id != $current_user_id): ?>
             <div class="detail-section animate-slide-up" style="animation-delay: 0.25s">
                 <h4 class="section-title">
                     <i class="fas fa-shield-alt"></i> Admin Actions
                 </h4>
                 <div class="space-y-2">
-                    <a href="profile/edit.php?id=<?php echo $user_id; ?>" class="btn btn-primary btn-block">
-                        <i class="fas fa-edit"></i> Edit User
-                    </a>
                     <button onclick="resetPassword(<?php echo $user_id; ?>)" class="btn btn-warning btn-block">
                         <i class="fas fa-key"></i> Reset Password
                     </button>
@@ -353,23 +321,22 @@ include __DIR__ . "/../Views/layouts/header.php";
             </div>
             <?php endif; ?>
 
-            <!-- BRANCH MANAGER ACTIONS - Viewing Field Officer -->
+            <!-- BRANCH MANAGER ACTIONS - Viewing Field Officer
+                 "Edit Officer" was removed (legacy shim deleted). Other
+                 actions remain functional. -->
             <?php if ($current_user_role == 'branch_manager' && $user_id != $current_user_id && $user['role'] == 'field_officer'): ?>
             <div class="detail-section animate-slide-up" style="animation-delay: 0.25s">
                 <h4 class="section-title">
                     <i class="fas fa-user-cog"></i> Management
                 </h4>
                 <div class="space-y-2">
-                    <a href="profile/edit.php?id=<?php echo $user_id; ?>" class="btn btn-primary btn-block">
-                        <i class="fas fa-edit"></i> Edit Officer
-                    </a>
                     <a href="Committees/officers/view.php?id=<?php echo $user_id; ?>" class="btn btn-success btn-block">
                         <i class="fas fa-users-cog"></i> View Committees
                     </a>
                     <a href="field-officer/dashboard.php?officer_id=<?php echo $user_id; ?>" class="btn btn-info btn-block">
                         <i class="fas fa-chart-bar"></i> View Dashboard
                     </a>
-                    <button onclick="toggleOfficerStatus(<?php echo $user_id; ?>, <?php echo $user['is_active']; ?>)" 
+                    <button onclick="toggleOfficerStatus(<?php echo $user_id; ?>, <?php echo $user['is_active']; ?>)"
                             class="btn <?php echo $user['is_active'] ? 'btn-warning' : 'btn-success'; ?> btn-block">
                         <i class="fas fa-<?php echo $user['is_active'] ? 'pause' : 'play'; ?>"></i>
                         <?php echo $user['is_active'] ? 'Deactivate' : 'Activate'; ?>
