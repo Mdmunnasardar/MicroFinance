@@ -1,145 +1,225 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { apiClient } from '../api/client';
-import { useAuth } from '../hooks/useAuth';
 
-const TONE_CLASS = {
-  blue: 'blue',
-  green: 'green',
-  purple: 'purple',
-  teal: 'teal',
-  red: 'red',
-  gold: 'gold',
+// Maps the API's short icon name (e.g. "users") to Font Awesome classes (fa-users).
+// Mirrors PHP renderStatCard() at backend/app/Views/components/stat-card.php.
+const ICON_CLASS = {
+  users: 'fa-users',
+  'user-check': 'fa-user-check',
+  'money-bill-wave': 'fa-money-bill-wave',
+  'circle-dollar': 'fa-circle-dollar',
+  'check-circle': 'fa-check-circle',
+  clock: 'fa-clock',
+  'piggy-bank': 'fa-piggy-bank',
+  'triangle-exclamation': 'fa-triangle-exclamation',
 };
 
-const ICON_LIBRARY = {
-  users: '👥',
-  'user-check': '✅',
-  'money-bill-wave': '💸',
-  'circle-dollar': '🟢',
-  'check-circle': '✔️',
-  clock: '⏰',
-  'piggy-bank': '🐷',
-  'triangle-exclamation': '⚠️',
+// PHP renders the trend chip with an arrow/dot icon (fa-arrow-up / fa-arrow-down / fa-circle).
+// Mirror this by reusing the delta text as-is; the icon is purely decorative.
+const TREND_ICON_CLASS = {
+  up: 'fa-arrow-up',
+  down: 'fa-arrow-down',
+  danger: 'fa-circle',
 };
 
 function StatCard({ stat }) {
-  const tone = TONE_CLASS[stat.tone] || 'blue';
+  const tone = stat.tone || 'blue';
+  const trend = stat.trend || 'up';
   return (
     <div className="stat-card">
       <div className="stat-header">
-        <div>
-          <div className="stat-label">{stat.label}</div>
-          <div className="stat-value">{stat.formatted}</div>
+        <div className={`stat-icon ${tone}`}>
+          <i className={`fa-solid ${ICON_CLASS[stat.icon] ?? 'fa-circle'}`}></i>
         </div>
-        <div className={`stat-icon ${tone}`}>{ICON_LIBRARY[stat.icon] ?? '•'}</div>
+        <div className={`stat-trend ${trend}`}>
+          <i className={`fa-solid ${TREND_ICON_CLASS[trend] ?? 'fa-circle'}`}></i>
+          {stat.delta}
+        </div>
       </div>
-      <div className={`stat-trend ${stat.trend}`}>{stat.delta}</div>
+      <div className="stat-value">{stat.formatted}</div>
+      <div className="stat-label">{stat.label}</div>
       <div className="stat-sub">{stat.sub}</div>
     </div>
   );
 }
 
 function OverdueAlert({ count }) {
-  if (!count) {
+  if (!count) return null;
+  return (
+    <div className="overdue-alert">
+      <i className="fa-solid fa-triangle-exclamation"></i>
+      <span><strong>{count}</strong> overdue loans require immediate attention!</span>
+      <a href="/MicroFinance/due_system/" className="alert-link">View Details →</a>
+    </div>
+  );
+}
+
+function HealthCard({ health }) {
+  const safe = Math.min(Math.max(Number(health) || 0, 0), 100);
+  let badge;
+  if (safe >= 70) {
+    badge = <span className="badge-success">✅ Your loan portfolio is healthy and performing well.</span>;
+  } else if (safe >= 50) {
+    badge = <span className="badge-warning">⚠️ Moderate health. Some attention needed.</span>;
+  } else {
+    badge = <span className="badge-danger">🔴 Critical health. Immediate action required.</span>;
+  }
+  return (
+    <div className="health-card">
+      <div className="health-header">
+        <i className="fa-solid fa-heart-pulse"></i>
+        <span>Loan Health</span>
+      </div>
+      <div className="health-value">{Math.round(safe * 10) / 10}%</div>
+      <div className="health-bar">
+        <div className="health-bar-fill" style={{ width: `${safe}%` }}></div>
+      </div>
+      <div className="health-status">
+        {badge}
+        <a href="#" className="health-link">View Details →</a>
+      </div>
+    </div>
+  );
+}
+
+function TopBorrowerCard({ top }) {
+  if (!top || !top.full_name) {
     return (
-      <div className="overdue-alert zero">
-        <span className="pulse" style={{ background: '#10b981' }} />
-        All loans are current. No overdue payments.
+      <div className="top-borrower">
+        <div className="top-header">
+          <i className="fa-solid fa-trophy"></i>
+          <span>Top Borrower</span>
+        </div>
+        <p className="text-muted">No borrowers found</p>
       </div>
     );
   }
+  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(top.full_name)}&background=4f46e5&color=fff&size=52`;
   return (
-    <div className="overdue-alert">
-      <span className="pulse" />
-      <strong>{count}</strong> loan{count === 1 ? '' : 's'} overdue. Review them now.
-    </div>
-  );
-}
-
-function ChartPanel({ data }) {
-  if (!data) return null;
-  const max = Math.max(1, ...data.loan_data, ...data.payment_data);
-  return (
-    <div className="card">
-      <div className="card-header">
-        <h3>Loans vs Collection</h3>
-        <span className="badge-bg">Last 6 Months</span>
+    <div className="top-borrower">
+      <div className="top-header">
+        <i className="fa-solid fa-trophy"></i>
+        <span>Top Borrower</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, height: 200 }}>
-        {data.labels.map((label, idx) => (
-          <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, width: '100%', height: '100%' }}>
-              <div title={`Loan: ${data.loan_data[idx]}`}
-                style={{ flex: 1, height: `${(data.loan_data[idx] / max) * 100}%`, background: 'linear-gradient(180deg, #6366f1, #4f46e5)', borderRadius: '6px 6px 0 0' }} />
-              <div title={`Paid: ${data.payment_data[idx]}`}
-                style={{ flex: 1, height: `${(data.payment_data[idx] / max) * 100}%`, background: 'linear-gradient(180deg, #14b8a6, #0ea5e9)', borderRadius: '6px 6px 0 0' }} />
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--muted)' }}>{label}</div>
+      <div className="top-member">
+        <img src={avatarUrl} alt="Avatar" />
+        <div>
+          <h4>{top.full_name}</h4>
+          <span className="member-id">ID: {top.member_id ?? 'N/A'}</span>
+          <div className="top-amount">
+            <span className="label">Total Borrowed</span>
+            <span className="value">${Number(top.total || 0).toLocaleString()}</span>
           </div>
-        ))}
-      </div>
-      <div style={{ marginTop: 12, display: 'flex', gap: 16, fontSize: 12, color: 'var(--muted)' }}>
-        <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: '#4f46e5', marginRight: 6 }} />Loans disbursed</span>
-        <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: '#0ea5e9', marginRight: 6 }} />Payments collected</span>
+        </div>
       </div>
     </div>
   );
 }
 
-function RecentTransactions({ items }) {
-  if (!items?.length) return <div className="empty">No transactions yet.</div>;
-  return (
-    <ul className="list">
-      {items.map((t, idx) => (
-        <li key={`${t.date}-${idx}`}>
-          <div>
-            <div className="who">{t.member || 'Unknown member'}</div>
-            <div className="meta">{t.description} · {t.status}</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontWeight: 600 }}>${Number(t.amount).toLocaleString()}</div>
-            <div className="meta">{t.date}</div>
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
+function TrendChart({ data }) {
+  const canvasRef = useRef(null);
+  const chartRef = useRef(null);
+
+  useEffect(() => {
+    if (!canvasRef.current || !data || typeof window === 'undefined' || !window.Chart) return undefined;
+    const Chart = window.Chart;
+
+    if (chartRef.current) {
+      chartRef.current.destroy();
+      chartRef.current = null;
+    }
+
+    chartRef.current = new Chart(canvasRef.current.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: data.labels || [],
+        datasets: [
+          {
+            label: 'Loans Disbursed',
+            data: data.loan_data || [],
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+            borderWidth: 3,
+            tension: 0.4,
+            pointRadius: 4,
+            pointBackgroundColor: '#4f46e5',
+            fill: true,
+          },
+          {
+            label: 'Collection',
+            data: data.payment_data || [],
+            borderColor: '#22c55e',
+            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            borderWidth: 3,
+            tension: 0.4,
+            pointRadius: 4,
+            pointBackgroundColor: '#22c55e',
+            fill: true,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              usePointStyle: true,
+              pointStyle: 'circle',
+              padding: 20,
+              font: { family: 'Inter', size: 12, weight: '500' },
+            },
+            position: 'top',
+          },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const label = context.dataset.label || '';
+                if (context.parsed.y !== null) {
+                  return `${label}: $${context.parsed.y.toLocaleString()}`;
+                }
+                return label;
+              },
+            },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: (value) => `$${Number(value).toLocaleString()}`,
+              font: { family: 'Inter', size: 11 },
+            },
+            grid: { color: 'rgba(0,0,0,0.05)' },
+          },
+          x: {
+            grid: { display: false },
+            ticks: { font: { family: 'Inter', size: 11 } },
+          },
+        },
+        interaction: { intersect: false, mode: 'index' },
+      },
+    });
+
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+        chartRef.current = null;
+      }
+    };
+  }, [data]);
+
+  return <canvas id="trendChart" ref={canvasRef}></canvas>;
 }
 
-function RecentMembers({ items }) {
-  if (!items?.length) return <div className="empty">No members yet.</div>;
-  return (
-    <ul className="list">
-      {items.map((m) => (
-        <li key={m.id}>
-          <div>
-            <div className="who">{m.full_name}</div>
-            <div className="meta">{m.code}</div>
-          </div>
-          <div className="meta">{m.joined_at}</div>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function TopBorrower({ data }) {
-  if (!data?.full_name) {
-    return <div className="empty">No loan data yet.</div>;
-  }
-  return (
-    <div>
-      <div className="who" style={{ fontSize: 16 }}>{data.full_name}</div>
-      <div className="meta">Member #{data.member_id}</div>
-      <div style={{ marginTop: 8, fontSize: 22, fontWeight: 700 }}>
-        ${Number(data.total).toLocaleString()}
-      </div>
-    </div>
-  );
+function formatDate(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -164,54 +244,131 @@ export default function DashboardPage() {
   }, []);
 
   if (loading) return <p>Loading dashboard…</p>;
-  if (error) return <div className="error-banner" style={{ background: 'rgba(239, 68, 68, 0.08)', borderColor: '#fecaca', color: '#991b1b' }}>{error}</div>;
+  if (error) {
+    return (
+      <div className="error-banner" style={{ background: 'rgba(239, 68, 68, 0.08)', borderColor: '#fecaca', color: '#991b1b' }}>
+        {error}
+      </div>
+    );
+  }
   if (!stats) return null;
+
+  const userName = stats?.user?.name || 'User';
+  const overdueCount = stats?.overdue_alert?.count ?? 0;
+  const statList = stats?.stats ?? [];
+  const chart = stats?.chart ?? null;
+  const top = stats?.top_borrower ?? null;
+  const health = stats?.health ?? 0;
+  const transactions = stats?.recent_transactions ?? [];
+  const members = stats?.recent_members ?? [];
 
   return (
     <>
-      <div className="welcome">
-        <div>
-          <h1>Welcome back, <span style={{ color: 'var(--primary)' }}>{user?.name}</span>!</h1>
-          <p>Here&apos;s what&apos;s happening with your microfinance today.</p>
+      <div className="dashboard-top">
+        <div className="welcome-section">
+          <h1>Welcome back, <span className="highlight">{userName}</span>!</h1>
+          <p>Here's what's happening with your microfinance today.</p>
         </div>
         <div className="quick-actions">
-          <a className="btn-quick btn-quick-primary" href="http://localhost/MicroFinance/members/add.php">+ Add Member</a>
-          <a className="btn-quick btn-quick-success" href="http://localhost/MicroFinance/loans/add.php">+ Add Loan</a>
-          <a className="btn-quick btn-quick-info" href="http://localhost/MicroFinance/savings/add.php">+ Add Savings</a>
+          <a href="#" className="btn-quick btn-quick-primary">
+            <i className="fa-solid fa-user-plus"></i> Add Member
+          </a>
+          <a href="#" className="btn-quick btn-quick-success">
+            <i className="fa-solid fa-hand-holding-dollar"></i> Add Loan
+          </a>
+          <a href="#" className="btn-quick btn-quick-info">
+            <i className="fa-solid fa-piggy-bank"></i> Add Savings
+          </a>
         </div>
       </div>
 
-      <OverdueAlert count={stats.overdue_alert?.count ?? 0} />
+      <OverdueAlert count={overdueCount} />
 
       <div className="stats-grid">
-        {stats.stats.map((stat) => <StatCard key={stat.key} stat={stat} />)}
+        {statList.map((stat) => <StatCard key={stat.key} stat={stat} />)}
       </div>
 
       <div className="dashboard-grid">
-        <ChartPanel data={stats.chart} />
-        <div className="card">
-          <div className="card-header">
-            <h3>Top Borrower</h3>
-            <span className="badge-bg">All time</span>
+        <div className="chart-container">
+          <div className="card-header-section">
+            <h3><i className="fa-solid fa-chart-line"></i> Loans vs Collection</h3>
+            <span className="badge-bg">Last 6 Months</span>
           </div>
-          <TopBorrower data={stats.top_borrower} />
+          <div className="chart-wrapper">
+            <TrendChart data={chart} />
+          </div>
+        </div>
+
+        <div className="right-panel">
+          <HealthCard health={health} />
+          <TopBorrowerCard top={top} />
         </div>
       </div>
 
-      <div className="dashboard-grid" style={{ marginTop: 20 }}>
-        <div className="card">
-          <div className="card-header">
-            <h3>Recent Transactions</h3>
-            <span className="badge-bg">Last 5</span>
+      <div className="bottom-grid">
+        <div className="transaction-table">
+          <div className="table-header">
+            <h3><i className="fa-solid fa-clock-rotate-left"></i> Recent Transactions</h3>
+            <a href="#" className="view-all">View All →</a>
           </div>
-          <RecentTransactions items={stats.recent_transactions} />
+          <div className="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Description</th>
+                  <th>Member</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.length === 0 ? (
+                  <tr><td colSpan={6} className="text-center text-muted">No transactions found</td></tr>
+                ) : (
+                  transactions.map((row, idx) => (
+                    <tr key={`${row.date}-${idx}`}>
+                      <td><span className="badge-type payment">{row.type}</span></td>
+                      <td>{row.description}</td>
+                      <td><strong>{row.member}</strong></td>
+                      <td>${Number(row.amount).toLocaleString()}</td>
+                      <td>{formatDate(row.date)}</td>
+                      <td><span className="badge-status completed"><i className="fa-solid fa-check-circle"></i> {row.status}</span></td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div className="card">
-          <div className="card-header">
-            <h3>Recent Members</h3>
-            <span className="badge-bg">Last 5</span>
+
+        <div className="recent-members">
+          <div className="table-header">
+            <h3><i className="fa-solid fa-user-plus"></i> Recent Members</h3>
+            <a href="#" className="view-all">View All →</a>
           </div>
-          <RecentMembers items={stats.recent_members} />
+          <div className="members-list">
+            {members.length === 0 ? (
+              <p className="text-muted">No members found</p>
+            ) : (
+              members.map((m) => {
+                const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(m.full_name)}&background=random&color=fff&size=36`;
+                return (
+                  <div className="member-item" key={m.id}>
+                    <img src={avatar} alt="Avatar" />
+                    <div>
+                      <div className="member-name">{m.full_name}</div>
+                      <div className="member-code">{m.code || 'N/A'}</div>
+                    </div>
+                    <div className="member-join">
+                      <small>{formatDate(m.joined_at)}</small>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
     </>

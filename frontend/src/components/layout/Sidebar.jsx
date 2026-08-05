@@ -4,16 +4,16 @@ import { useAuth } from '../../hooks/useAuth';
 const legacyBase = 'http://localhost/MicroFinance';
 
 const internalLinks = [
-  { to: '/installments', label: 'Installments', icon: '💳', end: true },
+  { to: '/', label: 'Dashboard', icon: 'fa-solid fa-chart-pie', end: true },
+  { to: '/installments', label: 'Installments', icon: 'fa-solid fa-credit-card', end: true },
 ];
 
 const legacyLinks = [
-  { to: `${legacyBase}/dashboard.php`, label: 'Dashboard', icon: '📊' },
-  { to: `${legacyBase}/members/`, label: 'Members', icon: '👥' },
-  { to: `${legacyBase}/Committees/`, label: 'Committees', icon: '🧩' },
-  { to: `${legacyBase}/loans/`, label: 'Loans', icon: '💰' },
-  { to: `${legacyBase}/savings/`, label: 'Savings', icon: '🐖' },
-  { to: `${legacyBase}/due_system/`, label: 'Due System', icon: '⏰' },
+  { to: `${legacyBase}/members/`, label: 'Members', icon: 'fa-solid fa-users' },
+  { to: `${legacyBase}/Committees/`, label: 'Committees', icon: 'fa-solid fa-layer-group' },
+  { to: `${legacyBase}/loans/`, label: 'Loans', icon: 'fa-solid fa-money-bill-wave' },
+  { to: `${legacyBase}/savings/`, label: 'Savings', icon: 'fa-solid fa-piggy-bank' },
+  { to: `${legacyBase}/due_system/`, label: 'Due System', icon: 'fa-solid fa-clock' },
 ];
 
 export default function Sidebar() {
@@ -29,7 +29,7 @@ export default function Sidebar() {
     <aside className="sidebar">
       <div className="sidebar-logo">
         <div className="logo-icon">
-          <span style={{ fontSize: 18 }}>🏦</span>
+          <i className="fa-solid fa-building-columns"></i>
         </div>
         <div>
           <h4>MicroFinance</h4>
@@ -41,13 +41,13 @@ export default function Sidebar() {
         {internalLinks.map((link) => (
           <NavLink key={link.to} to={link.to} end={link.end}
             className={({ isActive }) => (isActive ? 'active' : '')}>
-            <span className="icon">{link.icon}</span>
+            <i className={link.icon}></i>
             {link.label}
           </NavLink>
         ))}
         {legacyLinks.map((link) => (
           <a key={link.to} href={link.to}>
-            <span className="icon">{link.icon}</span>
+            <i className={link.icon}></i>
             {link.label}
           </a>
         ))}
@@ -55,7 +55,7 @@ export default function Sidebar() {
 
       <div className="sidebar-bottom">
         <a href="/MicroFinance/logout.php" onClick={handleLogout}>
-          <span className="icon">🚪</span>
+          <i className="fa-solid fa-right-from-bracket"></i>
           Logout
         </a>
       </div>

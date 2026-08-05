@@ -14,12 +14,93 @@ final class MembersController
 {
     public function index(Request $request): never { JsonResponse::notImplemented('GET /api/members'); }
     public function store(Request $request): never { JsonResponse::notImplemented('POST /api/members'); }
-    public function show(Request $request): never { JsonResponse::notImplemented('GET /api/members/{id}'); }
     public function update(Request $request): never { JsonResponse::notImplemented('PUT /api/members/{id}'); }
     public function destroy(Request $request): never { JsonResponse::notImplemented('DELETE /api/members/{id}'); }
     public function transactions(Request $request): never { JsonResponse::notImplemented('GET /api/members/{id}/transactions'); }
     public function loans(Request $request): never { JsonResponse::notImplemented('GET /api/members/{id}/loans'); }
     public function savings(Request $request): never { JsonResponse::notImplemented('GET /api/members/{id}/savings'); }
+
+    /**
+     * Single member view — mirrors backend/app/Controllers/Members/MemberViewController.php
+     * so the React MemberProfilePage can render the same data as members/view.php.
+     * Returns member + committee/branch + loans + savings + payments + summary.
+     */
+    public function show(Request $request): never
+    {
+        $memberId = (int) $request->param('id', 0);
+        if ($memberId <= 0) {
+            JsonResponse::error('VALIDATION_ERROR', 'Member id is required.', 422);
+        }
+
+        $conn = Database::connection();
+
+        $stmt = $conn->prepare('SELECT m.*, c.committee_name, b.branch_name
+                                FROM members m
+                                LEFT JOIN committees c ON m.committee_id = c.committee_id
+                                LEFT JOIN branches b ON m.branch_id = b.branch_id
+                                WHERE m.member_id = ? LIMIT 1');
+        $stmt->bind_param('i', $memberId);
+        $stmt->execute();
+        $member = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if (!$member) {
+            JsonResponse::error('NOT_FOUND', 'Member not found.', 404);
+        }
+
+        $loansStmt = $conn->prepare('SELECT * FROM loans WHERE member_id = ? ORDER BY loan_id DESC');
+        $loansStmt->bind_param('i', $memberId);
+        $loansStmt->execute();
+        $loans = $loansStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $loansStmt->close();
+
+        $savingsStmt = $conn->prepare('SELECT * FROM savings WHERE member_id = ?');
+        $savingsStmt->bind_param('i', $memberId);
+        $savingsStmt->execute();
+        $savings = $savingsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $savingsStmt->close();
+
+        $paymentsStmt = $conn->prepare('SELECT lp.*, l.loan_code
+                                        FROM loan_payments lp
+                                        LEFT JOIN loans l ON lp.loan_id = l.loan_id
+                                        WHERE l.member_id = ?
+                                        ORDER BY lp.payment_id DESC');
+        $paymentsStmt->bind_param('i', $memberId);
+        $paymentsStmt->execute();
+        $payments = $paymentsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $paymentsStmt->close();
+
+        $loanTotalStmt = $conn->prepare('SELECT COALESCE(SUM(principal_amount),0) AS t FROM loans WHERE member_id = ?');
+        $loanTotalStmt->bind_param('i', $memberId);
+        $loanTotalStmt->execute();
+        $loanTotal = (float) ($loanTotalStmt->get_result()->fetch_assoc()['t'] ?? 0);
+        $loanTotalStmt->close();
+
+        $paidTotalStmt = $conn->prepare('SELECT COALESCE(SUM(total_paid),0) AS t FROM loans WHERE member_id = ?');
+        $paidTotalStmt->bind_param('i', $memberId);
+        $paidTotalStmt->execute();
+        $paidTotal = (float) ($paidTotalStmt->get_result()->fetch_assoc()['t'] ?? 0);
+        $paidTotalStmt->close();
+
+        $savingTotalStmt = $conn->prepare('SELECT COALESCE(SUM(balance),0) AS t FROM savings WHERE member_id = ?');
+        $savingTotalStmt->bind_param('i', $memberId);
+        $savingTotalStmt->execute();
+        $savingTotal = (float) ($savingTotalStmt->get_result()->fetch_assoc()['t'] ?? 0);
+        $savingTotalStmt->close();
+
+        JsonResponse::success([
+            'member' => $member,
+            'loans' => $loans,
+            'savings' => $savings,
+            'payments' => $payments,
+            'summary' => [
+                'loan_total' => $loanTotal,
+                'paid_total' => $paidTotal,
+                'due_total' => $loanTotal - $paidTotal,
+                'saving_total' => $savingTotal,
+            ],
+        ]);
+    }
 
     /**
      * Member lookup by name, member_code, phone, national_id, or numeric

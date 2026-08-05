@@ -97,7 +97,20 @@
       "Bash(/c/xampp/php/php.exe -r '\nrequire __DIR__ . \"/backend/app/Bootstrap/autoload.php\";\nuse App\\\\Config\\\\Database;\n$conn = Database::connection\\(\\);\n$conn->query\\(\"UPDATE installments SET paid_amount=1000, status=\\\\\"pending\\\\\", paid_date=NULL, collected_by=NULL, notes=NULL WHERE installment_id=1\"\\);\necho \"restored\\\\n\";\n' 2>&1)",
       "Bash(/c/xampp/php/php.exe -l backend/app/Controllers/JsonApi/MembersController.php)",
       "Bash(cp frontend/dist/installments.html installments/index.html)",
-      "Bash(rm -f installments/assets/installments-*.js.old)"
+      "Bash(rm -f installments/assets/installments-*.js.old)",
+      "Skill(create-skill)",
+      "Bash(xargs -I {} grep -l \"dashboard\" \"C:/xampp/htdocs/MicroFinance/frontend/src/api/{}\")",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":5173\")",
+      "Bash(taskkill:*)",
+      "Bash(findstr \":80.*LISTEN\")",
+      "Bash(findstr \":5173.*LISTEN\")",
+      "Bash(\"C:/xampp/mysql/bin/mysql.exe\" -u root MicroFinance -e \"SELECT user_id, username, full_name, role, avatar FROM users LIMIT 10;\" 2>&1)",
+      "Bash(\"C:/xampp/mysql/bin/mysql.exe\" -h 127.0.0.1 -P 3306 -u root MicroFinance -e \"SELECT user_id, username, full_name, role, avatar FROM users LIMIT 10;\" 2>&1)",
+      "Bash(\"C:/xampp/mysql/bin/mysql.exe\" --version)",
+      "Bash(\"C:/xampp/mysql/bin/mysql.exe\" -u root -e \"SHOW DATABASES;\")",
+      "Bash(./mysql.exe -u root -e \"SHOW DATABASES;\")",
+      "Bash(xxd)"
     ]
   }
 }
