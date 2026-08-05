@@ -112,16 +112,20 @@
                 </div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-body">
-                    <a href="profile.php" class="dropdown-item">
+                    <?php
+                    // Account-menu links now route into the React SPA.
+                    // The legacy profile/edit.php + profile/change-password.php
+                    // shims were retired in Phase 6, and profile.php itself
+                    // is being retired in Phase 7A — the React ProfilePage
+                    // (registered in frontend/src/App.jsx at "/profile")
+                    // is the single source of truth for viewing your own
+                    // account details.
+                    $spa_base = '/MicroFinance/';
+                    ?>
+                    <a href="<?php echo $spa_base; ?>profile" class="dropdown-item">
                         <i class="fas fa-user-circle"></i>
                         <span>My Profile</span>
                     </a>
-                    <?php
-                    // Edit Profile and Change Password are React-only flows.
-                    // The legacy PHP shims have been retired — link users
-                    // straight into the SPA so we don't 404.
-                    $spa_base = '/MicroFinance/';
-                    ?>
                     <a href="<?php echo $spa_base; ?>profile/edit" class="dropdown-item">
                         <i class="fas fa-user-edit"></i>
                         <span>Edit Profile</span>
@@ -972,15 +976,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         officers.forEach(item => {
+            // Cross-user profile view (legacy profile.php?id=<user_id>) has
+            // no React equivalent — the React ProfilePage only renders the
+            // logged-in user's own profile. To avoid a 404 we render the
+            // officer result as a non-clickable div mirroring the React
+            // Topbar's officer-result treatment (frontend/src/components/
+            // layout/Topbar.jsx, see "officers.forEach" block).
             html += `
-                <a href="profile.php?id=${item.user_id}" class="search-result-item">
+                <div class="search-result-item">
                     <div class="result-icon officer"><i class="fas fa-user-tie"></i></div>
                     <div class="result-info">
                         <div class="result-name">${escapeHtml(item.full_name)}</div>
                         <div class="result-detail">${escapeHtml(item.phone || 'No phone')}</div>
                     </div>
                     <span class="result-badge">Officer</span>
-                </a>
+                </div>
             `;
         });
         
