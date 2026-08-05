@@ -111,7 +111,19 @@
       "Bash(\"C:/xampp/mysql/bin/mysql.exe\" -u root -e \"SHOW DATABASES;\")",
       "Bash(./mysql.exe -u root -e \"SHOW DATABASES;\")",
       "Bash(xxd)",
-      "Bash(ls \"C:\\\\xampp\\\\htdocs\\\\MicroFinance\\\\frontend\\\\src\\\\pages 2>/dev/null || ls /c/xampp/htdocs/MicroFinance/frontend/src/pages/ 2>/dev/null || find / -type d -name MicroFinance\")"
+      "Bash(ls \"C:\\\\xampp\\\\htdocs\\\\MicroFinance\\\\frontend\\\\src\\\\pages 2>/dev/null || ls /c/xampp/htdocs/MicroFinance/frontend/src/pages/ 2>/dev/null || find / -type d -name MicroFinance\")",
+      "Bash(rm -v index.php add.php edit.php delete.php view.php payment.php)",
+      "Bash(rmdir \"C:/xampp/htdocs/MicroFinance/loans\")",
+      "Bash(rm -v index.php add.php edit.php delete.php deposit.php withdraw.php member.php transactions.php report.php)",
+      "Bash(rmdir \"C:/xampp/htdocs/MicroFinance/savings\")",
+      "Bash(for endpoint:*)",
+      "Bash(do printf:*)",
+      "Bash(for path:*)",
+      "Bash(\"C:/xampp/php/php.exe\" -l \"C:/xampp/htdocs/MicroFinance/backend/app/Views/layouts/sidebar.php\")",
+      "Bash(\"C:/xampp/php/php.exe\" -l \"C:/xampp/htdocs/MicroFinance/backend/app/Views/layouts/topbar.php\")",
+      "Bash(\"C:/xampp/php/php.exe\" -l \"C:/xampp/htdocs/MicroFinance/backend/app/Controllers/JsonApi/LoansController.php\")",
+      "Bash(\"C:/xampp/php/php.exe\" -l \"C:/xampp/htdocs/MicroFinance/backend/app/Controllers/JsonApi/SavingsController.php\")",
+      "Read(//tmp/**)"
     ]
   }
 }

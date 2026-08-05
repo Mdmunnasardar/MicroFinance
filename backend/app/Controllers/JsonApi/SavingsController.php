@@ -14,7 +14,6 @@ final class SavingsController
 {
     /**
      * GET /api/savings — paginated list with search and type filters plus stats.
-     * Mirrors backend/app/Controllers/Savings/SavingsListController.php.
      */
     public function index(Request $request): never
     {
@@ -89,7 +88,7 @@ final class SavingsController
         ]);
     }
 
-    /** POST /api/savings — create a savings account. Mirrors SavingCreateController.php. */
+    /** POST /api/savings — create a savings account. */
     public function store(Request $request): never
     {
         $conn = Database::connection();
@@ -264,7 +263,7 @@ final class SavingsController
         ]);
     }
 
-    /** POST /api/savings/deposits — record a deposit. Mirrors SavingDepositController.php. */
+    /** POST /api/savings/deposits — record a deposit. */
     public function deposit(Request $request): never
     {
         $conn = Database::connection();
@@ -318,7 +317,7 @@ final class SavingsController
         ], 201);
     }
 
-    /** POST /api/savings/withdrawals — record a withdrawal. Mirrors SavingWithdrawController.php. */
+    /** POST /api/savings/withdrawals — record a withdrawal. */
     public function withdraw(Request $request): never
     {
         $conn = Database::connection();

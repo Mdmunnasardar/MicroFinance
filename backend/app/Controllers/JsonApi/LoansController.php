@@ -14,7 +14,6 @@ final class LoansController
 {
     /**
      * GET /api/loans — paginated list with search/status/member filters and stats.
-     * Mirrors backend/app/Controllers/Loans/LoansListController.php.
      */
     public function index(Request $request): never
     {
@@ -298,10 +297,9 @@ final class LoansController
 
     /**
      * POST /api/loans/{id}/payments — record a loan payment.
-     * Mirrors the loan_payments write in backend/app/Controllers/Loans/LoanPaymentController.php
-     * and InstallmentPaymentController.php. The actual `loan_payments` schema
-     * has columns loan_id, member_id, amount, payment_date, note (note column
-     * stores the receipt/reference text and any payment_method label).
+     * The `loan_payments` schema has columns loan_id, member_id, amount,
+     * payment_date, note (note column stores the receipt/reference text and
+     * any payment_method label).
      */
     public function recordPayment(Request $request): never
     {
