@@ -132,7 +132,12 @@
       "Bash(/c/xampp/php/php.exe -v)",
       "Bash(/c/xampp/php/php.exe -l index.php login.php logout.php dashboard.php profile.php members/edit.php members/export_csv.php members/view.php Committees/view.php due_system/index.php profile/edit.php profile/change-password.php profile/upload-avatar.php api/notifications.php api/search.php)",
       "Bash(/c/xampp/php/php.exe -l \"$f\")",
-      "Bash(/c/xampp/php/php.exe -r 'echo \"\"\"\"PHP CLI OK\"\"\"\";')"
+      "Bash(/c/xampp/php/php.exe -r 'echo \"\"\"\"PHP CLI OK\"\"\"\";')",
+      "Bash(/c/xampp/php/php.exe -l members/edit.php)",
+      "Bash(/c/xampp/php/php.exe -l members/export_csv.php)",
+      "Bash(/c/xampp/php/php.exe -l members/view.php)",
+      "Bash(/c/xampp/php/php.exe -l Committees/view.php)",
+      "Bash(/c/xampp/php/php.exe -l due_system/index.php)"
     ]
   }
 }

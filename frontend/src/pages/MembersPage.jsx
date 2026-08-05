@@ -1,5 +1,5 @@
 // MembersPage — list page mirroring members/index.php + MembersListController.
-// Stats grid, filter row, action header (Export CSV / Add Member), table,
+// Stats grid, filter row, action header (Add Member), table,
 // pagination. Keeps the same Bootstrap-style markup as the PHP view so the
 // CSS already in members.css maps 1:1; the small CSS block under `.members-page`
 // adds the few extras (filter row layout, empty state, stat spacing).
@@ -11,8 +11,6 @@ import MembersFilters from '../components/members/MembersFilters';
 import MembersTable from '../components/members/MembersTable';
 
 const DEFAULT_PAGE_SIZE = 25;
-const LEGACY_BASE = '/MicroFinance';
-
 function formatMoney(value) {
   const n = Number(value) || 0;
   return `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
@@ -205,9 +203,6 @@ export default function MembersPage() {
       <div className="members-actions">
         <span className="text-muted">Total: {total} members</span>
         <div>
-          <a href={`${LEGACY_BASE}/members/export_csv.php`} className="btn btn-success me-2" target="_blank" rel="noopener noreferrer">
-            <i className="fa-solid fa-file-export"></i> Export CSV
-          </a>
           <Link to="/members/new" className="btn btn-primary">
             <i className="fa-solid fa-plus"></i> Add Member
           </Link>
