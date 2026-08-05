@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { installmentsApi } from '../api/installmentsApi';
+import { membersApi } from '../api/membersApi';
 import { useAuth } from '../hooks/useAuth';
 
 /* ------------------------------ Helpers ------------------------------ */
 
-function formatMoney(value) {
+const BDT_FORMATTER = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+function formatBDT(value) {
   const n = Number(value) || 0;
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 2,
-  }).format(n);
+  return '\u09F3' + BDT_FORMATTER.format(n);
 }
 
 function todayISO() {
@@ -21,11 +23,36 @@ function todayISO() {
   return `${y}-${m}-${day}`;
 }
 
+function formatDate(iso) {
+  if (!iso) return '—';
+  const s = String(iso).slice(0, 10);
+  const parts = s.split('-');
+  if (parts.length !== 3) return s;
+  const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  if (Number.isNaN(d.getTime())) return s;
+  return d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 function initials(name) {
   if (!name) return '??';
   const parts = String(name).trim().split(/\s+/);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function safeTrim(value) {
+  if (value === null || value === undefined) return '';
+  return String(value).trim();
+}
+
+function normalizeStatus(installment) {
+  const raw = String(installment?.status || '').toLowerCase();
+  const paid = Number(installment?.paidAmount) || 0;
+  const due = Number(installment?.dueAmount) || 0;
+  if (raw === 'paid' || (due > 0 && paid >= due)) return 'paid';
+  if (paid > 0) return 'partial';
+  if (raw === 'overdue') return 'overdue';
+  return 'pending';
 }
 
 /* ------------------------------- Icons ------------------------------- */
@@ -42,13 +69,6 @@ const WalletIcon = () => (
     <rect x="2" y="6" width="20" height="14" rx="2" />
     <path d="M16 14h2" />
     <path d="M2 10h20" />
-  </svg>
-);
-
-const UserIcon = () => (
-  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-    <circle cx="12" cy="7" r="4" />
   </svg>
 );
 
@@ -112,18 +132,35 @@ const CloseIcon = () => (
   </svg>
 );
 
+const PhoneIcon = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.86 19.86 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.86 19.86 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+  </svg>
+);
+
+const ScheduleIcon = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <line x1="8" y1="6" x2="21" y2="6" />
+    <line x1="8" y1="12" x2="21" y2="12" />
+    <line x1="8" y1="18" x2="21" y2="18" />
+    <line x1="3" y1="6" x2="3.01" y2="6" />
+    <line x1="3" y1="12" x2="3.01" y2="12" />
+    <line x1="3" y1="18" x2="3.01" y2="18" />
+  </svg>
+);
+
 /* --------------------------- Member Picker ---------------------------- */
 
-function MemberPicker({ onPick, disabled, value, onClear }) {
+function MemberPicker({ value, onPick, onClear, disabled }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
+  const [highlight, setHighlight] = useState(0);
   const debounceRef = useRef(null);
   const containerRef = useRef(null);
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handler(event) {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
@@ -135,7 +172,7 @@ function MemberPicker({ onPick, disabled, value, onClear }) {
   }, []);
 
   const searchMembers = useCallback(async (term) => {
-    const t = (term || '').trim();
+    const t = safeTrim(term);
     if (t.length < 2) {
       setResults([]);
       setError('');
@@ -144,23 +181,9 @@ function MemberPicker({ onPick, disabled, value, onClear }) {
     setLoading(true);
     setError('');
     try {
-      // Search across all installments (any status) by member name/code or loan code
-      const response = await installmentsApi.list({ q: t, per_page: 200 });
-      const items = Array.isArray(response.data) ? response.data : [];
-      // Dedupe by member id, preserve first occurrence
-      const seen = new Map();
-      for (const it of items) {
-        const mid = it?.member?.id;
-        if (!mid) continue;
-        if (!seen.has(mid)) {
-          seen.set(mid, {
-            id: mid,
-            name: it.member?.name || '',
-            code: it.member?.code || '',
-          });
-        }
-      }
-      setResults(Array.from(seen.values()).slice(0, 12));
+      const response = await membersApi.search({ q: t, limit: 12 });
+      const items = Array.isArray(response?.data) ? response.data : [];
+      setResults(items);
     } catch (err) {
       setError(err.message || 'Failed to search members.');
       setResults([]);
@@ -173,18 +196,48 @@ function MemberPicker({ onPick, disabled, value, onClear }) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       searchMembers(query);
-    }, 300);
+    }, 280);
     return () => debounceRef.current && clearTimeout(debounceRef.current);
   }, [query, searchMembers]);
 
-  // If a value is selected, show it as the trigger
+  useEffect(() => {
+    setHighlight(0);
+  }, [results]);
+
+  const handleSelect = (member) => {
+    onPick(member);
+    setOpen(false);
+    setQuery('');
+    setResults([]);
+  };
+
+  const handleKeyDown = (event) => {
+    if (!open || results.length === 0) return;
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setHighlight((h) => Math.min(results.length - 1, h + 1));
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setHighlight((h) => Math.max(0, h - 1));
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      const chosen = results[highlight];
+      if (chosen) handleSelect(chosen);
+    } else if (event.key === 'Escape') {
+      setOpen(false);
+    }
+  };
+
   if (value) {
     return (
       <div className="cp-picker-selected">
         <div className="cp-picker-avatar" aria-hidden>{initials(value.name)}</div>
         <div className="cp-picker-selected-text">
           <strong>{value.name}</strong>
-          <span>{value.code ? `Member code: ${value.code}` : `Member ID: ${value.id}`}</span>
+          <span>
+            {value.code ? `Member code: ${value.code}` : `Member ID: ${value.id}`}
+            {value.phone ? ` · ${value.phone}` : ''}
+          </span>
         </div>
         <button
           type="button"
@@ -207,22 +260,27 @@ function MemberPicker({ onPick, disabled, value, onClear }) {
         <input
           type="text"
           className="cp-picker-input"
-          placeholder="Search member by name, code, or loan code…"
+          placeholder="Search member by name, member ID, phone, or loan code…"
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
+          onKeyDown={handleKeyDown}
           disabled={disabled}
           aria-label="Search member"
+          aria-autocomplete="list"
+          aria-expanded={open}
+          aria-controls="cp-member-listbox"
           autoComplete="off"
+          spellCheck="false"
         />
         {query ? (
           <button
             type="button"
             className="cp-picker-clear"
-            onClick={() => { setQuery(''); setResults([]); }}
+            onClick={() => { setQuery(''); setResults([]); setOpen(false); }}
             aria-label="Clear search"
             tabIndex={-1}
           >
@@ -232,11 +290,11 @@ function MemberPicker({ onPick, disabled, value, onClear }) {
       </div>
 
       {open ? (
-        <div className="cp-picker-dropdown" role="listbox">
+        <div className="cp-picker-dropdown" role="listbox" id="cp-member-listbox">
           {loading ? (
             <div className="cp-picker-state">
               <div className="cp-spinner" />
-              <span>Searching…</span>
+              <span>Searching members…</span>
             </div>
           ) : error ? (
             <div className="cp-picker-state error">
@@ -247,29 +305,42 @@ function MemberPicker({ onPick, disabled, value, onClear }) {
             <div className="cp-picker-state muted">
               {query.trim().length < 2
                 ? <>Type at least 2 characters to search.</>
-                : <>No members found for "{query}".</>}
+                : <>No members found for &ldquo;{query}&rdquo;.</>}
             </div>
           ) : (
             <ul className="cp-picker-list">
-              {results.map((member) => (
-                <li key={member.id}>
-                  <button
-                    type="button"
-                    className="cp-picker-item"
-                    onClick={() => {
-                      onPick(member);
-                      setOpen(false);
-                      setQuery('');
-                    }}
-                  >
-                    <div className="cp-picker-avatar small" aria-hidden>{initials(member.name)}</div>
-                    <div className="cp-picker-item-text">
-                      <strong>{member.name}</strong>
-                      <span>{member.code ? `Code: ${member.code}` : `ID: ${member.id}`}</span>
-                    </div>
-                  </button>
-                </li>
-              ))}
+              {results.map((member, idx) => {
+                const matchedLoan = member.matchedLoan;
+                return (
+                  <li key={member.id}>
+                    <button
+                      type="button"
+                      className={`cp-picker-item ${idx === highlight ? 'active' : ''}`}
+                      onClick={() => handleSelect(member)}
+                      onMouseEnter={() => setHighlight(idx)}
+                      role="option"
+                      aria-selected={idx === highlight}
+                    >
+                      <div className="cp-picker-avatar small" aria-hidden>{initials(member.name)}</div>
+                      <div className="cp-picker-item-text">
+                        <strong>{member.name}</strong>
+                        <span className="cp-picker-meta">
+                          <span>{member.code ? `Code: ${member.code}` : `ID: ${member.id}`}</span>
+                          {member.phone ? (
+                            <span className="cp-picker-meta-tag"><PhoneIcon />{member.phone}</span>
+                          ) : null}
+                          {matchedLoan ? (
+                            <span className="cp-picker-meta-tag loan">Loan: {matchedLoan.code}</span>
+                          ) : null}
+                          {!member.isActive ? (
+                            <span className="cp-picker-meta-tag muted">Inactive</span>
+                          ) : null}
+                        </span>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -280,123 +351,169 @@ function MemberPicker({ onPick, disabled, value, onClear }) {
 
 /* ----------------------------- Loan Picker --------------------------- */
 
-function LoanPicker({ loans, value, onPick, loading, error, memberId }) {
-  if (!memberId) return null;
-  return (
-    <div className="cp-loan-picker">
-      <div className="cp-section-label">
-        <LoanIcon />
-        <span>Active loans</span>
+function LoanPicker({ loans, value, onPick, loading, error }) {
+  if (loading) {
+    return (
+      <div className="cp-state">
+        <div className="cp-spinner" />
+        <span>Loading member loans…</span>
       </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="cp-state error">
+        <AlertIcon />
+        <span>{error}</span>
+      </div>
+    );
+  }
+  if (loans.length === 0) {
+    return <div className="cp-state muted">No active loans found for this member.</div>;
+  }
 
-      {loading ? (
-        <div className="cp-state">
-          <div className="cp-spinner" />
-          <span>Loading member loans…</span>
-        </div>
-      ) : error ? (
-        <div className="cp-state error">
-          <AlertIcon />
-          <span>{error}</span>
-        </div>
-      ) : loans.length === 0 ? (
-        <div className="cp-state muted">No active loans found for this member.</div>
-      ) : (
-        <div className="cp-loan-list">
-          {loans.map((loan) => {
-            const isSelected = value?.id === loan.id;
-            return (
-              <button
-                type="button"
-                key={loan.id}
-                className={`cp-loan-card ${isSelected ? 'selected' : ''}`}
-                onClick={() => onPick(loan)}
-              >
-                <div className="cp-loan-card-head">
-                  <span className="cp-loan-code">{loan.code || `Loan #${loan.id}`}</span>
-                  <span className={`cp-loan-status ${loan.outstanding > 0 ? 'pending' : 'settled'}`}>
-                    {loan.outstanding > 0 ? 'Outstanding' : 'Settled'}
-                  </span>
-                </div>
-                <div className="cp-loan-card-stats">
-                  <div>
-                    <span>Total due</span>
-                    <strong>{formatMoney(loan.totalDue)}</strong>
-                  </div>
-                  <div>
-                    <span>Paid</span>
-                    <strong className="ok">{formatMoney(loan.totalPaid)}</strong>
-                  </div>
-                  <div>
-                    <span>Outstanding</span>
-                    <strong className={loan.outstanding > 0 ? 'warn' : 'ok'}>
-                      {formatMoney(loan.outstanding)}
-                    </strong>
-                  </div>
-                  <div>
-                    <span>Pending installments</span>
-                    <strong>{loan.pendingCount}</strong>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
+  return (
+    <div className="cp-loan-list">
+      {loans.map((loan) => {
+        const isSelected = value?.id === loan.id;
+        return (
+          <button
+            type="button"
+            key={loan.id}
+            className={`cp-loan-card ${isSelected ? 'selected' : ''}`}
+            onClick={() => onPick(loan)}
+          >
+            <div className="cp-loan-card-head">
+              <span className="cp-loan-code">{loan.code || `Loan #${loan.id}`}</span>
+              <span className={`cp-loan-status ${loan.outstanding > 0 ? 'pending' : 'settled'}`}>
+                {loan.outstanding > 0 ? 'Outstanding' : 'Settled'}
+              </span>
+            </div>
+            <div className="cp-loan-card-stats">
+              <div>
+                <span>Total due</span>
+                <strong>{formatBDT(loan.totalDue)}</strong>
+              </div>
+              <div>
+                <span>Paid</span>
+                <strong className="ok">{formatBDT(loan.totalPaid)}</strong>
+              </div>
+              <div>
+                <span>Outstanding</span>
+                <strong className={loan.outstanding > 0 ? 'warn' : 'ok'}>
+                  {formatBDT(loan.outstanding)}
+                </strong>
+              </div>
+              <div>
+                <span>Pending installments</span>
+                <strong>{loan.pendingCount}</strong>
+              </div>
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-/* --------------------- Installment Info Card ----------------------- */
+/* ----------------------- Installment Schedule ----------------------- */
+/*
+ * NOTE: The old "Collect" action button (per-row) has been removed.
+ * Rows that aren't already settled are now clickable directly -
+ * clicking anywhere on a pending/partial/overdue row selects it for
+ * collection. Settled rows just show a checkmark and are not clickable.
+ */
 
-function InstallmentInfo({ installment }) {
-  if (!installment) return null;
-  const due = Number(installment.dueAmount) || 0;
-  const paid = Number(installment.paidAmount) || 0;
-  const remaining = Math.max(0, due - paid);
-  const progress = due > 0 ? Math.min(100, Math.round((paid / due) * 100)) : 0;
+function InstallmentSchedule({ installments, selectedId, onSelect, loading, error, loan }) {
+  if (loading) {
+    return (
+      <div className="cp-state">
+        <div className="cp-spinner" />
+        <span>Loading installment schedule…</span>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="cp-state error">
+        <AlertIcon />
+        <span>{error}</span>
+      </div>
+    );
+  }
+  if (!installments || installments.length === 0) {
+    return <div className="cp-state muted">No installments found for this loan.</div>;
+  }
+
   return (
-    <div className="cp-info-card">
-      <div className="cp-info-card-head">
-        <div>
-          <span className="cp-info-eyebrow">Current installment</span>
-          <h3>Installment #{installment.installmentNo}</h3>
-        </div>
-        <span className={`cp-info-pill ${installment.status === 'paid' ? 'ok' : (paid > 0 ? 'partial' : 'pending')}`}>
-          {installment.status === 'paid' ? 'Settled' : paid > 0 ? 'Partially paid' : 'Pending'}
-        </span>
+    <div className="cp-schedule-wrap">
+      <div className="cp-schedule-head">
+        <ScheduleIcon />
+        <span>Installment schedule{loan ? ` · ${loan.code}` : ''}</span>
       </div>
-
-      <div className="cp-info-progress">
-        <div className="cp-info-progress-bar">
-          <span style={{ width: `${progress}%` }} />
-        </div>
-        <span className="cp-info-progress-num">{progress}%</span>
-      </div>
-
-      <div className="cp-info-grid">
-        <div>
-          <span>Due amount</span>
-          <strong>{formatMoney(due)}</strong>
-        </div>
-        <div>
-          <span>Already paid</span>
-          <strong className="ok">{formatMoney(paid)}</strong>
-        </div>
-        <div>
-          <span>Remaining</span>
-          <strong className={remaining > 0 ? 'warn' : 'ok'}>{formatMoney(remaining)}</strong>
-        </div>
-        <div>
-          <span>Loan</span>
-          <strong>{installment.loan?.code || `#${installment.loanId}`}</strong>
-        </div>
+      <div className="cp-schedule-table-wrap">
+        <table className="cp-schedule-table" role="grid">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Due date</th>
+              <th>Due amount</th>
+              <th>Paid</th>
+              <th>Remaining</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {installments.map((inst) => {
+              const due = Number(inst.dueAmount) || 0;
+              const paid = Number(inst.paidAmount) || 0;
+              const remaining = Math.max(0, due - paid);
+              const status = normalizeStatus(inst);
+              const isSelected = selectedId === inst.id;
+              const isCollectable = status !== 'paid';
+              return (
+                <tr
+                  key={inst.id}
+                  className={`${isSelected ? 'selected' : ''} ${status} ${isCollectable ? 'cp-row-clickable' : ''}`}
+                  onClick={isCollectable ? () => onSelect(inst) : undefined}
+                  role={isCollectable ? 'button' : undefined}
+                  tabIndex={isCollectable ? 0 : undefined}
+                  onKeyDown={
+                    isCollectable
+                      ? (event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            onSelect(inst);
+                          }
+                        }
+                      : undefined
+                  }
+                >
+                  <td className="cp-schedule-no">#{inst.installmentNo}</td>
+                  <td>{formatDate(inst.dueDate)}</td>
+                  <td className="cp-num">{formatBDT(due)}</td>
+                  <td className="cp-num ok">{formatBDT(paid)}</td>
+                  <td className={`cp-num ${remaining > 0 ? 'warn' : 'ok'}`}>{formatBDT(remaining)}</td>
+                  <td>
+                    <span className={`cp-schedule-status cp-status-${status}`}>
+                      {status === 'paid' && 'Settled'}
+                      {status === 'partial' && 'Partial'}
+                      {status === 'overdue' && 'Overdue'}
+                      {status === 'pending' && 'Pending'}
+                      {isSelected ? ' · Selected' : ''}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
-/* --------------------- Member / Loan Summary ----------------------- */
+/* ----------------------- Member / Loan Summary ----------------------- */
 
 function MemberSummary({ member, loan }) {
   return (
@@ -413,7 +530,7 @@ function MemberSummary({ member, loan }) {
         <div className="cp-summary-loan">
           <span className="cp-summary-eyebrow">Loan</span>
           <strong>{loan.code || `Loan #${loan.id}`}</strong>
-          <span>{loan.totalDue ? `${formatMoney(loan.totalPaid)} paid of ${formatMoney(loan.totalDue)}` : ''}</span>
+          <span>{loan.totalDue ? `${formatBDT(loan.totalPaid)} paid of ${formatBDT(loan.totalDue)}` : ''}</span>
         </div>
       ) : null}
     </div>
@@ -431,7 +548,10 @@ export default function CollectPaymentPage() {
   const [loansLoading, setLoansLoading] = useState(false);
   const [loansError, setLoansError] = useState('');
   const [selectedLoan, setSelectedLoan] = useState(null);
-  const [currentInstallment, setCurrentInstallment] = useState(null);
+  const [installments, setInstallments] = useState([]);
+  const [installmentsLoading, setInstallmentsLoading] = useState(false);
+  const [installmentsError, setInstallmentsError] = useState('');
+  const [selectedInstallment, setSelectedInstallment] = useState(null);
   const [installmentLoading, setInstallmentLoading] = useState(false);
   const [installmentError, setInstallmentError] = useState('');
 
@@ -443,7 +563,9 @@ export default function CollectPaymentPage() {
   const [submitError, setSubmitError] = useState('');
   const [success, setSuccess] = useState(null);
 
-  // Feedback
+  const advanceTimerRef = useRef(null);
+
+  // Toast
   const [toast, setToast] = useState(null);
   useEffect(() => {
     if (!toast) return undefined;
@@ -453,98 +575,126 @@ export default function CollectPaymentPage() {
 
   useEffect(() => { document.title = 'Collect Payment · MicroFinance'; }, []);
 
-  /* ----------- Load member's active loans + installments ----------- */
+  useEffect(() => () => {
+    if (advanceTimerRef.current) {
+      clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
+    }
+  }, []);
+
+  const summarizeLoans = (items) => {
+    const loanMap = new Map();
+    for (const it of items) {
+      const lid = it.loanId;
+      if (!loanMap.has(lid)) {
+        loanMap.set(lid, {
+          id: lid,
+          code: it.loan?.code || '',
+          totalDue: 0,
+          totalPaid: 0,
+          outstanding: 0,
+          pendingCount: 0,
+          installmentCount: 0,
+          installments: [],
+        });
+      }
+      const entry = loanMap.get(lid);
+      entry.totalDue += Number(it.dueAmount) || 0;
+      entry.totalPaid += Number(it.paidAmount) || 0;
+      entry.outstanding += Math.max(0, (Number(it.dueAmount) || 0) - (Number(it.paidAmount) || 0));
+      entry.installments.push(it);
+      entry.installmentCount += 1;
+      if (normalizeStatus(it) !== 'paid') entry.pendingCount += 1;
+    }
+    return Array.from(loanMap.values()).sort((a, b) => b.id - a.id);
+  };
+
+  /* ----------- Load member's loans + installments ----------- */
 
   const loadMemberData = useCallback(async (memberId) => {
+    if (!memberId) return;
     setLoansLoading(true);
+    setInstallmentsLoading(true);
     setLoansError('');
+    setInstallmentsError('');
     setMemberLoans([]);
     setSelectedLoan(null);
-    setCurrentInstallment(null);
+    setInstallments([]);
+    setSelectedInstallment(null);
     setInstallmentError('');
     try {
-      // Fetch ALL installments for this member (any status), then group by loan
       const response = await installmentsApi.list({ member_id: memberId, per_page: 200 });
       const items = Array.isArray(response.data) ? response.data : [];
-
-      // Group by loan id
-      const loanMap = new Map();
-      for (const it of items) {
-        const lid = it.loanId;
-        if (!loanMap.has(lid)) {
-          loanMap.set(lid, {
-            id: lid,
-            code: it.loan?.code || '',
-            totalDue: 0,
-            totalPaid: 0,
-            outstanding: 0,
-            pendingCount: 0,
-            installments: [],
-          });
-        }
-        const entry = loanMap.get(lid);
-        entry.totalDue += Number(it.dueAmount) || 0;
-        entry.totalPaid += Number(it.paidAmount) || 0;
-        entry.outstanding += Number(it.balance) || 0;
-        entry.installments.push(it);
-        if (it.status !== 'paid') entry.pendingCount += 1;
-      }
-
-      // Only keep loans with at least one pending installment (i.e., active collections)
-      const active = Array.from(loanMap.values())
-        .filter((l) => l.pendingCount > 0)
-        .sort((a, b) => b.id - a.id);
-
-      setMemberLoans(active);
-      if (active.length === 0) {
-        setLoansError('This member has no loans with pending installments.');
+      const summaries = summarizeLoans(items);
+      setMemberLoans(summaries);
+      if (summaries.length === 0) {
+        setLoansError('This member has no loans yet.');
       }
     } catch (err) {
       setLoansError(err.message || 'Failed to load member loans.');
     } finally {
       setLoansLoading(false);
+      setInstallmentsLoading(false);
     }
   }, []);
 
-  /* ---------- When a loan is picked, fetch latest installment -------- */
+  /* ---- When a loan is picked, show its full installment schedule ---- */
 
-  const loadLoanInstallment = useCallback(async (loan) => {
-    setInstallmentLoading(true);
+  const loadLoanSchedule = useCallback(async (loan) => {
+    setInstallmentsLoading(true);
+    setInstallmentsError('');
+    setInstallments([]);
+    setSelectedInstallment(null);
     setInstallmentError('');
-    setCurrentInstallment(null);
+    setSubmitError('');
+    setSuccess(null);
     setAmount('');
     setNote('');
+    try {
+      const response = await installmentsApi.list({ loan_id: loan.id, per_page: 200 });
+      const items = Array.isArray(response.data) ? response.data : [];
+      const sorted = [...items].sort(
+        (a, b) => (Number(a.installmentNo) || 0) - (Number(b.installmentNo) || 0),
+      );
+      setInstallments(sorted);
+      const nextPending = sorted.find((it) => normalizeStatus(it) !== 'paid');
+      if (nextPending) {
+        await selectInstallment(nextPending);
+      } else if (sorted.length > 0) {
+        setInstallmentError('All installments for this loan are settled.');
+      } else {
+        setInstallmentError('No installments found for this loan.');
+      }
+    } catch (err) {
+      setInstallmentsError(err.message || 'Failed to load installment schedule.');
+    } finally {
+      setInstallmentsLoading(false);
+    }
+  }, []);
+
+  const selectInstallment = useCallback(async (installment) => {
+    setInstallmentLoading(true);
+    setInstallmentError('');
     setSubmitError('');
     setSuccess(null);
     try {
-      // Re-query installments for this loan and find the next pending one
-      const response = await installmentsApi.list({ loan_id: loan.id, per_page: 200 });
-      const items = Array.isArray(response.data) ? response.data : [];
-
-      // Sort by installment number, take next pending
-      const sorted = [...items].sort((a, b) => (a.installmentNo || 0) - (b.installmentNo || 0));
-      const nextPending = sorted.find((it) => it.status !== 'paid');
-
-      if (!nextPending) {
-        setInstallmentError('No pending installments found for this loan.');
-        return;
-      }
-
-      // Optionally re-fetch single installment for the freshest data
-      let fresh = nextPending;
+      // Re-fetch so paid amounts reflect the freshest server state.
+      let fresh = installment;
       try {
-        const single = await installmentsApi.get(nextPending.id);
+        const single = await installmentsApi.get(installment.id);
         if (single?.data) fresh = single.data;
       } catch {
-        // Fall back to the list data
+        // Fall back to the list payload if single-fetch fails.
       }
-
-      setCurrentInstallment(fresh);
-      // Pre-fill amount with remaining balance
-      const remaining = Math.max(0, (Number(fresh.dueAmount) || 0) - (Number(fresh.paidAmount) || 0));
+      setSelectedInstallment(fresh);
+      const remaining = Math.max(
+        0,
+        (Number(fresh.dueAmount) || 0) - (Number(fresh.paidAmount) || 0),
+      );
       setAmount(remaining > 0 ? String(remaining) : '');
+      setNote('');
     } catch (err) {
-      setInstallmentError(err.message || 'Failed to load installment details.');
+      setInstallmentError(err.message || 'Failed to load installment.');
     } finally {
       setInstallmentLoading(false);
     }
@@ -563,7 +713,8 @@ export default function CollectPaymentPage() {
     setSelectedMember(null);
     setMemberLoans([]);
     setSelectedLoan(null);
-    setCurrentInstallment(null);
+    setInstallments([]);
+    setSelectedInstallment(null);
     setAmount('');
     setNote('');
     setPaymentDate(todayISO());
@@ -575,7 +726,7 @@ export default function CollectPaymentPage() {
     setSelectedLoan(loan);
     setSuccess(null);
     setSubmitError('');
-    loadLoanInstallment(loan);
+    loadLoanSchedule(loan);
   };
 
   const handleResetForm = () => {
@@ -588,17 +739,20 @@ export default function CollectPaymentPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!currentInstallment) return;
+    if (!selectedInstallment) {
+      setSubmitError('Please select an installment to collect.');
+      return;
+    }
     const value = Number(amount);
     if (!value || value <= 0) {
       setSubmitError('Please enter a valid amount greater than zero.');
       return;
     }
-    const due = Number(currentInstallment.dueAmount) || 0;
-    const alreadyPaid = Number(currentInstallment.paidAmount) || 0;
+    const due = Number(selectedInstallment.dueAmount) || 0;
+    const alreadyPaid = Number(selectedInstallment.paidAmount) || 0;
     const maxAddable = Math.max(0, due - alreadyPaid);
     if (value > maxAddable) {
-      setSubmitError(`Amount exceeds the remaining balance of ${formatMoney(maxAddable)}.`);
+      setSubmitError(`Amount exceeds the remaining balance of ${formatBDT(maxAddable)}.`);
       return;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(paymentDate)) {
@@ -610,51 +764,81 @@ export default function CollectPaymentPage() {
     setSubmitError('');
     try {
       const newPaidTotal = alreadyPaid + value;
-      // Reuse existing API + business logic — do NOT change calculations.
-      await installmentsApi.pay(currentInstallment.id, {
+      // PUT returns the updated installment (server calls show() after update).
+      const putResponse = await installmentsApi.pay(selectedInstallment.id, {
         paidAmount: newPaidTotal,
         paidDate: paymentDate,
-        notes: note || null,
+        notes: safeTrim(note) === '' ? null : safeTrim(note),
         collectedBy: user?.id ?? null,
       });
-
-      // Refresh this installment + (after settle) load the next one
-      let fresh;
-      try {
-        const single = await installmentsApi.get(currentInstallment.id);
-        fresh = single?.data ?? null;
-      } catch {
-        fresh = null;
-      }
+      const fresh = putResponse?.data ?? null;
 
       const settled = !fresh
-        || fresh.status === 'paid'
+        || String(fresh.status).toLowerCase() === 'paid'
         || (Number(fresh.balance) || 0) <= 0;
 
       setToast({
         kind: 'success',
         message: settled
-          ? `Payment of ${formatMoney(value)} recorded. Installment settled.`
-          : `Partial payment of ${formatMoney(value)} recorded for installment #${currentInstallment.installmentNo}.`,
+          ? `Payment of ${formatBDT(value)} recorded. Installment settled.`
+          : `Partial payment of ${formatBDT(value)} recorded for installment #${selectedInstallment.installmentNo}.`,
       });
       setSuccess({
         amount: value,
         date: paymentDate,
-        note: note || null,
+        note: safeTrim(note) || null,
         settled,
-        installmentNo: currentInstallment.installmentNo,
+        installmentNo: selectedInstallment.installmentNo,
       });
 
-      // If this installment is settled, look for the next pending one on the same loan.
+      // Re-list so the schedule mirrors the new totals for every other
+      // installment that was waiting on this payment.
+      let refreshedList = installments;
+      if (selectedLoan) {
+        try {
+          const response = await installmentsApi.list({ loan_id: selectedLoan.id, per_page: 100 });
+          const items = Array.isArray(response.data) ? response.data : [];
+          refreshedList = [...items].sort(
+            (a, b) => (Number(a.installmentNo) || 0) - (Number(b.installmentNo) || 0),
+          );
+          setInstallments(refreshedList);
+          setMemberLoans((prev) => prev.map((loan) => {
+            if (loan.id !== selectedLoan.id) return loan;
+            const totals = refreshedList.reduce((acc, it) => {
+              const due = Number(it.dueAmount) || 0;
+              const paid = Number(it.paidAmount) || 0;
+              acc.due += due;
+              acc.paid += paid;
+              if (normalizeStatus(it) !== 'paid') acc.pending += 1;
+              return acc;
+            }, { due: 0, paid: 0, pending: 0 });
+            return {
+              ...loan,
+              totalDue: totals.due,
+              totalPaid: totals.paid,
+              outstanding: Math.max(0, totals.due - totals.paid),
+              pendingCount: totals.pending,
+            };
+          }));
+        } catch {
+          // Best-effort: keep the prior schedule if the refresh fails.
+        }
+      }
+
       if (settled) {
-        // Wait a moment so the toast is visible, then auto-advance
-        setTimeout(async () => {
-          await loadLoanInstallment(selectedLoan);
-          await loadMemberData(selectedMember.id);
-        }, 600);
-      } else {
-        // Update the current installment in place
-        if (fresh) setCurrentInstallment(fresh);
+        const nextPending = refreshedList.find((it) => normalizeStatus(it) !== 'paid');
+        if (nextPending) {
+          advanceTimerRef.current = setTimeout(() => {
+            advanceTimerRef.current = null;
+            selectInstallment(nextPending);
+          }, 400);
+        } else {
+          setSelectedInstallment(null);
+          setInstallmentError('All installments for this loan are settled. Great job!');
+        }
+      } else if (fresh) {
+        setSelectedInstallment(fresh);
+        setAmount('');
         setNote('');
       }
     } catch (err) {
@@ -667,19 +851,24 @@ export default function CollectPaymentPage() {
   /* ---------------------------- Derived ---------------------------- */
 
   const remainingBalance = useMemo(() => {
-    if (!currentInstallment) return 0;
-    const due = Number(currentInstallment.dueAmount) || 0;
-    const paid = Number(currentInstallment.paidAmount) || 0;
+    if (!selectedInstallment) return 0;
+    const due = Number(selectedInstallment.dueAmount) || 0;
+    const paid = Number(selectedInstallment.paidAmount) || 0;
     return Math.max(0, due - paid);
-  }, [currentInstallment]);
+  }, [selectedInstallment]);
 
   const progressPct = useMemo(() => {
-    if (!currentInstallment) return 0;
-    const due = Number(currentInstallment.dueAmount) || 0;
-    const paid = Number(currentInstallment.paidAmount) || 0;
+    if (!selectedInstallment) return 0;
+    const due = Number(selectedInstallment.dueAmount) || 0;
+    const paid = Number(selectedInstallment.paidAmount) || 0;
     if (due <= 0) return 0;
     return Math.min(100, Math.round((paid / due) * 100));
-  }, [currentInstallment]);
+  }, [selectedInstallment]);
+
+  const installmentStatus = useMemo(
+    () => (selectedInstallment ? normalizeStatus(selectedInstallment) : null),
+    [selectedInstallment],
+  );
 
   /* ---------------------------- Render ----------------------------- */
 
@@ -707,7 +896,7 @@ export default function CollectPaymentPage() {
           <h1>
             Collect <span className="accent">Payment</span>
           </h1>
-          <p>Search a member, pick their active loan, and record today's collection in seconds.</p>
+          <p>Search a member, pick their active loan, choose an installment, and record today&rsquo;s collection in seconds.</p>
         </div>
         <div className="cp-header-meta">
           <div className="cp-header-meta-item">
@@ -722,14 +911,13 @@ export default function CollectPaymentPage() {
       </header>
 
       <main className="cp-layout">
-        {/* LEFT — Workflow steps */}
         <section className="cp-card cp-card-main">
           <ol className="cp-steps">
             <li className={`cp-step ${selectedMember ? 'done' : 'active'}`}>
               <div className="cp-step-num">1</div>
               <div className="cp-step-body">
                 <h3>Select member</h3>
-                <p>Search by name, member code, or loan code.</p>
+                <p>Search by name, member ID, phone, or loan code. Live suggestions as you type.</p>
                 <MemberPicker
                   value={selectedMember}
                   onPick={handlePickMember}
@@ -743,37 +931,107 @@ export default function CollectPaymentPage() {
               <div className="cp-step-num">2</div>
               <div className="cp-step-body">
                 <h3>Pick their active loan</h3>
-                <p>Loans with pending installments are shown.</p>
-                <LoanPicker
-                  loans={memberLoans}
-                  value={selectedLoan}
-                  onPick={handlePickLoan}
-                  loading={loansLoading}
-                  error={loansError}
-                  memberId={selectedMember?.id}
+                <p>Loans are grouped with their installment totals.</p>
+                <div className="cp-loan-picker">
+                  <div className="cp-section-label">
+                    <LoanIcon />
+                    <span>Active loans</span>
+                  </div>
+                  <LoanPicker
+                    loans={memberLoans}
+                    value={selectedLoan}
+                    onPick={handlePickLoan}
+                    loading={loansLoading}
+                    error={loansError}
+                  />
+                </div>
+              </div>
+            </li>
+
+            <li className={`cp-step ${selectedLoan ? (selectedInstallment ? 'active' : '') : ''}`}>
+              <div className="cp-step-num">3</div>
+              <div className="cp-step-body">
+                <h3>Installment schedule</h3>
+                <p>Review the schedule and click a row to choose the installment you&rsquo;re collecting for.</p>
+                <InstallmentSchedule
+                  installments={installments}
+                  selectedId={selectedInstallment?.id}
+                  onSelect={selectInstallment}
+                  loading={installmentsLoading}
+                  error={installmentsError}
+                  loan={selectedLoan}
                 />
               </div>
             </li>
 
-            <li className={`cp-step ${currentInstallment ? 'active' : ''}`}>
-              <div className="cp-step-num">3</div>
+            <li className={`cp-step ${selectedInstallment ? 'active' : ''}`}>
+              <div className="cp-step-num">4</div>
               <div className="cp-step-body">
-                <h3>Record today's collection</h3>
-                <p>Confirm the amount and add an optional note.</p>
+                <h3>Record today&rsquo;s collection</h3>
+                <p>Confirm the amount and add an optional note. Notes can be left blank.</p>
 
                 {installmentLoading ? (
                   <div className="cp-state">
                     <div className="cp-spinner" />
                     <span>Loading installment…</span>
                   </div>
-                ) : installmentError ? (
+                ) : installmentError && !selectedInstallment ? (
                   <div className="cp-state error">
                     <AlertIcon />
                     <span>{installmentError}</span>
                   </div>
-                ) : currentInstallment ? (
+                ) : selectedInstallment ? (
                   <form className="cp-form" onSubmit={handleSubmit}>
-                    <InstallmentInfo installment={currentInstallment} />
+                    <div className="cp-info-card">
+                      <div className="cp-info-card-head">
+                        <div>
+                          <span className="cp-info-eyebrow">Selected installment</span>
+                          <h3>Installment #{selectedInstallment.installmentNo}</h3>
+                        </div>
+                        <span className={`cp-info-pill cp-status-${installmentStatus}`}>
+                          {installmentStatus === 'paid' && 'Settled'}
+                          {installmentStatus === 'partial' && 'Partially paid'}
+                          {installmentStatus === 'overdue' && 'Overdue'}
+                          {installmentStatus === 'pending' && 'Pending'}
+                        </span>
+                      </div>
+
+                      <div className="cp-info-progress">
+                        <div className="cp-info-progress-bar">
+                          <span style={{ width: `${progressPct}%` }} />
+                        </div>
+                        <span className="cp-info-progress-num">{progressPct}%</span>
+                      </div>
+
+                      <div className="cp-info-grid">
+                        <div>
+                          <span>Due date</span>
+                          <strong>{formatDate(selectedInstallment.dueDate)}</strong>
+                        </div>
+                        <div>
+                          <span>Due amount</span>
+                          <strong>{formatBDT(selectedInstallment.dueAmount)}</strong>
+                        </div>
+                        <div>
+                          <span>Already paid</span>
+                          <strong className="ok">{formatBDT(selectedInstallment.paidAmount)}</strong>
+                        </div>
+                        <div>
+                          <span>Remaining</span>
+                          <strong className={remainingBalance > 0 ? 'warn' : 'ok'}>
+                            {formatBDT(remainingBalance)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Loan</span>
+                          <strong>{selectedInstallment.loan?.code || `#${selectedInstallment.loanId}`}</strong>
+                        </div>
+                        <div>
+                          <span>Member</span>
+                          <strong>{selectedMember?.name || selectedInstallment.member?.name || '—'}</strong>
+                        </div>
+                      </div>
+                    </div>
 
                     {success ? (
                       <div className={`cp-success-banner ${success.settled ? 'settled' : 'partial'}`}>
@@ -785,7 +1043,7 @@ export default function CollectPaymentPage() {
                               : 'Partial payment recorded'}
                           </strong>
                           <span>
-                            {formatMoney(success.amount)} on {success.date}
+                            {formatBDT(success.amount)} on {success.date}
                             {success.note ? ` · Note: ${success.note}` : ''}
                           </span>
                         </div>
@@ -799,7 +1057,7 @@ export default function CollectPaymentPage() {
                           <span>Amount collected today</span>
                         </label>
                         <div className="cp-amount-wrap">
-                          <span className="cp-amount-prefix" aria-hidden>$</span>
+                          <span className="cp-amount-prefix" aria-hidden>৳</span>
                           <input
                             id="cp-amount"
                             type="number"
@@ -826,7 +1084,7 @@ export default function CollectPaymentPage() {
                           </button>
                         </div>
                         <small className="cp-field-hint">
-                          Remaining balance: <strong>{formatMoney(remainingBalance)}</strong>
+                          Remaining balance: <strong>{formatBDT(remainingBalance)}</strong>
                         </small>
                       </div>
 
@@ -862,6 +1120,9 @@ export default function CollectPaymentPage() {
                           disabled={submitting}
                           maxLength={500}
                         />
+                        <small className="cp-field-hint">
+                          Notes are optional. Leave blank if there&rsquo;s nothing to add.
+                        </small>
                       </div>
                     </div>
 
@@ -902,18 +1163,21 @@ export default function CollectPaymentPage() {
                     </div>
                   </form>
                 ) : (
-                  <div className="cp-state muted">Pick a loan to see its current installment.</div>
+                  <div className="cp-state muted">
+                    {selectedLoan
+                      ? 'Choose an installment above to record a collection.'
+                      : 'Pick a loan to see its installment schedule.'}
+                  </div>
                 )}
               </div>
             </li>
           </ol>
         </section>
 
-        {/* RIGHT — Summary sidebar (lightweight, no global Sidebar) */}
         <aside className="cp-aside">
           <div className="cp-card cp-aside-card">
             <span className="cp-aside-eyebrow">Summary</span>
-            {selectedMember || selectedLoan || currentInstallment ? (
+            {selectedMember || selectedLoan || selectedInstallment ? (
               <MemberSummary member={selectedMember} loan={selectedLoan} />
             ) : (
               <p className="cp-aside-empty">
@@ -922,31 +1186,35 @@ export default function CollectPaymentPage() {
             )}
           </div>
 
-          {currentInstallment ? (
+          {selectedInstallment ? (
             <div className="cp-card cp-aside-card">
               <span className="cp-aside-eyebrow">Installment snapshot</span>
               <div className="cp-aside-stats">
                 <div>
                   <span>Installment #</span>
-                  <strong>{currentInstallment.installmentNo}</strong>
+                  <strong>{selectedInstallment.installmentNo}</strong>
+                </div>
+                <div>
+                  <span>Due date</span>
+                  <strong>{formatDate(selectedInstallment.dueDate)}</strong>
                 </div>
                 <div>
                   <span>Due amount</span>
-                  <strong>{formatMoney(currentInstallment.dueAmount)}</strong>
+                  <strong>{formatBDT(selectedInstallment.dueAmount)}</strong>
                 </div>
                 <div>
                   <span>Already paid</span>
-                  <strong className="ok">{formatMoney(currentInstallment.paidAmount)}</strong>
+                  <strong className="ok">{formatBDT(selectedInstallment.paidAmount)}</strong>
                 </div>
                 <div>
                   <span>Remaining</span>
                   <strong className={remainingBalance > 0 ? 'warn' : 'ok'}>
-                    {formatMoney(remainingBalance)}
+                    {formatBDT(remainingBalance)}
                   </strong>
                 </div>
                 <div>
-                  <span>Today's collection</span>
-                  <strong>{amount ? formatMoney(Number(amount)) : '—'}</strong>
+                  <span>Today&rsquo;s collection</span>
+                  <strong>{amount ? formatBDT(Number(amount)) : '—'}</strong>
                 </div>
                 <div>
                   <span>Payment date</span>
@@ -954,7 +1222,7 @@ export default function CollectPaymentPage() {
                 </div>
                 <div className="cp-aside-full">
                   <span>Note</span>
-                  <strong>{note ? note : '—'}</strong>
+                  <strong>{safeTrim(note) || '—'}</strong>
                 </div>
               </div>
 
@@ -971,9 +1239,10 @@ export default function CollectPaymentPage() {
           <div className="cp-card cp-aside-card cp-tips">
             <span className="cp-aside-eyebrow">Quick tips</span>
             <ul>
-              <li>Search the member by full name or member code for faster lookup.</li>
-              <li>The system auto-fills the remaining balance so you can confirm quickly.</li>
-              <li>If today's collection settles the installment, the next one will load automatically.</li>
+              <li>Search by name, member ID, phone, or loan code &mdash; live suggestions appear as you type.</li>
+              <li>The installment schedule auto-loads when you pick a loan. Click a row to choose the correct installment.</li>
+              <li>The note field is optional &mdash; you can save without adding anything.</li>
+              <li>If today&rsquo;s collection settles the installment, the next pending one loads automatically.</li>
             </ul>
           </div>
         </aside>

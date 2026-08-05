@@ -43,6 +43,21 @@ final class Request
     public function param(string $key, mixed $default = null): mixed { return $this->routeParams[$key] ?? $default; }
     public function setRouteParams(array $params): void { $this->routeParams = $params; }
 
+    /**
+     * Look up the first present key among aliases without triggering a PHP
+     * "undefined array key" notice (which this project's error handler
+     * converts to ErrorException).
+     */
+    public function pickBody(array $aliases, mixed $default = null): mixed
+    {
+        foreach ($aliases as $key) {
+            if (array_key_exists($key, $this->body)) {
+                return $this->body[$key];
+            }
+        }
+        return $default;
+    }
+
     private function parseBody(): array
     {
         $contentType = $_SERVER['CONTENT_TYPE'] ?? '';

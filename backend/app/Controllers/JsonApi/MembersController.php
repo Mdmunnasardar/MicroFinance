@@ -22,9 +22,9 @@ final class MembersController
     public function savings(Request $request): never { JsonResponse::notImplemented('GET /api/members/{id}/savings'); }
 
     /**
-     * Smart member lookup used by the Collect Payment workflow.
-     * Searches members by name, member_code, phone, or national_id.
-     * Read-only — does not mutate any state.
+     * Member lookup by name, member_code, phone, national_id, or numeric
+     * member_id. Also matches by loan_code, in which case the matching loan
+     * is returned in `matchedLoan` so the UI can deep-link to it.
      */
     public function search(Request $request): never
     {
@@ -43,19 +43,23 @@ final class MembersController
         $idValue = $isNumeric ? (int) $rawQuery : 0;
 
         $like = '%' . $rawQuery . '%';
-        $sql = 'SELECT member_id, full_name, member_code, phone, national_id, is_active '
-             . 'FROM members '
-             . 'WHERE full_name LIKE ? OR member_code LIKE ? OR phone LIKE ? OR national_id LIKE ?';
+        $sql = 'SELECT DISTINCT m.member_id, m.full_name, m.member_code, m.phone, m.national_id, m.is_active '
+             . 'FROM members m '
+             . 'WHERE m.full_name LIKE ? OR m.member_code LIKE ? OR m.phone LIKE ? OR m.national_id LIKE ?';
         $types = 'ssss';
         $values = [$like, $like, $like, $like];
 
         if ($isNumeric && $idValue > 0) {
-            $sql .= ' OR member_id = ?';
+            $sql .= ' OR m.member_id = ?';
             $types .= 'i';
             $values[] = $idValue;
         }
 
-        $sql .= ' ORDER BY (CASE WHEN is_active = 1 THEN 0 ELSE 1 END) ASC, full_name ASC LIMIT ?';
+        $sql .= ' OR EXISTS (SELECT 1 FROM loans l WHERE l.member_id = m.member_id AND l.loan_code LIKE ?)';
+        $types .= 's';
+        $values[] = $like;
+
+        $sql .= ' ORDER BY (CASE WHEN m.is_active = 1 THEN 0 ELSE 1 END) ASC, m.full_name ASC LIMIT ?';
         $types .= 'i';
         $values[] = $limit;
 
@@ -64,6 +68,7 @@ final class MembersController
         $result = $stmt->get_result();
 
         $items = [];
+        $memberIds = [];
         while ($row = $result->fetch_assoc()) {
             $items[] = [
                 'id' => (int) $row['member_id'],
@@ -73,8 +78,36 @@ final class MembersController
                 'nationalId' => $row['national_id'],
                 'isActive' => (int) $row['is_active'] === 1,
             ];
+            $memberIds[] = (int) $row['member_id'];
         }
         $stmt->close();
+
+        $loanHint = [];
+        if ($memberIds !== []) {
+            $placeholders = implode(',', array_fill(0, count($memberIds), '?'));
+            $hintTypes = str_repeat('i', count($memberIds));
+            $hintSql = "SELECT loan_id, loan_code, member_id, status "
+                     . "FROM loans "
+                     . "WHERE member_id IN ($placeholders) AND loan_code LIKE ? "
+                     . "ORDER BY (CASE WHEN status = 'active' THEN 0 ELSE 1 END) ASC, loan_id DESC";
+            $hintValues = [...$memberIds, $like];
+            $hintTypes .= 's';
+            $hintStmt = $this->prepare($conn, $hintSql, $hintTypes, $hintValues);
+            $hintStmt->execute();
+            $hintRes = $hintStmt->get_result();
+            while ($h = $hintRes->fetch_assoc()) {
+                $loanHint[(int) $h['member_id']] = [
+                    'id' => (int) $h['loan_id'],
+                    'code' => $h['loan_code'],
+                    'status' => $h['status'],
+                ];
+            }
+            $hintStmt->close();
+        }
+
+        foreach ($items as $idx => $item) {
+            $items[$idx]['matchedLoan'] = $loanHint[$item['id']] ?? null;
+        }
 
         JsonResponse::success($items, 200, [
             'total' => count($items),

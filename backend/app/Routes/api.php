@@ -25,13 +25,15 @@ return [
     // Members
     ['GET',    '/api/members',                                       \App\Controllers\JsonApi\MembersController::class, 'index',         ['auth']],
     ['POST',   '/api/members',                                       \App\Controllers\JsonApi\MembersController::class, 'store',         ['auth']],
+    // Static "search" route must come BEFORE the dynamic "{id}" route,
+    // otherwise /api/members/search is captured by the {id} placeholder.
+    ['GET',    '/api/members/search',                                \App\Controllers\JsonApi\MembersController::class, 'search',        ['auth']],
     ['GET',    '/api/members/{id}',                                  \App\Controllers\JsonApi\MembersController::class, 'show',          ['auth']],
     ['PUT',    '/api/members/{id}',                                  \App\Controllers\JsonApi\MembersController::class, 'update',        ['auth']],
     ['DELETE', '/api/members/{id}',                                  \App\Controllers\JsonApi\MembersController::class, 'destroy',       ['auth']],
     ['GET',    '/api/members/{id}/transactions',                     \App\Controllers\JsonApi\MembersController::class, 'transactions',  ['auth']],
     ['GET',    '/api/members/{id}/loans',                            \App\Controllers\JsonApi\MembersController::class, 'loans',         ['auth']],
     ['GET',    '/api/members/{id}/savings',                          \App\Controllers\JsonApi\MembersController::class, 'savings',       ['auth']],
-    ['GET',    '/api/members/search',                                \App\Controllers\JsonApi\MembersController::class, 'search',        ['auth']],
 
     // Committees
     ['GET',    '/api/committees',                                    \App\Controllers\JsonApi\CommitteesController::class, 'index',         ['auth']],
