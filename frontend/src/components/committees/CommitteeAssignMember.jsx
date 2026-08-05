@@ -4,6 +4,7 @@
 // (member_ids array), and onRemoveSingle (member_id) callbacks.
 
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 function escapeHtml(text) {
   if (text === null || text === undefined) return '';
@@ -186,9 +187,9 @@ export default function CommitteeAssignMember({
           <div className="text-center py-12">
             <i className="fa-solid fa-check-circle text-4xl mb-3" style={{ fontSize: 36, color: '#10b981' }}></i>
             <p className="text-gray-500">All members are already assigned</p>
-            <a href="/MicroFinance/members/index.php" className="text-primary text-sm mt-2 inline-block" style={{ color: 'var(--c-primary)' }}>
+            <Link to="/members" className="text-primary text-sm mt-2 inline-block" style={{ color: 'var(--c-primary)' }}>
               <i className="fa-solid fa-arrow-right mr-1"></i> View All Members
-            </a>
+            </Link>
           </div>
         )}
       </div>

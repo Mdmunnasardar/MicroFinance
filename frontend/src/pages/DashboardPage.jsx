@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { apiClient } from '../api/client';
 
 // Maps the API's short icon name (e.g. "users") to Font Awesome classes (fa-users).
@@ -49,7 +50,7 @@ function OverdueAlert({ count }) {
     <div className="overdue-alert">
       <i className="fa-solid fa-triangle-exclamation"></i>
       <span><strong>{count}</strong> overdue loans require immediate attention!</span>
-      <a href="/MicroFinance/due_system/" className="alert-link">View Details →</a>
+      <Link to="/due-system/overdue" className="alert-link">View Details →</Link>
     </div>
   );
 }

@@ -301,14 +301,14 @@ export default function Topbar() {
                     </Link>
                   ))}
                   {(searchResults.committees || []).map((item) => (
-                    <a key={`c-${item.committee_id}`} href={`${LEGACY_BASE}/Committees/view.php?id=${item.committee_id}`} className="search-result-item">
+                    <Link key={`c-${item.committee_id}`} to={`/committees/${item.committee_id}`} className="search-result-item">
                       <div className="result-icon committee"><i className="fas fa-users-cog"></i></div>
                       <div className="result-info">
                         <div className="result-name">{escapeHtml(item.committee_name)}</div>
                         <div className="result-detail">{escapeHtml(item.branch_name || 'N/A')}</div>
                       </div>
                       <span className="result-badge">Committee</span>
-                    </a>
+                    </Link>
                   ))}
                   {(searchResults.officers || []).map((item) => (
                     <a key={`o-${item.user_id}`} href={`${LEGACY_BASE}/profile.php?id=${item.user_id}`} className="search-result-item">

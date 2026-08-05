@@ -123,7 +123,16 @@
       "Bash(\"C:/xampp/php/php.exe\" -l \"C:/xampp/htdocs/MicroFinance/backend/app/Views/layouts/topbar.php\")",
       "Bash(\"C:/xampp/php/php.exe\" -l \"C:/xampp/htdocs/MicroFinance/backend/app/Controllers/JsonApi/LoansController.php\")",
       "Bash(\"C:/xampp/php/php.exe\" -l \"C:/xampp/htdocs/MicroFinance/backend/app/Controllers/JsonApi/SavingsController.php\")",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Read(//c//**)",
+      "Read(//mnt/**)",
+      "Bash(find backend/app/Views -type f -name *.php -exec head -50 {})",
+      "Bash(2)",
+      "Bash(cd:*)",
+      "Bash(/c/xampp/php/php.exe -v)",
+      "Bash(/c/xampp/php/php.exe -l index.php login.php logout.php dashboard.php profile.php members/edit.php members/export_csv.php members/view.php Committees/view.php due_system/index.php profile/edit.php profile/change-password.php profile/upload-avatar.php api/notifications.php api/search.php)",
+      "Bash(/c/xampp/php/php.exe -l \"$f\")",
+      "Bash(/c/xampp/php/php.exe -r 'echo \"\"\"\"PHP CLI OK\"\"\"\";')"
     ]
   }
 }

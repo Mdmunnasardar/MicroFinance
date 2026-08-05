@@ -128,9 +128,9 @@ export default function MemberProfilePage() {
               </div>
             </div>
             <div className="col-md-4 text-md-end mt-3 mt-md-0">
-              <a href={`/MicroFinance/members/edit.php?id=${memberId}`} className="btn btn-warning">
+              <Link to={`/members/${memberId}/edit`} className="btn btn-warning">
                 <i className="fa-solid fa-pen"></i> Edit
-              </a>
+              </Link>
             </div>
           </div>
         </div>
