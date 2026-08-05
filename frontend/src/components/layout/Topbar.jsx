@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { profileApi } from '../../api/profileApi';
 
 const titleMap = {
   '/': 'Dashboard',
@@ -19,6 +20,10 @@ const titleMap = {
   '/due-system': 'Due System',
   '/due-system/overdue': 'Overdue Loans',
   '/due-system/report': 'Due Report',
+  '/profile': 'My Profile',
+  '/profile/edit': 'Edit Profile',
+  '/profile/change-password': 'Change Password',
+  '/field-officers': 'Field Officers',
 };
 
 // Legacy endpoints used by PHP topbar.php (these work; the /api/* JSON
@@ -44,7 +49,8 @@ function escapeHtml(text) {
 
 export default function Topbar() {
   const location = useLocation();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, logout, setUser } = useAuth();
 
   const computeTitle = () => {
     const { pathname } = location;
@@ -65,7 +71,9 @@ export default function Topbar() {
   const userAvatar = user?.avatar ?? null;
 
   const initials = getInitials(userName);
-  const avatarSrc = userAvatar ? `${LEGACY_BASE}/uploads/avatars/${userAvatar}` : null;
+  const avatarSrc = userAvatar
+    ? (userAvatar.startsWith('http') ? userAvatar : `/MicroFinance/uploads/avatars/${userAvatar}`)
+    : null;
 
   // Sidebar toggle (PHP topbar.php JS section 12) — emits a custom event the
   // Sidebar component can listen to. PHP uses a real id/class toggle; we
@@ -198,13 +206,35 @@ export default function Topbar() {
   };
 
   const handleLogout = async () => {
-    // Mirror PHP topbar.php: <a href="logout.php">. React route: call authApi.
+    // Use the JSON API + React AuthContext; do not hit legacy logout.php.
+    await logout();
+    setUserDropdownOpen(false);
+    navigate('/login', { replace: true });
+  };
+
+  // ----- Avatar upload (Topbar) -----
+  const avatarFileInputRef = useRef(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarUploadError, setAvatarUploadError] = useState('');
+
+  const handleAvatarFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    // Allow re-selecting the same file later — clear the input value.
+    if (e.target) e.target.value = '';
+    if (!file) return;
+    setAvatarUploadError('');
+    setAvatarUploading(true);
     try {
-      await fetch(`${LEGACY_BASE}/logout.php`, { credentials: 'include' });
+      const data = await profileApi.uploadAvatar(file);
+      const newName = data?.avatar || data?.data?.avatar;
+      if (newName && user) {
+        setUser({ ...user, avatar: newName });
+      }
     } catch (err) {
-      // ignore
+      setAvatarUploadError(err?.message || 'Could not upload avatar.');
+    } finally {
+      setAvatarUploading(false);
     }
-    window.location.href = '/MicroFinance/login.php';
   };
 
   // ----- Render helpers -----
@@ -311,14 +341,14 @@ export default function Topbar() {
                     </Link>
                   ))}
                   {(searchResults.officers || []).map((item) => (
-                    <a key={`o-${item.user_id}`} href={`${LEGACY_BASE}/profile.php?id=${item.user_id}`} className="search-result-item">
+                    <div key={`o-${item.user_id}`} className="search-result-item">
                       <div className="result-icon officer"><i className="fas fa-user-tie"></i></div>
                       <div className="result-info">
                         <div className="result-name">{escapeHtml(item.full_name)}</div>
                         <div className="result-detail">{escapeHtml(item.phone || 'No phone')}</div>
                       </div>
                       <span className="result-badge">Officer</span>
-                    </a>
+                    </div>
                   ))}
                 </>
               );
@@ -398,57 +428,84 @@ export default function Topbar() {
 
           <div className={`user-dropdown${userDropdownOpen ? ' show' : ''}`} id="userDropdown">
             <div className="dropdown-header">
-              <div className="user-avatar-large">{renderUserAvatar('large')}</div>
+              <div className="user-avatar-large" style={{ position: 'relative' }}>
+                {renderUserAvatar('large')}
+                <button
+                  type="button"
+                  className="avatar-upload-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    avatarFileInputRef.current?.click();
+                  }}
+                  disabled={avatarUploading}
+                  title={avatarUploading ? 'Uploading…' : 'Change avatar'}
+                  aria-label="Change avatar"
+                >
+                  <i className={`fas ${avatarUploading ? 'fa-spinner fa-spin' : 'fa-camera'}`}></i>
+                </button>
+                <input
+                  ref={avatarFileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  style={{ display: 'none' }}
+                  onChange={handleAvatarFileChange}
+                />
+              </div>
               <div>
                 <p className="dropdown-user-name">{escapeHtml(userName)}</p>
                 <p className="dropdown-user-role">{roleLabel.charAt(0).toUpperCase() + roleLabel.slice(1)}</p>
+                {avatarUploadError && (
+                  <p style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>
+                    <i className="fas fa-circle-exclamation" /> {avatarUploadError}
+                  </p>
+                )}
               </div>
             </div>
             <div className="dropdown-divider"></div>
             <div className="dropdown-body">
-              <a href={`${LEGACY_BASE}/profile.php`} className="dropdown-item">
+              <Link to="/profile" className="dropdown-item" onClick={() => setUserDropdownOpen(false)}>
                 <i className="fas fa-user-circle"></i>
                 <span>My Profile</span>
-              </a>
-              <a href={`${LEGACY_BASE}/profile/edit.php`} className="dropdown-item">
+              </Link>
+              <Link to="/profile/edit" className="dropdown-item" onClick={() => setUserDropdownOpen(false)}>
                 <i className="fas fa-user-edit"></i>
                 <span>Edit Profile</span>
-              </a>
-              <a href={`${LEGACY_BASE}/profile/change-password.php`} className="dropdown-item">
+              </Link>
+              <Link to="/profile/change-password" className="dropdown-item" onClick={() => setUserDropdownOpen(false)}>
                 <i className="fas fa-key"></i>
                 <span>Change Password</span>
-              </a>
+              </Link>
               <div className="dropdown-divider"></div>
 
               {userRole === 'field_officer' && (
                 <>
-                  <a href={`${LEGACY_BASE}/field-officer/dashboard.php`} className="dropdown-item">
+                  <Link to="/" className="dropdown-item" onClick={() => setUserDropdownOpen(false)}>
                     <i className="fas fa-chart-bar"></i>
                     <span>My Dashboard</span>
-                  </a>
-                  <a href={`${LEGACY_BASE}/field-officer/members.php`} className="dropdown-item">
+                  </Link>
+                  <Link to="/members" className="dropdown-item" onClick={() => setUserDropdownOpen(false)}>
                     <i className="fas fa-users"></i>
                     <span>My Members</span>
-                  </a>
-                  <a href={`${LEGACY_BASE}/field-officer/committees.php`} className="dropdown-item">
+                  </Link>
+                  <Link to="/committees" className="dropdown-item" onClick={() => setUserDropdownOpen(false)}>
                     <i className="fas fa-users-cog"></i>
                     <span>My Committees</span>
-                  </a>
+                  </Link>
                 </>
               )}
 
               {(userRole === 'admin' || userRole === 'branch_manager') && (
-                <a href={`${LEGACY_BASE}/Committees/officers/index.php`} className="dropdown-item">
+                <Link to="/field-officers" className="dropdown-item" onClick={() => setUserDropdownOpen(false)}>
                   <i className="fas fa-user-tie"></i>
                   <span>Field Officers</span>
-                </a>
+                </Link>
               )}
 
               <div className="dropdown-divider"></div>
-              <a href={`${LEGACY_BASE}/logout.php`} className="dropdown-item logout" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
+              <button type="button" className="dropdown-item logout" onClick={handleLogout}>
                 <i className="fas fa-sign-out-alt"></i>
                 <span>Logout</span>
-              </a>
+              </button>
             </div>
           </div>
         </div>

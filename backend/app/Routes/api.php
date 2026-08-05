@@ -17,6 +17,12 @@ return [
     ['POST',   '/api/profile/avatar',         \App\Controllers\JsonApi\ProfileController::class,        'uploadAvatar',  ['auth']],
     ['PUT',    '/api/profile/password',       \App\Controllers\JsonApi\ProfileController::class,        'changePassword',['auth']],
 
+    // Field officers (admin + branch_manager only)
+    ['GET',    '/api/field-officers',         \App\Controllers\JsonApi\FieldOfficersController::class, 'index',         ['auth']],
+
+    // Branches (used by Edit Profile to populate the branch dropdown)
+    ['GET',    '/api/branches',               \App\Controllers\JsonApi\BranchesController::class,      'index',         ['auth']],
+
     // Search + notifications
     ['GET',    '/api/search',                 \App\Controllers\JsonApi\SearchController::class,         'index',     ['auth']],
     ['GET',    '/api/notifications',          \App\Controllers\JsonApi\NotificationsController::class,  'index',     ['auth']],

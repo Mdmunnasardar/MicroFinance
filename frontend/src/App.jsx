@@ -23,6 +23,10 @@ import SavingsTransactionsPage from './pages/SavingsTransactionsPage';
 import DueSystemPage from './pages/DueSystemPage';
 import DueSystemOverduePage from './pages/DueSystemOverduePage';
 import DueSystemReportPage from './pages/DueSystemReportPage';
+import ProfilePage from './pages/account/ProfilePage';
+import EditProfilePage from './pages/account/EditProfilePage';
+import ChangePasswordPage from './pages/account/ChangePasswordPage';
+import FieldOfficersPage from './pages/account/FieldOfficersPage';
 
 export default function App() {
   return (
@@ -54,6 +58,12 @@ export default function App() {
         <Route path="/due-system" element={<DueSystemPage />} />
         <Route path="/due-system/overdue" element={<DueSystemOverduePage />} />
         <Route path="/due-system/report" element={<DueSystemReportPage />} />
+
+        {/* Account (React + JSON API) */}
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/edit" element={<EditProfilePage />} />
+        <Route path="/profile/change-password" element={<ChangePasswordPage />} />
+        <Route path="/field-officers" element={<FieldOfficersPage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />
