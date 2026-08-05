@@ -31,6 +31,7 @@ return [
     ['GET',    '/api/members/{id}/transactions',                     \App\Controllers\JsonApi\MembersController::class, 'transactions',  ['auth']],
     ['GET',    '/api/members/{id}/loans',                            \App\Controllers\JsonApi\MembersController::class, 'loans',         ['auth']],
     ['GET',    '/api/members/{id}/savings',                          \App\Controllers\JsonApi\MembersController::class, 'savings',       ['auth']],
+    ['GET',    '/api/members/search',                                \App\Controllers\JsonApi\MembersController::class, 'search',        ['auth']],
 
     // Committees
     ['GET',    '/api/committees',                                    \App\Controllers\JsonApi\CommitteesController::class, 'index',         ['auth']],

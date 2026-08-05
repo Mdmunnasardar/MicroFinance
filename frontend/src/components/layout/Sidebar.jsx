@@ -4,11 +4,11 @@ import { useAuth } from '../../hooks/useAuth';
 const legacyBase = 'http://localhost/MicroFinance';
 
 const internalLinks = [
-  { to: '/', label: 'Dashboard', icon: '📊', end: true },
-  { to: '/installments', label: 'Installments', icon: '💳' },
+  { to: '/installments', label: 'Installments', icon: '💳', end: true },
 ];
 
 const legacyLinks = [
+  { to: `${legacyBase}/dashboard.php`, label: 'Dashboard', icon: '📊' },
   { to: `${legacyBase}/members/`, label: 'Members', icon: '👥' },
   { to: `${legacyBase}/Committees/`, label: 'Committees', icon: '🧩' },
   { to: `${legacyBase}/loans/`, label: 'Loans', icon: '💰' },
