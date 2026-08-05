@@ -45,6 +45,20 @@ function safeTrim(value) {
   return String(value).trim();
 }
 
+// Maps a raw role string to a human-readable label. Single source of truth
+// so we never hardcode "Field Officer" against an admin's name.
+function roleLabel(role) {
+  if (!role) return 'User';
+  const map = {
+    admin: 'Admin',
+    branch_manager: 'Branch Manager',
+    field_officer: 'Field Officer',
+    member: 'Member',
+  };
+  if (map[role]) return map[role];
+  return String(role).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function normalizeStatus(installment) {
   const raw = String(installment?.status || '').toLowerCase();
   const paid = Number(installment?.paidAmount) || 0;
@@ -891,7 +905,7 @@ export default function CollectPaymentPage() {
           </a>
           <span className="cp-eyebrow">
             <span className="dot" aria-hidden />
-            Field Officer · Daily Collection
+            {roleLabel(user?.role)} · Daily Collection
           </span>
           <h1>
             Collect <span className="accent">Payment</span>
@@ -905,7 +919,7 @@ export default function CollectPaymentPage() {
           </div>
           <div className="cp-header-meta-item">
             <span>Collector</span>
-            <strong>{user?.name || user?.username || 'Field Officer'}</strong>
+            <strong>{user?.name || user?.username || roleLabel(user?.role) || 'User'}</strong>
           </div>
         </div>
       </header>

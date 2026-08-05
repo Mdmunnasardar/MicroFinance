@@ -19,6 +19,8 @@ return [
 
     // Field officers (admin + branch_manager only)
     ['GET',    '/api/field-officers',         \App\Controllers\JsonApi\FieldOfficersController::class, 'index',         ['auth']],
+    // Field officer's own profile stats (officer-only)
+    ['GET',    '/api/field-officers/summary', \App\Controllers\JsonApi\FieldOfficersController::class, 'summary',       ['auth']],
 
     // Branches (used by Edit Profile to populate the branch dropdown)
     ['GET',    '/api/branches',               \App\Controllers\JsonApi\BranchesController::class,      'index',         ['auth']],

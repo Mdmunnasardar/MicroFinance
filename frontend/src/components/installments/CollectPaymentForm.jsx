@@ -7,6 +7,20 @@ const formatMoney = (value) => {
   return `৳ ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
+// Maps a raw role string to a human-readable label. Single source of truth
+// so we never hardcode "Field Officer" against an admin's name.
+const roleLabel = (role) => {
+  if (!role) return 'User';
+  const map = {
+    admin: 'Admin',
+    branch_manager: 'Branch Manager',
+    field_officer: 'Field Officer',
+    member: 'Member',
+  };
+  if (map[role]) return map[role];
+  return String(role).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
 const initials = (value) => {
   if (!value) return 'FO';
   const parts = String(value).trim().split(/\s+/);
@@ -120,7 +134,7 @@ export default function CollectPaymentForm({ open, installment, busy, error, col
 
   if (!open || !installment) return null;
 
-  const collectorName = collector?.name || 'Field Officer';
+  const collectorName = collector?.name || roleLabel(collector?.role) || 'User';
   const collectorUsername = collector?.username ? `(@${collector.username})` : '';
 
   const handleSubmit = (event) => {
@@ -354,7 +368,9 @@ export default function CollectPaymentForm({ open, installment, busy, error, col
                 {collectorUsername ? <span className="inst-collector-username">{collectorUsername}</span> : null}
               </div>
               <span className="inst-collector-role">
-                {collector?.role === 'admin' || collector?.role === 'branch_manager' ? 'Authorized' : 'Field Officer'}
+                {collector?.role === 'admin' || collector?.role === 'branch_manager'
+                  ? 'Authorized'
+                  : roleLabel(collector?.role)}
               </span>
             </div>
           </div>
