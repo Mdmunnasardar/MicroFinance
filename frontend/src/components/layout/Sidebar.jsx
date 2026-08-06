@@ -21,7 +21,9 @@ export default function Sidebar() {
   const handleLogout = async (event) => {
     event.preventDefault();
     await logout();
-    window.location.href = '/login';
+    // Use a path anchored at the app root (/MicroFinance/) so the redirect
+    // works regardless of the current React Router deep link.
+    window.location.href = '/MicroFinance/login';
   };
 
   return (
@@ -53,7 +55,7 @@ export default function Sidebar() {
       </div>
 
       <div className="sidebar-bottom">
-        <a href="/MicroFinance/logout.php" onClick={handleLogout}>
+        <a href="/MicroFinance/login" onClick={handleLogout}>
           <i className="fa-solid fa-right-from-bracket"></i>
           Logout
         </a>
