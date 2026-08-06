@@ -149,7 +149,31 @@
       "Bash(find /c/xampp/htdocs/MicroFinance -path */node_modules -prune -o -path */dist -prune -o -path */storage -prune -o -path */.puku-cli -prune -o -path *Committees* -name *.php -print)",
       "Bash(find /c/xampp/htdocs/MicroFinance -path */node_modules -prune -o -path */dist -prune -o -path */storage -prune -o -path */.puku-cli -prune -o -path */worktrees -prune -o -path *api* -name *.php -print)",
       "Read(//c/Users/Munna SR/.puku-cli/plans/**)",
-      "Bash(mkdir -p \"C:/Users/Munna SR/.puku-cli/plans/\")"
+      "Bash(mkdir -p \"C:/Users/Munna SR/.puku-cli/plans/\")",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root -e \"USE MicroFinance; SELECT user_id, username, role, is_active FROM users LIMIT 5;\" 2>&1)",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root -e \"USE MicroFinance; SELECT user_id, username, role, is_active FROM users LIMIT 5;\")",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root --skip-column-names -e \"SELECT user_id, username, role, is_active FROM MicroFinance.users LIMIT 5;\")",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root --version 2>&1)",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root MicroFinance -e \"SELECT user_id, username, role, is_active FROM users LIMIT 5;\" 2>&1)",
+      "Bash(CK=/tmp/mf_cookies.txt)",
+      "Bash(rm -f $CK)",
+      "Bash(__NEW_LINE_6c665eb615a80cf5__ echo:*)",
+      "Bash(/c/xampp/php/php.exe -l /c/xampp/htdocs/MicroFinance/backend/app/Controllers/HomeController.php)",
+      "Bash(/c/xampp/php/php.exe -l /c/xampp/htdocs/MicroFinance/backend/app/Controllers/DashboardController.php)",
+      "Bash(/c/xampp/php/php.exe -l /c/xampp/htdocs/MicroFinance/backend/app/Controllers/Auth/LoginController.php)",
+      "Bash(/c/xampp/php/php.exe -l /c/xampp/htdocs/MicroFinance/backend/app/Controllers/Auth/LogoutController.php)",
+      "Bash(/c/xampp/php/php.exe -l /c/xampp/htdocs/MicroFinance/backend/app/Views/layouts/header.php)",
+      "Bash(CK=/tmp/mf_cookies2.txt rm -f $CK __NEW_LINE_0505c8cf7462b373__ echo \"=== 1. Login ===\" curl -s -c $CK -X POST http://localhost/MicroFinance/backend/public/api/auth/login -H \"Content-Type: application/json\" -d '{\"\"\"\"username\"\"\"\":\"\"\"\"admin\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"123456\"\"\"\"}' -w \"\\\\nStatus: %{http_code}\\\\n\")",
+      "Bash(echo \"...\" __NEW_LINE_0505c8cf7462b373__ echo \"\" echo \"=== 4. Logout ===\" curl -s -b $CK -c $CK -X POST http://localhost/MicroFinance/backend/public/api/auth/logout -w \"\\\\nStatus: %{http_code}\\\\n\")",
+      "Bash(CK=/tmp/mf_cookies3.txt rm -f $CK __NEW_LINE_fb5c3846f8286533__ echo \"=== Full simulated SPA flow ===\" echo \"\" echo \"1. Anonymous user hits /MicroFinance/ → SPA shell\" curl -s -o /dev/null -w \"  HTTP %{http_code}, %{size_download} bytes\\\\n\" http://localhost/MicroFinance/ __NEW_LINE_fb5c3846f8286533__ echo \"\" echo \"2. Anonymous user hits /MicroFinance/login → SPA shell\" curl -s -o /dev/null -w \"  HTTP %{http_code}, %{size_download} bytes\\\\n\" http://localhost/MicroFinance/login __NEW_LINE_fb5c3846f8286533__ echo \"\" echo \"3. Login → JSON API sets session cookie\" curl -s -c $CK -X POST http://localhost/MicroFinance/backend/public/api/auth/login -H \"Content-Type: application/json\" -d '{\"\"\"\"username\"\"\"\":\"\"\"\"admin\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"123456\"\"\"\"}' -o /tmp/_login.json -w \"  HTTP %{http_code}\\\\n\" echo \"  Cookie:\")",
+      "Read(//c/xampp/htdocs/MicroFinance/**)",
+      "Bash(head -30 echo echo '--- The bundle includes /login route? Grep the bundle ---' curl -s http://localhost/MicroFinance/assets/main-C0r18dv1.js ls -la /tmp/bundle.js echo 'LoginPage references:' grep -oE \"LoginPage|/login[^A-Za-z]\" /tmp/bundle.js)",
+      "Bash(head -20 echo \"\" echo \"Pathname matching:\" grep -oE 'pathname[^,;\\)]*' /tmp/bundle.js)",
+      "Bash(echo '=== Confirm basename is in the deployed bundle ===' curl -s http://localhost/MicroFinance/assets/main-DnRovLIa.js echo 'Bundle size: $\\(wc -c < /tmp/bundle_basename.js\\) bytes' echo echo \"basename:''''/MicroFinance'''' occurrences:\" grep -oE \"basename:\"\"/MicroFinance\"\"|basename:\"\"\\\\?/MicroFinance\"\"\" /tmp/bundle_basename.js)",
+      "Read(//c/xampp/htdocs/MicroFinance/frontend/**)",
+      "Bash(echo __NEW_LINE_6c44d3aa2bc63067__ echo \"\" echo \"3. Protected /dashboard-stats \\(authenticated, expect 200\\)\" curl -s -b $CK http://localhost/MicroFinance/backend/public/api/dashboard-stats -o /tmp/_stats.json -w \"  HTTP %{http_code}\\\\n\" echo \"  Stats keys:\")",
+      "Bash(echo __NEW_LINE_6c44d3aa2bc63067__ echo \"\" echo \"4. Logout\" curl -s -b $CK -c $CK -X POST http://localhost/MicroFinance/backend/public/api/auth/logout -o /tmp/_logout.json -w \"  HTTP %{http_code}\\\\n\" cat /tmp/_logout.json)",
+      "Bash(echo __NEW_LINE_6c44d3aa2bc63067__ echo \"\" echo \"5. After logout, /dashboard-stats returns 401\" curl -s -b $CK http://localhost/MicroFinance/backend/public/api/dashboard-stats -o /tmp/_post.json -w \"  HTTP %{http_code}\\\\n\" cat /tmp/_post.json)"
     ]
   }
 }
