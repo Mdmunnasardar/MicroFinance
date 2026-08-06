@@ -1,0 +1,76 @@
+# =============================================================================
+# MicroFinance project-root routing
+#
+# This file wires the React SPA (frontend/dist/) and the JSON API
+# (backend/public/api/) under the /MicroFinance/* URL space. It is the
+# authoritative front door for the application — the legacy shim files
+# at the project root (index.php, login.php, logout.php, dashboard.php)
+# are being retired in Phase 7D now that this rule set is in place.
+#
+# Rule order (top → bottom matters; Apache applies the first match):
+#   1. Pass through anything that exists on disk (real files / directories),
+#      EXCEPT the four legacy shims which we explicitly intercept.
+#   2. Intercept /MicroFinance/index.php, /login.php, /logout.php,
+#      /dashboard.php and rewrite them to frontend/dist/index.html so
+#      deep links and bookmarks to the legacy URLs still serve the SPA.
+#   3. Map /MicroFinance/assets/*  → frontend/dist/assets/*
+#      The Vite build uses base:'./' so index.html references
+#      ./assets/main-*.js, which the browser resolves to
+#      /MicroFinance/assets/main-*.js. We must rewrite that path
+#      because frontend/dist/ is not exposed as a real URL path.
+#   4. SPA fallback: any other /MicroFinance/* request (including the bare
+#      /MicroFinance/ directory) serves frontend/dist/index.html so React
+#      Router can take over.
+#
+# Notes:
+#   - DirectoryIndex is set to the SPA shell so /MicroFinance/ auto-loads
+#     the React app without going through any PHP shim.
+# =============================================================================
+
+Options -Indexes
+RewriteEngine On
+
+# The bare /MicroFinance/ directory loads the SPA shell directly via
+# DirectoryIndex, bypassing any legacy PHP shim. The SPA's index.html then
+# takes over via React Router for client-side routes.
+DirectoryIndex frontend/dist/index.html
+
+# Strip the /MicroFinance prefix when matching rewrite patterns so the
+# rules below stay readable.
+RewriteBase /MicroFinance/
+
+# -----------------------------------------------------------------------------
+# 1. Pass through real files and directories (uploads/, api/*.php legacy
+#    shims, backend/public/*, etc.) EXCEPT the four retired root shims.
+#    If the requested URL resolves to something on disk we leave it alone —
+#    the L flag short-circuits further rules.
+# -----------------------------------------------------------------------------
+RewriteCond %{REQUEST_URI} !^/MicroFinance/(index|login|logout|dashboard)\.php$ [NC]
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# -----------------------------------------------------------------------------
+# 2. Intercept the four retired root shims. Even after Phase 7D deletes
+#    them, this rule remains as a safety net for stale bookmarks/cached
+#    URLs. The browser is silently served the SPA shell.
+# -----------------------------------------------------------------------------
+RewriteRule ^(index|login|logout|dashboard)\.php$ frontend/dist/index.html [L]
+
+# -----------------------------------------------------------------------------
+# 3. Serve SPA-built assets from frontend/dist/assets/ when the browser
+#    requests /MicroFinance/assets/*. Vite emits base:'./' URLs so the
+#    built index.html loads /assets/main-*.js etc. relative to the page.
+# -----------------------------------------------------------------------------
+RewriteRule ^assets/(.*)$ frontend/dist/assets/$1 [L]
+
+# -----------------------------------------------------------------------------
+# 4. SPA fallback. Any remaining /MicroFinance/* request that is not a real
+#    file/directory serves frontend/dist/index.html. This lets React Router
+#    handle client-side routes (/login, /profile, /members, etc.).
+#
+#    We intentionally rewrite (not redirect) so the URL bar stays clean and
+#    so deep-linking works on hard reload.
+# -----------------------------------------------------------------------------
+RewriteCond %{REQUEST_URI} !^/MicroFinance/backend/public/ [NC]
+RewriteRule ^ frontend/dist/index.html [L]

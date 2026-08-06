@@ -1,9 +1,17 @@
 <?php
+// Legacy dashboard controller — kept as a thin compatibility shim.
+// Phase 7C's project-root .htaccess intercepts /MicroFinance/dashboard.php
+// before this script ever runs in normal traffic. The React DashboardPage
+// (rendered from /MicroFinance/) is the source of truth.
+//
+// If something DOES reach this controller (e.g. an internal legacy
+// include), we still enforce the auth gate and bounce unauthenticated
+// users to the React SPA login screen rather than the retired .php shims.
 session_start();
 include __DIR__ . "/../Config/db.php";
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: index.php");
+    header("Location: /MicroFinance/login");
     exit();
 }
 

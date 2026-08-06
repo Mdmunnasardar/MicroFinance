@@ -4,7 +4,13 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: /index.php");
+    // Auth gate for legacy pages that still include this header layout.
+    // After Phase 7C, any direct request for /MicroFinance/login.php etc.
+    // is intercepted by the project-root .htaccess and never reaches PHP.
+    // If a legacy page is loaded directly (e.g. via a stale internal
+    // include), we still want to bounce the user to the React SPA login
+    // screen rather than the retired /MicroFinance/index.php shim.
+    header("Location: /MicroFinance/login");
     exit();
 }
 ?>

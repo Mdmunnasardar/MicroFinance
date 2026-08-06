@@ -319,7 +319,7 @@ The system distinguishes four roles stored in the `users.role` column:
 - **Called from:** Topbar's live search and notification dropdown.
 
 ### File Uploads
-- **Avatar:** `profile/upload-avatar.php` accepts image files; saves to `uploads/avatars/`.
+- **Avatar:** `POST /api/profile/avatar` accepts image files (jpeg/png/gif/webp, max 5 MB); saves to `uploads/avatars/`. Legacy `profile/upload-avatar.php` shim removed in Phase 6 cleanup.
 - **No other file uploads** detected in the codebase.
 
 ### Session Handling
@@ -499,9 +499,9 @@ These rules are extracted from the code. *"Needs clarification"* is used where t
 | 12 | Members can be assigned to a committee only if active. | Enforced in `Committees/assign-member.php`. |
 | 13 | Each committee has exactly one field officer. | Schema-level design. |
 | 14 | A user can view other profiles only if admin or branch manager (and only if branch manager → field officer). | Enforced in `profile.php`. |
-| 15 | A user can only edit their own profile unless admin/branch_manager. | Enforced in `profile/edit.php`. |
-| 16 | Password change requires the current password. | Enforced in `profile/change-password.php`. |
-| 17 | New password must be at least 6 characters and must match confirmation. | Enforced in `profile/change-password.php`. |
+| 15 | A user can only edit their own profile unless admin/branch_manager. | Enforced in `PUT /api/profile` (JSON API). Legacy `profile/edit.php` shim removed in Phase 6 cleanup. |
+| 16 | Password change requires the current password. | Enforced in `PUT /api/profile/password` (JSON API). Legacy `profile/change-password.php` shim removed in Phase 6 cleanup. |
+| 17 | New password must be at least 6 characters and must match confirmation. | Enforced in `PUT /api/profile/password` (JSON API). |
 | 18 | All protected pages check `$_SESSION['user_id']` and redirect to `index.php` otherwise. | Implemented in every page. |
 | 19 | Login fails if username not found or password does not verify. | Enforced in `login.php`. |
 | 20 | Overdue loans are loans whose `maturity_date` has passed with `status = 'active'` (dashboard) **or** loans whose `next_due_date < CURDATE()` (notifications). | Two different definitions exist — *Needs clarification* for unified business rule. |
@@ -785,7 +785,8 @@ MicroFinance/
 ### Authorization
 - Every protected page checks `!isset($_SESSION['user_id'])` and redirects to `index.php`.
 - `profile.php` blocks viewing other users unless viewer is `admin` or `branch_manager`.
-- `profile/edit.php` and `profile/change-password.php` enforce the same role rules.
+- `PUT /api/profile` (JSON API) enforces the same role rules for self-edit. Legacy `profile/edit.php` shim removed in Phase 6 cleanup.
+- `PUT /api/profile/password` (JSON API) enforces the same role rules for password change. Legacy `profile/change-password.php` shim removed in Phase 6 cleanup.
 - `api/notifications.php` and `api/search.php` return 401 JSON if no session.
 
 ### Password Security
@@ -812,7 +813,7 @@ MicroFinance/
 - Server-side validation is minimal — most placeholders for `int` casts rely on PHP's loose typing.
 
 ### File Upload Security
-- `profile/upload-avatar.php` accepts image files. Detailed validation (MIME, size, filename sanitization) **Needs clarification** by reading the implementation.
+- `POST /api/profile/avatar` (JSON API) accepts image files (jpeg/png/gif/webp), max 5 MB; filename `<unix_ts>_<filename>`. Legacy `profile/upload-avatar.php` shim removed in Phase 6 cleanup.
 
 ### Recommendations
 1. Add CSRF tokens to all state-changing forms.
