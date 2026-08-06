@@ -159,7 +159,7 @@
                     <?php endif; ?>
                     
                     <div class="dropdown-divider"></div>
-                    <a href="logout.php" class="dropdown-item logout">
+                    <a href="<?php echo $spa_base; ?>login" class="dropdown-item logout">
                         <i class="fas fa-sign-out-alt"></i>
                         <span>Logout</span>
                     </a>
