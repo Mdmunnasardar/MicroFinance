@@ -1,12 +1,21 @@
 <?php
+// Legacy login controller — kept as a thin compatibility shim.
+// Phase 7C's project-root .htaccess intercepts /MicroFinance/login.php
+// before this script ever runs in normal traffic. The JSON API at
+// /MicroFinance/backend/public/api/auth/login is the source of truth for
+// authentication, used by the React LoginPage.
+//
+// If something DOES reach this controller (e.g. an internal legacy
+// include), we still terminate the PHP session check, bounce the user
+// to the React SPA routes, and never redirect to the retired .php shims.
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 include __DIR__ . "/../../Config/db.php";
 
-// If already logged in, go to dashboard
+// If already logged in, go to the React dashboard
 if (isset($_SESSION['user_id'])) {
-    header("Location: dashboard.php");
+    header("Location: /MicroFinance/");
     exit();
 }
 
@@ -39,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $_SESSION['role'] = $user['role'];
                 $_SESSION['name'] = $user['full_name'];
 
-                header("Location: dashboard.php");
+                header("Location: /MicroFinance/");
                 exit();
             } else {
                 $error = 'Invalid password';
