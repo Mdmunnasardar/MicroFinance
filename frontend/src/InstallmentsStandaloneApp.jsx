@@ -1,7 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
-import InstallmentsPage from './pages/InstallmentsPage';
-import CollectPaymentPage from './pages/CollectPaymentPage';
+import InstallmentsApp from './pages/installments/InstallmentsApp';
 import LoginPage from './pages/LoginPage';
 
 export default function InstallmentsStandaloneApp() {
@@ -12,18 +11,11 @@ export default function InstallmentsStandaloneApp() {
         path="/"
         element={
           <ProtectedRoute>
-            <InstallmentsPage />
+            <InstallmentsApp defaultTab="collect" />
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/collect-payment"
-        element={
-          <ProtectedRoute>
-            <CollectPaymentPage />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/collect-payment" element={<Navigate to="/" replace />} />
       <Route path="/installments" element={<Navigate to="/" replace />} />
       <Route path="/dashboard" element={<Navigate to="/" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
