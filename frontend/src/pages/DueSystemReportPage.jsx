@@ -1,6 +1,7 @@
 // DueSystemReportPage — mirrors due_system/report.php. Card with total
 // loan, total paid, and remaining due amounts.
 
+import '../assets/css/due-system.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { dueSystemApi } from '../api/dueSystemApi';
