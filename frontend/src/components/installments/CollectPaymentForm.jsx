@@ -142,8 +142,12 @@ export default function CollectPaymentForm({ open, installment, busy, error, col
     const numeric = Number(amount);
     if (Number.isNaN(numeric) || numeric < 0) return;
     if (numeric > remaining) return;
+    // Backend expects the CUMULATIVE total paid against this installment,
+    // not the delta being recorded today. Otherwise a partial payment would
+    // overwrite the previously-recorded total down to today's amount.
+    const cumulativePaid = Math.min(due, paidSoFar + numeric);
     onSubmit({
-      paidAmount: numeric,
+      paidAmount: cumulativePaid,
       paidDate: paidDate || today(),
       notes: notes.trim() || null,
       collectedBy: collector?.id ?? null,
@@ -273,7 +277,6 @@ export default function CollectPaymentForm({ open, installment, busy, error, col
             <div className="inst-form-section-title">Amount collected today</div>
             <div className="inst-amount-input-wrap">
               <label className="inst-field">
-                <span className="inst-field-label">Amount collected today</span>
                 <div className={`inst-currency-input inst-currency-input-lg ${overLimit ? 'is-error' : ''}`}>
                   <span className="inst-currency-prefix" aria-hidden>৳</span>
                   <input

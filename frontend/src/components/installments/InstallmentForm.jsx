@@ -103,8 +103,13 @@ export default function InstallmentForm({ open, mode, installment, busy, error, 
     event.preventDefault();
     const numeric = Number(amount);
     if (Number.isNaN(numeric) || numeric < 0) return;
+    // Backend expects the CUMULATIVE total paid (not the delta). For a
+    // partial-pay edit, add the entered amount on top of the already-recorded
+    // total so we don't overwrite the previous payment down to today's amount.
+    const basePaid = mode === 'pay' ? paidSoFar : 0;
+    const cumulativePaid = Math.min(due, basePaid + numeric);
     onSubmit({
-      paidAmount: numeric,
+      paidAmount: cumulativePaid,
       paidDate: paidDate || today(),
     });
   };
