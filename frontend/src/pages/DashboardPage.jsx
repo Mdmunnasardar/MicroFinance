@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiClient } from '../api/client';
+import '../assets/css/dashboard.css';
 
 // Maps the API's short icon name (e.g. "users") to Font Awesome classes (fa-users).
 // Mirrors PHP renderStatCard() at backend/app/Views/components/stat-card.php.
