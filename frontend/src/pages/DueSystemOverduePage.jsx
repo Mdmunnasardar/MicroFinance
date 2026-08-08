@@ -1,6 +1,7 @@
 // DueSystemOverduePage — mirrors due_system/overdue.php. Active loans with
 // remaining > 0, displayed in a 3-column table (Loan, Member, Remaining).
 
+import '../assets/css/due-system.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { dueSystemApi } from '../api/dueSystemApi';
