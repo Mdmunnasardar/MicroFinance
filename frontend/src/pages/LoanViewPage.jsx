@@ -2,6 +2,7 @@
 // loan/member/dates/purpose detail sections, action buttons (Edit, Delete,
 // Print). Confirmation modal for destructive operations.
 
+import '../assets/css/loans.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { loansApi } from '../api/loansApi';
