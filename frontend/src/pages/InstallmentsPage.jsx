@@ -1,3 +1,4 @@
+import '../assets/css/installments.css';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { installmentsApi } from '../api/installmentsApi';
 import InstallmentsTable from '../components/installments/InstallmentsTable';
