@@ -3,6 +3,7 @@
 // and the existing loan for edit. Returns to the list with sessionStorage
 // feedback so the redirect banner shows.
 
+import '../assets/css/loans.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { loansApi } from '../api/loansApi';
