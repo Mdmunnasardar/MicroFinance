@@ -3,6 +3,7 @@
 // Overdue Loans / Collection Rate), filter row, full loans table, delete
 // confirmation modal, toast feedback, and Back to Dashboard button.
 
+import '../assets/css/loans.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { loansApi } from '../api/loansApi';
