@@ -2,6 +2,7 @@
 // savings/transactions.php (ID, Member, Type, Amount, Balance After, Date,
 // Notes) plus stats grid, type filter, and pagination.
 
+import '../assets/css/savings.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { savingsApi } from '../api/savingsApi';

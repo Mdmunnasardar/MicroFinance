@@ -173,7 +173,19 @@
       "Read(//c/xampp/htdocs/MicroFinance/frontend/**)",
       "Bash(echo __NEW_LINE_6c44d3aa2bc63067__ echo \"\" echo \"3. Protected /dashboard-stats \\(authenticated, expect 200\\)\" curl -s -b $CK http://localhost/MicroFinance/backend/public/api/dashboard-stats -o /tmp/_stats.json -w \"  HTTP %{http_code}\\\\n\" echo \"  Stats keys:\")",
       "Bash(echo __NEW_LINE_6c44d3aa2bc63067__ echo \"\" echo \"4. Logout\" curl -s -b $CK -c $CK -X POST http://localhost/MicroFinance/backend/public/api/auth/logout -o /tmp/_logout.json -w \"  HTTP %{http_code}\\\\n\" cat /tmp/_logout.json)",
-      "Bash(echo __NEW_LINE_6c44d3aa2bc63067__ echo \"\" echo \"5. After logout, /dashboard-stats returns 401\" curl -s -b $CK http://localhost/MicroFinance/backend/public/api/dashboard-stats -o /tmp/_post.json -w \"  HTTP %{http_code}\\\\n\" cat /tmp/_post.json)"
+      "Bash(echo __NEW_LINE_6c44d3aa2bc63067__ echo \"\" echo \"5. After logout, /dashboard-stats returns 401\" curl -s -b $CK http://localhost/MicroFinance/backend/public/api/dashboard-stats -o /tmp/_post.json -w \"  HTTP %{http_code}\\\\n\" cat /tmp/_post.json)",
+      "Bash(dir \"C:\\\\xampp\\\\htdocs\\\\MicroFinance\")",
+      "Bash(1 echo:*)",
+      "Read(//c/xampp/htdocs/MicroFinance/=== tools/**)",
+      "Read(//c/xampp/htdocs/MicroFinance/assets/css/**)",
+      "Read(//c/xampp/htdocs/MicroFinance/assets/js/**)",
+      "Bash(ls \"/c/xampp/htdocs/MicroFinance/\"*.php)",
+      "Bash(ls \"/c/xampp/htdocs/MicroFinance/\"*.html)",
+      "Bash(ls -d /c/xampp/htdocs/MicroFinance/*/)",
+      "Bash(printf \"css %-12s \" \"input.css\")",
+      "Bash(ls frontend/vite.config.*)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(npx vite:*)"
     ]
   }
 }
