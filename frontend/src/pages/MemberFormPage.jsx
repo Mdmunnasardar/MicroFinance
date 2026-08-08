@@ -2,6 +2,7 @@
 // Detects mode from URL params, fetches the existing member record for edit,
 // loads committees/branches for the dropdowns, and submits via membersApi.
 
+import '../assets/css/members.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { membersApi } from '../api/membersApi';
