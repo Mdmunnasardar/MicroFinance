@@ -1,0 +1,681 @@
+/* Sidebar */
+.sidebar {
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  display: flex;
+  flex-direction: column;
+  padding: 22px 16px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+  padding: 0 6px;
+}
+.sidebar-logo .logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: grid;
+  place-items: center;
+  color: white;
+}
+.sidebar-logo h4 { color: white; margin: 0; font-size: 16px; }
+.sidebar-logo small { color: #94a3b8; font-size: 11px; }
+
+.sidebar-menu { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.sidebar-menu a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--sidebar-text);
+  font-size: 14px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.sidebar-menu a:hover { background: rgba(255, 255, 255, 0.06); color: white; }
+.sidebar-menu a.active { background: rgba(99, 102, 241, 0.18); color: white; }
+.sidebar-menu a i { width: 20px; text-align: center; font-size: 16px; }
+
+.sidebar-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+}
+.sidebar-bottom a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #fca5a5;
+}
+.sidebar-bottom a:hover { background: rgba(239, 68, 68, 0.12); color: white; }
+
+/* Topbar */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px;
+  background: var(--topbar-bg);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+}
+.topbar-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px 4px 4px;
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+}
+.topbar-user:hover { background: rgba(15, 23, 42, 0.05); }
+.avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  font-weight: 600;
+}
+.user-name { font-weight: 600; font-size: 13px; }
+.user-role { color: var(--muted); font-size: 11px; }
+
+.topbar-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1f5f9;
+  padding: 8px 12px;
+  border-radius: 8px;
+  min-width: 280px;
+}
+.topbar-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+}
+
+/* Main content */
+.main-content { padding: 28px; }
+.welcome { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
+.welcome h1 { margin: 0; font-size: 22px; }
+.welcome p { margin: 4px 0 0; color: var(--muted); }
+.quick-actions { display: flex; gap: 8px; }
+.quick-actions .btn-quick {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+.quick-actions .btn-quick:hover { transform: translateY(-1px); }
+.btn-quick-primary { background: var(--primary); color: white; }
+.btn-quick-success { background: var(--success); color: white; }
+.btn-quick-info { background: #06b6d4; color: white; }
+/* ========================================================================
+   PHP topbar styles (port from backend/app/Views/layouts/topbar.php)
+   Source of truth for the React <Topbar /> component.
+   ======================================================================== */
+
+.topbar-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #64748b;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: 0.3s ease;
+}
+.topbar-toggle:hover { background: #f1f5f9; }
+
+.topbar-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* ----- Search ----- */
+.topbar-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.topbar-search i {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+  font-size: 14px;
+  pointer-events: none;
+}
+.topbar-search input {
+  padding: 8px 14px 8px 40px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  width: 220px;
+  transition: 0.3s ease;
+  background: #f8fafc;
+  color: #1e293b;
+  font-family: inherit;
+  outline: none;
+}
+.topbar-search input::placeholder { color: #94a3b8; }
+.topbar-search input:focus {
+  border-color: #4f46e5;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08);
+  width: 280px;
+}
+
+.search-results {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+  border: 1px solid #e2e8f0;
+  display: none;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+.search-results.show {
+  display: block;
+  animation: slideDown 0.3s ease;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  text-decoration: none;
+  color: #1e293b;
+  transition: 0.2s ease;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+}
+.search-result-item:hover { background: #f8fafc; }
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item .result-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.search-result-item .result-icon.member { background: #eef2ff; color: #4f46e5; }
+.search-result-item .result-icon.committee { background: #d1fae5; color: #10b981; }
+.search-result-item .result-icon.officer { background: #fef3c7; color: #f59e0b; }
+.search-result-item .result-icon.branch { background: #ede9fe; color: #8b5cf6; }
+.search-result-item .result-info { flex: 1; min-width: 0; }
+.search-result-item .result-info .result-name { font-weight: 500; font-size: 14px; }
+.search-result-item .result-info .result-detail { font-size: 12px; color: #94a3b8; }
+.search-result-item .result-badge {
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.search-loading {
+  padding: 20px;
+  text-align: center;
+  color: #94a3b8;
+}
+.search-loading i { margin-right: 8px; }
+.search-empty {
+  padding: 20px;
+  text-align: center;
+  color: #94a3b8;
+}
+.search-empty i {
+  font-size: 24px;
+  color: #cbd5e1;
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* ----- Notifications ----- */
+.topbar-notifications { position: relative; }
+
+.notification-btn {
+  position: relative;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #64748b;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: 0.3s ease;
+}
+.notification-btn:hover { background: #f1f5f9; }
+
+.notification-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 380px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+  border: 1px solid #e2e8f0;
+  display: none;
+  overflow: hidden;
+  z-index: 1000;
+}
+.notification-dropdown.show {
+  display: block;
+  animation: slideDown 0.3s ease;
+}
+.notification-dropdown .dropdown-header {
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+}
+.notification-dropdown .dropdown-header span {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 14px;
+}
+.notification-dropdown .dropdown-header a {
+  font-size: 12px;
+  color: #4f46e5;
+  text-decoration: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+}
+.notification-dropdown .dropdown-body {
+  max-height: 350px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.notification-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 20px;
+  transition: 0.3s ease;
+  cursor: pointer;
+  border-bottom: 1px solid #f8fafc;
+  text-decoration: none;
+  color: inherit;
+}
+.notification-item:hover { background: #f8fafc; }
+.notification-item.unread {
+  background: #f8fafc;
+  border-left: 3px solid #4f46e5;
+}
+.notification-item .notification-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.notification-item .notification-icon.warning { background: #fef3c7; color: #f59e0b; }
+.notification-item .notification-icon.success { background: #d1fae5; color: #10b981; }
+.notification-item .notification-icon.info { background: #eef2ff; color: #4f46e5; }
+.notification-item .notification-text { font-size: 13px; color: #1e293b; margin: 0; }
+.notification-item .notification-time { font-size: 11px; color: #94a3b8; }
+
+.notification-dropdown .dropdown-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+}
+.notification-dropdown .dropdown-footer a {
+  font-size: 13px;
+  color: #4f46e5;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* ----- User menu ----- */
+.topbar-user { position: relative; }
+
+.user-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 12px 4px 4px;
+  border-radius: 8px;
+  transition: 0.3s ease;
+  font-family: inherit;
+}
+.user-btn:hover { background: #f1f5f9; }
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #eef2ff;
+}
+.user-avatar .avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.user-avatar .avatar-text {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 50%;
+}
+
+.user-info { text-align: left; line-height: 1.3; }
+.user-name { display: block; font-size: 14px; font-weight: 600; color: #1e293b; }
+.user-role { display: block; font-size: 11px; color: #94a3b8; text-transform: capitalize; }
+
+.user-arrow {
+  color: #94a3b8;
+  font-size: 12px;
+  transition: 0.3s ease;
+}
+.user-btn.active .user-arrow { transform: rotate(180deg); }
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+  border: 1px solid #e2e8f0;
+  display: none;
+  overflow: hidden;
+  z-index: 1000;
+}
+.user-dropdown.show {
+  display: block;
+  animation: slideDown 0.3s ease;
+}
+.user-dropdown .dropdown-header {
+  padding: 20px 20px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.user-dropdown .user-avatar-large {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #eef2ff;
+}
+.user-dropdown .user-avatar-large .avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.user-dropdown .user-avatar-large .avatar-text {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  border-radius: 50%;
+}
+.user-dropdown .dropdown-user-name { font-weight: 600; color: #1e293b; margin: 0; }
+.user-dropdown .dropdown-user-role { font-size: 12px; color: #94a3b8; margin: 0; text-transform: capitalize; }
+.user-dropdown .dropdown-divider { height: 1px; background: #e2e8f0; margin: 0 16px; }
+.user-dropdown .dropdown-body { padding: 8px 0; }
+.user-dropdown .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  color: #475569;
+  text-decoration: none;
+  transition: 0.3s ease;
+  font-size: 14px;
+}
+.user-dropdown .dropdown-item:hover { background: #f8fafc; color: #4f46e5; }
+.user-dropdown .dropdown-item i { width: 20px; text-align: center; color: #94a3b8; }
+.user-dropdown .dropdown-item:hover i { color: #4f46e5; }
+.user-dropdown .dropdown-item.logout { color: #ef4444; }
+.user-dropdown .dropdown-item.logout:hover { background: #fee2e2; color: #dc2626; }
+.user-dropdown .dropdown-item.logout i { color: #ef4444; }
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .topbar-toggle { display: block; }
+  .topbar-search input { width: 150px; }
+  .topbar-search input:focus { width: 180px; }
+  .search-results { width: 300px; left: auto; right: -80px; }
+  .user-info { display: none; }
+  .user-arrow { display: none; }
+  .user-dropdown { width: 280px; right: -60px; }
+  .notification-dropdown { width: 320px; right: -40px; }
+}
+
+@media (max-width: 480px) {
+  .topbar-search input { width: 120px; }
+  .topbar-search input:focus { width: 140px; }
+  .search-results { width: 280px; right: -100px; }
+  .user-dropdown { width: 260px; right: -80px; }
+  .notification-dropdown { width: 280px; right: -60px; }
+}
+
+/* React-only: visually-hidden avatar fallback text uses gradient initials */
+.topbar-user .avatar-fallback,
+.user-dropdown .avatar-fallback {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+}
+
+/* ========================================================================
+   Topbar — override React-original CSS that conflicts with PHP topbar.php
+   These rules have the same or higher specificity as the React-original
+   rules and come last, so they win.
+   ======================================================================== */
+
+/* React-original .topbar (line ~3464) is position:fixed with left offset
+   from --sidebar-width and padding:0 30px. PHP topbar.php uses:
+   position: sticky, top:0, full-width, padding: 12px 28px, backdrop-filter
+   blur(10px), background: rgba(255,255,255,0.95). */
+.topbar {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: auto;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e2e8f0;
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 100;
+}
+
+/* React-original .main-content has margin-top: var(--topbar-height) to
+   compensate for the now-removed fixed topbar. PHP topbar is sticky, so
+   no margin is needed — it sits at the top of the content column. */
+.main-content {
+  margin-top: 0 !important;
+}
+
+/* React-original made .topbar-search a gray pill with min-width 280px.
+   PHP uses an unstyled container with a bordered, focused-input child. */
+.topbar-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: transparent;
+  padding: 0;
+  gap: 0;
+  min-width: 0;
+  border-radius: 0;
+}
+.topbar-search input {
+  flex: initial;
+  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  outline: none;
+  padding: 8px 14px 8px 40px;
+  border-radius: 8px;
+  font-size: 14px;
+  width: 220px;
+  transition: 0.3s ease;
+  color: #1e293b;
+  font-family: inherit;
+}
+.topbar-search input:focus {
+  border-color: #4f46e5;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08);
+  width: 280px;
+}
+
+/* React-original had .topbar-user styled as a pill button.
+   PHP uses .user-btn (the actual clickable element) for the pill styling. */
+.topbar-user {
+  display: block;
+  position: relative;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  align-items: initial;
+  gap: 0;
+}
+.topbar-user:hover { background: transparent; }
+
+/* React-original .avatar (36px gradient circle) — PHP uses .user-avatar
+   (40px circle, light bg with gradient initials fallback). */
+.topbar .avatar { all: unset; }
+.topbar-user .avatar,
+.user-dropdown .avatar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 50%;
+}
+
+/* React-original .user-name / .user-role were inline labels in the topbar pill.
+   PHP uses the same class names; keep the React sizing but ensure they render
+   inside .user-info with the right line-height. */
+.topbar-user .user-name { font-weight: 600; font-size: 14px; color: #1e293b; display: block; line-height: 1.3; }
+.topbar-user .user-role { font-size: 11px; color: #94a3b8; text-transform: capitalize; display: block; line-height: 1.3; }
+
+/* React-original .topbar-right has gap: 16px — PHP topbar.php inline CSS
+   also uses gap: 16px. No conflict. */
+
+/* ============================================
+   AVATAR UPLOAD BUTTON (Topbar dropdown)
+   ============================================ */
+.avatar-upload-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid white;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  padding: 0;
+}
+.avatar-upload-btn:hover:not(:disabled) {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+.avatar-upload-btn:disabled { opacity: 0.7; cursor: progress; }
+
+.dropdown-item.logout {
+  width: 100%;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+
