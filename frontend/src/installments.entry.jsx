@@ -6,6 +6,7 @@ import InstallmentsStandaloneApp from './InstallmentsStandaloneApp.jsx';
 import './assets/css/common.css';
 import './assets/css/layout.css';
 import './assets/css/installments.css';
+import './pages/installments/tabs.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
