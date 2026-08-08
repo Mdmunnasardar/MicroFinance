@@ -1239,6 +1239,12 @@
 .inst-modal.inst-modal-collect .inst-modal-body {
   padding: 0 24px 24px;
   gap: 6px;
+  /* The modal as a whole is overflow:hidden (for the fintech rounded corners),
+     so the form body itself must be the scrollable region. */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .inst-context-row.inst-context-row-multi {
@@ -1404,6 +1410,10 @@
   gap: 10px;
   position: relative;
   overflow: hidden;
+  /* Don't shrink the balance card when the modal content exceeds max-height —
+     flexbox would otherwise collapse it (and clip its children with overflow:hidden)
+     instead of letting the modal scroll. */
+  flex-shrink: 0;
 }
 .inst-balance-card::before {
   content: '';

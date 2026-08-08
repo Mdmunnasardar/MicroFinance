@@ -1,18 +1,31 @@
-# Node / Vite
-frontend/node_modules/
-frontend/dist/
-frontend/.env
-frontend/.env.local
+# Dependencies
+node_modules/
+**/node_modules/
 
-# PHP
+# Vite / build output
+dist/
+**/dist/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# PHP logs
 backend/storage/logs/*.log
 
-# Scratch / tooling
-.puku-cli/worktrees/
+# Java / Gradle
+.gradle/
+**/.gradle/
+
+# Puku CLI
+.puku-cli/
+**/.puku-cli/
 
 # OS
 Thumbs.db
 .DS_Store
 
-.puku-cli
-.node_modules
+# IDE
+.vscode/
+.idea/

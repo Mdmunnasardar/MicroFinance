@@ -11,7 +11,7 @@ import LoginPage from './pages/LoginPage';
 // other page and create an unwanted blank band between the sidebar and the
 // main content.
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
-import InstallmentsPage from './pages/InstallmentsPage';
+import InstallmentsApp from './pages/installments/InstallmentsApp';
 import MembersPage from './pages/MembersPage';
 import MemberFormPage from './pages/MemberFormPage';
 import MemberProfilePage from './pages/MemberProfilePage';
@@ -47,7 +47,7 @@ export default function App() {
             <DashboardPage />
           </Suspense>
         } />
-        <Route path="/installments" element={<InstallmentsPage />} />
+        <Route path="/installments" element={<InstallmentsApp defaultTab="schedule" />} />
         <Route path="/members" element={<MembersPage />} />
         <Route path="/members/new" element={<MemberFormPage mode="create" />} />
         <Route path="/members/:id/edit" element={<MemberFormPage mode="edit" />} />
