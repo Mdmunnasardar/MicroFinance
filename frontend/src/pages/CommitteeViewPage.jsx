@@ -2,6 +2,7 @@
 // Two-column layout: main info + sidebar (officer + quick actions),
 // then a members table below. Mirrors PHP view.php lines 64-295.
 
+import '../assets/css/committees.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { committeesApi } from '../api/committeesApi';

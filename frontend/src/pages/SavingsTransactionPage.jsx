@@ -2,6 +2,7 @@
 // Mirrors savings/deposit.php and savings/withdraw.php (account select,
 // amount, notes). Withdraw enforces balance check on the backend.
 
+import '../assets/css/savings.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { savingsApi } from '../api/savingsApi';

@@ -4,6 +4,7 @@
 // Keeps the same markup/classes as the PHP view so the CSS in
 // .committees-page maps 1:1.
 
+import '../assets/css/committees.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { committeesApi } from '../api/committeesApi';

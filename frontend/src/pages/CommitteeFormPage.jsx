@@ -3,6 +3,7 @@
 // edit, submits via committeesApi. Returns to the list page with feedback
 // via sessionStorage (the list page reads it on mount).
 
+import '../assets/css/committees.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { committeesApi } from '../api/committeesApi';

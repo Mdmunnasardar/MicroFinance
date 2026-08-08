@@ -4,6 +4,7 @@
 // CSS already in members.css maps 1:1; the small CSS block under `.members-page`
 // adds the few extras (filter row layout, empty state, stat spacing).
 
+import '../assets/css/members.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { membersApi } from '../api/membersApi';

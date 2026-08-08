@@ -2,6 +2,7 @@
 // Code, Member, Loan, Paid, Remaining, Status) with the same Paid /
 // Near Close / Due bucketing. Adds stats cards and pagination.
 
+import '../assets/css/due-system.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { dueSystemApi } from '../api/dueSystemApi';

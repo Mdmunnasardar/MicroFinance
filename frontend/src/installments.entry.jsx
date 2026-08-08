@@ -3,7 +3,9 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
 import InstallmentsStandaloneApp from './InstallmentsStandaloneApp.jsx';
-import './styles.css';
+import './assets/css/common.css';
+import './assets/css/layout.css';
+import './assets/css/installments.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

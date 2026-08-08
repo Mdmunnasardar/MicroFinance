@@ -1,8 +1,16 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
+// Lazy-load DashboardPage so its dashboard.css ships only with the dashboard
+// route chunk instead of the eagerly-loaded main entry. Without this, the
+// layout overrides in dashboard.css (.app-shell { display: block },
+// .sidebar { position: fixed; width: var(--sidebar-width) },
+// .main-content { margin-left: var(--sidebar-width) }) leak onto every
+// other page and create an unwanted blank band between the sidebar and the
+// main content.
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 import InstallmentsPage from './pages/InstallmentsPage';
 import MembersPage from './pages/MembersPage';
 import MemberFormPage from './pages/MemberFormPage';
@@ -34,7 +42,11 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
 
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/" element={
+          <Suspense fallback={null}>
+            <DashboardPage />
+          </Suspense>
+        } />
         <Route path="/installments" element={<InstallmentsPage />} />
         <Route path="/members" element={<MembersPage />} />
         <Route path="/members/new" element={<MemberFormPage mode="create" />} />

@@ -2,6 +2,7 @@
 // Bootstrap-themed list with 5 columns and 4 action buttons). Adds stat
 // cards, search/type filters, and pagination to the same table layout.
 
+import '../assets/css/savings.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { savingsApi } from '../api/savingsApi';

@@ -2,6 +2,7 @@
 // 4-card summary (Total Payable, Total Paid, Remaining, Status), then a
 // form to record a payment. POSTs to /api/loans/{id}/payments.
 
+import '../assets/css/loans.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { loansApi } from '../api/loansApi';
