@@ -141,6 +141,7 @@
    PHP topbar styles (port from backend/app/Views/layouts/topbar.php)
    Source of truth for the React <Topbar /> component.
    ======================================================================== */
+   
 
 .topbar-toggle {
   display: none;
