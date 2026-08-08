@@ -1,0 +1,417 @@
+/* ============================================================
+   Savings page — mirrors savings/index.php (clean Bootstrap-
+   style list, card-box aesthetic). Scoped under .savings-page
+   so the same classes can be reused on Committees/Installments
+   without colliding.
+   ============================================================ */
+.savings-page {
+  position: relative;
+  margin: -28px;
+  padding: 24px 20px;
+  min-height: calc(100vh - 0px);
+  background: linear-gradient(135deg, #f4f6f9 0%, #eef2f7 50%, #f4f6f9 100%);
+  font-family: 'Inter', sans-serif;
+  color: #1f2937;
+  overflow-x: hidden;
+}
+
+.savings-page .container { max-width: 1280px; margin: 0 auto; }
+
+.savings-page .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.savings-page .page-header .header-left { display: flex; flex-direction: column; gap: 4px; }
+.savings-page .page-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.savings-page .page-title i { color: #4f46e5; font-size: 24px; }
+.savings-page .page-subtitle { font-size: 14px; color: #64748b; margin: 0; }
+.savings-page .page-header .header-right { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Stats grid */
+.savings-page .savings-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.savings-page .savings-stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.savings-page .savings-stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(15, 23, 42, 0.10); }
+.savings-page .savings-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+.savings-page .savings-stat-icon.green { background: linear-gradient(135deg, #10b981, #059669); }
+.savings-page .savings-stat-icon.amber { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.savings-page .savings-stat-icon.purple { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+.savings-page .savings-stat-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; }
+.savings-page .savings-stat-value { font-size: 24px; font-weight: 700; color: #0f172a; }
+.savings-page .savings-stat-meta { font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 4px; }
+.savings-page .savings-stat-meta i { color: #4f46e5; }
+
+/* Action row */
+.savings-page .savings-action-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+/* Buttons */
+.savings-page .savings-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+}
+.savings-page .savings-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12); }
+.savings-page .savings-btn.block { width: 100%; justify-content: center; }
+.savings-page .savings-btn.primary { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff; }
+.savings-page .savings-btn.success { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
+.savings-page .savings-btn.warning { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; }
+.savings-page .savings-btn.info    { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: #fff; }
+.savings-page .savings-btn.secondary { background: #e2e8f0; color: #1f2937; }
+.savings-page .savings-btn.danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
+.savings-page .savings-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* Filter card */
+.savings-page .savings-filter-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+  margin-bottom: 16px;
+}
+.savings-page .savings-filter-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto auto;
+  gap: 12px;
+  align-items: end;
+}
+.savings-page .savings-filter-group { display: flex; flex-direction: column; gap: 6px; }
+.savings-page .savings-filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.savings-page .savings-filter-label i { color: #4f46e5; }
+.savings-page .savings-filter-input {
+  padding: 9px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.savings-page .savings-filter-input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); }
+
+/* Card / table */
+.savings-page .savings-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.savings-page .savings-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+.savings-page .savings-card-header h5 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.savings-page .savings-card-count { font-size: 12px; color: #64748b; }
+.savings-page .savings-table-responsive { overflow-x: auto; }
+.savings-page .savings-table { width: 100%; border-collapse: collapse; }
+.savings-page .savings-table thead { background: #0f172a; color: #fff; }
+.savings-page .savings-table thead th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.savings-page .savings-table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #1f2937;
+  vertical-align: middle;
+}
+.savings-page .savings-table tbody tr:hover { background: #f8fafc; }
+.savings-page .savings-id-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #eef2ff;
+  color: #4f46e5;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 36px;
+  justify-content: center;
+}
+.savings-page .savings-member { display: flex; flex-direction: column; gap: 1px; }
+.savings-page .savings-member strong { color: #0f172a; font-size: 13px; }
+.savings-page .savings-member small { color: #64748b; font-size: 11px; }
+.savings-page .savings-member small i { color: #4f46e5; margin-right: 3px; }
+.savings-page .savings-balance { font-weight: 600; color: #0f172a; font-variant-numeric: tabular-nums; }
+.savings-page .savings-balance.positive { color: #047857; }
+.savings-page .savings-balance.negative { color: #b91c1c; }
+
+.savings-page .savings-type-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.savings-page .savings-type-badge.individual { background: #ede9fe; color: #6d28d9; }
+.savings-page .savings-type-badge.group      { background: #fef3c7; color: #b45309; }
+
+.savings-page .savings-txn-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.savings-page .savings-txn-badge.deposit    { background: #d1fae5; color: #047857; }
+.savings-page .savings-txn-badge.withdrawal { background: #fee2e2; color: #b91c1c; }
+.savings-page .savings-muted { color: #94a3b8; }
+
+/* Empty + loading + alerts */
+.savings-page .savings-loading,
+.savings-page .savings-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+}
+.savings-page .savings-empty i {
+  font-size: 36px;
+  color: #cbd5e1;
+  margin-bottom: 10px;
+  display: block;
+}
+.savings-page .savings-empty p { margin: 0 0 16px 0; }
+.savings-page .savings-alert {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.savings-page .savings-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  background: #0f172a;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.25);
+  animation: savings-toast-in 0.25s ease;
+}
+.savings-page .savings-toast.success { background: linear-gradient(135deg, #10b981, #059669); }
+.savings-page .savings-toast.error   { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.savings-page .savings-toast-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+}
+@keyframes savings-toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Pagination */
+.savings-page .savings-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 4px 0;
+}
+.savings-page .savings-pagination-info { font-size: 12px; color: #475569; }
+.savings-page .savings-pagination-info strong { color: #0f172a; }
+.savings-page .savings-pagination-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.savings-page .savings-pagination-size { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #475569; }
+.savings-page .savings-pagination-size select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 12px;
+  background: #fff;
+}
+.savings-page .savings-pagination-current { font-size: 12px; color: #475569; }
+.savings-page .savings-pagination-current strong { color: #0f172a; }
+
+.savings-page .savings-back-wrap { margin-top: 20px; }
+
+/* Form */
+.savings-page .savings-form-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+  padding: 24px;
+  max-width: 720px;
+}
+.savings-page .savings-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.savings-page .savings-form-group { display: flex; flex-direction: column; gap: 6px; }
+.savings-page .savings-form-group.full { grid-column: 1 / -1; }
+.savings-page .savings-form-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.savings-page .savings-form-label i { color: #4f46e5; }
+.savings-page .savings-form-input {
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.savings-page .savings-form-input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); }
+.savings-page .savings-form-input:disabled { background: #f1f5f9; color: #64748b; }
+.savings-page textarea.savings-form-input { resize: vertical; min-height: 80px; }
+
+.savings-page .savings-form-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.savings-page .savings-balance-hint {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Print */
+@media print {
+  .savings-page .savings-action-row,
+  .savings-page .savings-pagination,
+  .savings-page .savings-back-wrap,
+  .savings-page .savings-filter-card { display: none !important; }
+  .savings-page { background: #fff !important; margin: 0 !important; padding: 0 !important; }
+  .savings-page .savings-card { box-shadow: none !important; border: 1px solid #cbd5e1; }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .savings-page .savings-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .savings-page .savings-filter-row { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 768px) {
+  .savings-page { margin: -20px; padding: 16px; }
+  .savings-page .page-header { flex-direction: column; align-items: stretch; }
+  .savings-page .page-title { font-size: 22px; }
+  .savings-page .savings-stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .savings-page .savings-stat-card { padding: 16px; }
+  .savings-page .savings-stat-value { font-size: 20px; }
+  .savings-page .savings-filter-row { grid-template-columns: 1fr; }
+  .savings-page .savings-form-row { grid-template-columns: 1fr; gap: 0; }
+  .savings-page .savings-table thead th,
+  .savings-page .savings-table tbody td { padding: 10px 8px; font-size: 12px; }
+  .savings-page .savings-pagination { flex-direction: column; align-items: stretch; }
+  .savings-page .savings-pagination-controls { justify-content: center; }
+}
+@media (max-width: 480px) {
+  .savings-page .savings-stats-grid { grid-template-columns: 1fr; }
+  .savings-page .page-title { font-size: 18px; }
+  .savings-page .savings-btn { padding: 8px 12px; font-size: 12px; }
+}
