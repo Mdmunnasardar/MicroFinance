@@ -2,6 +2,7 @@
 // dropdown, amount, date, note). Loads members via savingsApi.list, submits
 // via savingsApi.create, redirects to /savings with sessionStorage feedback.
 
+import '../assets/css/savings.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { savingsApi } from '../api/savingsApi';
