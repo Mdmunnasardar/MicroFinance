@@ -3,6 +3,7 @@
 // via the JSON API, supports single bulk assign + single remove, and renders
 // success/error feedback inline.
 
+import '../assets/css/committees.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { committeesApi } from '../api/committeesApi';
