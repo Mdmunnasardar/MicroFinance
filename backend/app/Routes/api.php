@@ -62,12 +62,14 @@ return [
     ['POST',   '/api/loans/{id}/status',                             \App\Controllers\JsonApi\LoansController::class, 'updateStatus',  ['auth']],
     ['POST',   '/api/loans/{id}/payments',                           \App\Controllers\JsonApi\LoansController::class, 'recordPayment', ['auth']],
 
-    // Installments
-    ['GET',    '/api/installments',                                  \App\Controllers\JsonApi\InstallmentsController::class, 'index',   ['auth']],
-    ['POST',   '/api/installments',                                  \App\Controllers\JsonApi\InstallmentsController::class, 'store',   ['auth']],
-    ['GET',    '/api/installments/{id}',                             \App\Controllers\JsonApi\InstallmentsController::class, 'show',    ['auth']],
-    ['PUT',    '/api/installments/{id}',                             \App\Controllers\JsonApi\InstallmentsController::class, 'update',  ['auth']],
-    ['DELETE', '/api/installments/{id}',                             \App\Controllers\JsonApi\InstallmentsController::class, 'destroy', ['auth']],
+// ==================== INSTALLMENTS ====================
+['GET',    '/api/installments',                                  \App\Controllers\JsonApi\InstallmentsController::class, 'index',   ['auth']],
+['GET',    '/api/installments/today',                            \App\Controllers\JsonApi\InstallmentsController::class, 'today',   ['auth']],
+['GET',    '/api/installments/overdue',                          \App\Controllers\JsonApi\InstallmentsController::class, 'overdue', ['auth']],
+['POST',   '/api/installments',                                  \App\Controllers\JsonApi\InstallmentsController::class, 'store',   ['auth']],
+['GET',    '/api/installments/{id}',                             \App\Controllers\JsonApi\InstallmentsController::class, 'show',    ['auth']],
+['PUT',    '/api/installments/{id}',                             \App\Controllers\JsonApi\InstallmentsController::class, 'update',  ['auth']],
+['DELETE', '/api/installments/{id}',                             \App\Controllers\JsonApi\InstallmentsController::class, 'destroy', ['auth']],
 
     // Savings
     // Static sub-routes (/api/savings/member/{id}, /api/savings/deposits,
