@@ -9,12 +9,10 @@ use App\Helpers\JsonResponse;
 use App\Helpers\Request;
 use mysqli;
 use mysqli_stmt;
+use DateTime;
 
 final class LoansController
 {
-    /**
-     * GET /api/loans — paginated list with search/status/member filters and stats.
-     */
     public function index(Request $request): never
     {
         $conn = Database::connection();
@@ -68,7 +66,6 @@ final class LoansController
         $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
 
-        // PHP list stats are unfiltered.
         $stats = $conn->query("SELECT COUNT(*) AS total_loans, "
                             . "SUM(CASE WHEN status='active' THEN 1 ELSE 0 END) AS active_loans, "
                             . "SUM(CASE WHEN status='overdue' THEN 1 ELSE 0 END) AS overdue_loans, "
@@ -101,7 +98,9 @@ final class LoansController
         ]);
     }
 
-    /** POST /api/loans — create a loan using the same calculations as add.php. */
+    /**
+     * POST /api/loans - CREATE LOAN WITH INSTALLMENTS (FIXED)
+     */
     public function store(Request $request): never
     {
         $conn = Database::connection();
@@ -132,27 +131,128 @@ final class LoansController
 
         [$totalPayable, $installmentAmount, $maturityDate] = $this->calculate($principal, $rate, $term, $disbursementDate);
 
-        $sql = 'INSERT INTO loans (loan_code, member_id, branch_id, principal_amount, interest_rate, interest_type, '
-             . 'loan_term_months, installment_type, installment_amount, total_payable, total_paid, disbursement_date, '
-             . 'first_installment_date, maturity_date, status, purpose) '
-             . "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, 'active', ?)";
-        $stmt = $this->prepare($conn, $sql, 'siiddsisddssss', [
-            $loanCode, $memberId, $branchId, $principal, $rate, $interestType,
-            $term, $installmentType, $installmentAmount, $totalPayable,
-            $disbursementDate, $firstInstallmentDate, $maturityDate, $purpose,
-        ]);
-        if (!$stmt->execute()) {
-            $error = $stmt->error;
-            $stmt->close();
-            JsonResponse::error('DB_ERROR', 'Failed to create loan: ' . $error, 500);
-        }
-        $loanId = $stmt->insert_id;
-        $stmt->close();
+        // START TRANSACTION
+        $conn->begin_transaction();
 
-        JsonResponse::success(['loan' => $this->fetchLoan($conn, $loanId)], 201);
+        try {
+            // 1. Insert loan
+            $sql = 'INSERT INTO loans (loan_code, member_id, branch_id, principal_amount, interest_rate, interest_type, '
+                 . 'loan_term_months, installment_type, installment_amount, total_payable, total_paid, disbursement_date, '
+                 . 'first_installment_date, maturity_date, status, purpose) '
+                 . "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, 'active', ?)";
+            $stmt = $this->prepare($conn, $sql, 'siiddsisddssss', [
+                $loanCode, $memberId, $branchId, $principal, $rate, $interestType,
+                $term, $installmentType, $installmentAmount, $totalPayable,
+                $disbursementDate, $firstInstallmentDate, $maturityDate, $purpose,
+            ]);
+            if (!$stmt->execute()) {
+                $error = $stmt->error;
+                $stmt->close();
+                JsonResponse::error('DB_ERROR', 'Failed to create loan: ' . $error, 500);
+            }
+            $loanId = $stmt->insert_id;
+            $stmt->close();
+
+            // 2. GENERATE INSTALLMENTS (CRITICAL FIX - THIS WAS MISSING)
+            $this->generateInstallments(
+                $conn, 
+                $loanId, 
+                $totalPayable, 
+                $term, 
+                $firstInstallmentDate,
+                $installmentType
+            );
+
+            $conn->commit();
+
+            // Get the created loan with installments
+            $loan = $this->fetchLoan($conn, $loanId);
+            
+            // Get generated installments
+            $instStmt = $conn->prepare('SELECT * FROM installments WHERE loan_id = ? ORDER BY installment_no ASC');
+            $instStmt->bind_param('i', $loanId);
+            $instStmt->execute();
+            $installments = $instStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            $instStmt->close();
+
+            JsonResponse::success([
+                'loan' => $loan,
+                'installments' => $installments,
+                'installments_generated' => count($installments),
+                'message' => 'Loan created successfully with ' . count($installments) . ' installments.'
+            ], 201);
+
+        } catch (\Exception $e) {
+            $conn->rollback();
+            JsonResponse::error('LOAN_CREATION_FAILED', 'Failed to create loan: ' . $e->getMessage(), 500);
+        }
     }
 
-    /** GET /api/loans/{id} — loan, member, payments and installments. */
+    /**
+     * Generate installments for a loan (FIXED - This actually creates the installments)
+     */
+    private function generateInstallments(
+        mysqli $conn, 
+        int $loanId, 
+        float $totalAmount, 
+        int $installmentCount, 
+        string $firstInstallmentDate,
+        string $installmentType
+    ): void {
+        // Check if installments already exist for this loan
+        $checkStmt = $conn->prepare('SELECT COUNT(*) as count FROM installments WHERE loan_id = ?');
+        $checkStmt->bind_param('i', $loanId);
+        $checkStmt->execute();
+        $result = $checkStmt->get_result()->fetch_assoc();
+        $checkStmt->close();
+        
+        if ((int) $result['count'] > 0) {
+            // Installments already exist, don't regenerate
+            return;
+        }
+        
+        // Calculate installment amount
+        $installmentAmount = $totalAmount / $installmentCount;
+        $currentDate = new DateTime($firstInstallmentDate);
+        
+        $stmt = $conn->prepare('
+            INSERT INTO installments (
+                loan_id, 
+                installment_no, 
+                due_date, 
+                due_amount, 
+                paid_amount, 
+                status, 
+                created_at
+            ) VALUES (?, ?, ?, ?, 0, "pending", NOW())
+        ');
+        
+        for ($i = 1; $i <= $installmentCount; $i++) {
+            // For first installment, use the provided date
+            if ($i > 1) {
+                if ($installmentType === 'weekly') {
+                    $currentDate->modify('+1 week');
+                } else {
+                    $currentDate->modify('+1 month');
+                }
+            }
+            $dueDate = $currentDate->format('Y-m-d');
+            
+            // For the last installment, adjust for rounding errors
+            if ($i === $installmentCount) {
+                $totalGenerated = $installmentAmount * ($installmentCount - 1);
+                $amount = round($totalAmount - $totalGenerated, 2);
+            } else {
+                $amount = round($installmentAmount, 2);
+            }
+            
+            $stmt->bind_param('iisd', $loanId, $i, $dueDate, $amount);
+            $stmt->execute();
+        }
+        
+        $stmt->close();
+    }
+
     public function show(Request $request): never
     {
         $loanId = $this->idOrFail($request);
@@ -169,16 +269,11 @@ final class LoansController
         $paymentsStmt->close();
 
         $installments = [];
-        // The current DB may not have generated installments for every loan.
-        // Keep this optional so the detail endpoint still works for legacy data.
-        $check = $conn->query("SHOW TABLES LIKE 'installments'");
-        if ($check && $check->num_rows > 0) {
-            $instStmt = $conn->prepare('SELECT * FROM installments WHERE loan_id = ? ORDER BY installment_no ASC');
-            $instStmt->bind_param('i', $loanId);
-            $instStmt->execute();
-            $installments = $instStmt->get_result()->fetch_all(MYSQLI_ASSOC);
-            $instStmt->close();
-        }
+        $instStmt = $conn->prepare('SELECT * FROM installments WHERE loan_id = ? ORDER BY installment_no ASC');
+        $instStmt->bind_param('i', $loanId);
+        $instStmt->execute();
+        $installments = $instStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $instStmt->close();
 
         JsonResponse::success([
             'loan' => $loan,
@@ -187,11 +282,11 @@ final class LoansController
             'summary' => [
                 'remaining_balance' => max(0, (float) $loan['total_payable'] - (float) $loan['total_paid']),
                 'payment_count' => count($payments),
+                'installment_count' => count($installments),
             ],
         ]);
     }
 
-    /** PUT /api/loans/{id} — edit fields shown in edit.php. */
     public function update(Request $request): never
     {
         $loanId = $this->idOrFail($request);
@@ -228,24 +323,53 @@ final class LoansController
 
         [$totalPayable, $installmentAmount] = $this->calculate($principal, $rate, $term, (string) $existing['disbursement_date']);
 
-        $stmt = $this->prepare(
-            $conn,
-            'UPDATE loans SET loan_code=?, principal_amount=?, interest_rate=?, interest_type=?, loan_term_months=?, '
-            . 'installment_type=?, status=?, purpose=?, total_payable=?, installment_amount=? WHERE loan_id=?',
-            'sddsisssddi',
-            [$loanCode, $principal, $rate, $interestType, $term, $installmentType, $status, $purpose, $totalPayable, $installmentAmount, $loanId],
-        );
-        if (!$stmt->execute()) {
-            $error = $stmt->error;
-            $stmt->close();
-            JsonResponse::error('DB_ERROR', 'Failed to update loan: ' . $error, 500);
-        }
-        $stmt->close();
+        $conn->begin_transaction();
 
-        JsonResponse::success(['loan' => $this->fetchLoan($conn, $loanId)]);
+        try {
+            $stmt = $this->prepare(
+                $conn,
+                'UPDATE loans SET loan_code=?, principal_amount=?, interest_rate=?, interest_type=?, loan_term_months=?, '
+                . 'installment_type=?, status=?, purpose=?, total_payable=?, installment_amount=? WHERE loan_id=?',
+                'sddsisssddi',
+                [$loanCode, $principal, $rate, $interestType, $term, $installmentType, $status, $purpose, $totalPayable, $installmentAmount, $loanId],
+            );
+            if (!$stmt->execute()) {
+                $error = $stmt->error;
+                $stmt->close();
+                JsonResponse::error('DB_ERROR', 'Failed to update loan: ' . $error, 500);
+            }
+            $stmt->close();
+
+            // Regenerate installments if loan changed
+            $this->regenerateInstallments($conn, $loanId, $totalPayable, $term, (string) $existing['first_installment_date'], $installmentType);
+
+            $conn->commit();
+            JsonResponse::success(['loan' => $this->fetchLoan($conn, $loanId)]);
+
+        } catch (\Exception $e) {
+            $conn->rollback();
+            JsonResponse::error('UPDATE_FAILED', 'Failed to update loan: ' . $e->getMessage(), 500);
+        }
     }
 
-    /** DELETE /api/loans/{id}. */
+    private function regenerateInstallments(
+        mysqli $conn,
+        int $loanId,
+        float $totalAmount,
+        int $installmentCount,
+        string $firstInstallmentDate,
+        string $installmentType
+    ): void {
+        // Delete existing installments
+        $stmt = $conn->prepare('DELETE FROM installments WHERE loan_id = ?');
+        $stmt->bind_param('i', $loanId);
+        $stmt->execute();
+        $stmt->close();
+
+        // Generate new ones
+        $this->generateInstallments($conn, $loanId, $totalAmount, $installmentCount, $firstInstallmentDate, $installmentType);
+    }
+
     public function destroy(Request $request): never
     {
         $loanId = $this->idOrFail($request);
@@ -263,18 +387,28 @@ final class LoansController
             JsonResponse::error('LOAN_HAS_PAYMENTS', 'Cannot delete a loan with payment records.', 409);
         }
 
-        $stmt = $conn->prepare('DELETE FROM loans WHERE loan_id = ?');
-        $stmt->bind_param('i', $loanId);
-        if (!$stmt->execute()) {
-            $error = $stmt->error;
+        $conn->begin_transaction();
+
+        try {
+            $stmt = $conn->prepare('DELETE FROM installments WHERE loan_id = ?');
+            $stmt->bind_param('i', $loanId);
+            $stmt->execute();
             $stmt->close();
-            JsonResponse::error('DB_ERROR', 'Failed to delete loan: ' . $error, 500);
+
+            $stmt = $conn->prepare('DELETE FROM loans WHERE loan_id = ?');
+            $stmt->bind_param('i', $loanId);
+            $stmt->execute();
+            $stmt->close();
+
+            $conn->commit();
+            JsonResponse::success(['loan_id' => $loanId]);
+
+        } catch (\Exception $e) {
+            $conn->rollback();
+            JsonResponse::error('DELETE_FAILED', 'Failed to delete loan: ' . $e->getMessage(), 500);
         }
-        $stmt->close();
-        JsonResponse::success(['loan_id' => $loanId]);
     }
 
-    /** POST /api/loans/{id}/status — focused status update contract. */
     public function updateStatus(Request $request): never
     {
         $loanId = $this->idOrFail($request);
@@ -287,20 +421,10 @@ final class LoansController
         $stmt = $conn->prepare('UPDATE loans SET status = ? WHERE loan_id = ?');
         $stmt->bind_param('si', $status, $loanId);
         $stmt->execute();
-        if ($stmt->affected_rows === 0 && !$this->fetchLoan($conn, $loanId)) {
-            $stmt->close();
-            JsonResponse::error('NOT_FOUND', 'Loan not found.', 404);
-        }
         $stmt->close();
         JsonResponse::success(['loan_id' => $loanId, 'status' => $status]);
     }
 
-    /**
-     * POST /api/loans/{id}/payments — record a loan payment.
-     * The `loan_payments` schema has columns loan_id, member_id, amount,
-     * payment_date, note (note column stores the receipt/reference text and
-     * any payment_method label).
-     */
     public function recordPayment(Request $request): never
     {
         $loanId = $this->idOrFail($request);
@@ -313,9 +437,6 @@ final class LoansController
         if ($amount <= 0 || $paymentDate === '') {
             JsonResponse::error('VALIDATION_ERROR', 'amount and payment_date are required.', 422);
         }
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $paymentDate)) {
-            JsonResponse::error('VALIDATION_ERROR', 'payment_date must use YYYY-MM-DD format.', 422);
-        }
 
         $conn = Database::connection();
         $loan = $this->fetchLoan($conn, $loanId);
@@ -325,40 +446,44 @@ final class LoansController
 
         $memberId = (int) $loan['member_id'];
 
-        $stmt = $this->prepare(
-            $conn,
-            'INSERT INTO loan_payments (loan_id, member_id, amount, payment_date, note) VALUES (?, ?, ?, ?, ?)',
-            'iidss',
-            [$loanId, $memberId, $amount, $paymentDate, $note],
-        );
-        if (!$stmt->execute()) {
-            $error = $stmt->error;
+        $conn->begin_transaction();
+
+        try {
+            $stmt = $this->prepare(
+                $conn,
+                'INSERT INTO loan_payments (loan_id, member_id, amount, payment_date, note) VALUES (?, ?, ?, ?, ?)',
+                'iidss',
+                [$loanId, $memberId, $amount, $paymentDate, $note],
+            );
+            $stmt->execute();
+            $paymentId = $stmt->insert_id;
             $stmt->close();
-            JsonResponse::error('DB_ERROR', 'Failed to record payment: ' . $error, 500);
+
+            $recalcStmt = $conn->prepare('SELECT COALESCE(SUM(amount), 0) AS t FROM loan_payments WHERE loan_id = ?');
+            $recalcStmt->bind_param('i', $loanId);
+            $recalcStmt->execute();
+            $total = (float) ($recalcStmt->get_result()->fetch_assoc()['t'] ?? 0);
+            $recalcStmt->close();
+
+            $updateStmt = $conn->prepare('UPDATE loans SET total_paid = ? WHERE loan_id = ?');
+            $updateStmt->bind_param('di', $total, $loanId);
+            $updateStmt->execute();
+            $updateStmt->close();
+
+            $conn->commit();
+
+            JsonResponse::success([
+                'payment_id' => $paymentId,
+                'loan_id' => $loanId,
+                'amount' => $amount,
+                'total_paid' => $total,
+                'remaining_balance' => max(0, (float) $loan['total_payable'] - $total),
+            ], 201);
+
+        } catch (\Exception $e) {
+            $conn->rollback();
+            JsonResponse::error('PAYMENT_FAILED', 'Failed to record payment: ' . $e->getMessage(), 500);
         }
-        $paymentId = $stmt->insert_id;
-        $stmt->close();
-
-        // Recalculate loans.total_paid from the sum of all payments (matches
-        // the PHP controllers' safe re-calc pattern).
-        $recalcStmt = $conn->prepare('SELECT COALESCE(SUM(amount), 0) AS t FROM loan_payments WHERE loan_id = ?');
-        $recalcStmt->bind_param('i', $loanId);
-        $recalcStmt->execute();
-        $total = (float) ($recalcStmt->get_result()->fetch_assoc()['t'] ?? 0);
-        $recalcStmt->close();
-
-        $updateStmt = $conn->prepare('UPDATE loans SET total_paid = ? WHERE loan_id = ?');
-        $updateStmt->bind_param('di', $total, $loanId);
-        $updateStmt->execute();
-        $updateStmt->close();
-
-        JsonResponse::success([
-            'payment_id' => $paymentId,
-            'loan_id' => $loanId,
-            'amount' => $amount,
-            'total_paid' => $total,
-            'remaining_balance' => max(0, (float) $loan['total_payable'] - $total),
-        ], 201);
     }
 
     private function validateLoan(
@@ -373,7 +498,7 @@ final class LoansController
         string $firstInstallmentDate,
     ): void {
         if ($loanCode === '' || $memberId <= 0 || $principal <= 0 || $rate < 0 || $term <= 0 || $disbursementDate === '' || $firstInstallmentDate === '') {
-            JsonResponse::error('VALIDATION_ERROR', 'loan_code, member_id, principal_amount, interest_rate, loan_term_months, disbursement_date and first_installment_date are required.', 422);
+            JsonResponse::error('VALIDATION_ERROR', 'All fields are required.', 422);
         }
         if (!in_array($interestType, ['flat', 'reducing_balance'], true)) {
             JsonResponse::error('VALIDATION_ERROR', 'Invalid interest type.', 422);
@@ -385,8 +510,6 @@ final class LoansController
 
     private function calculate(float $principal, float $rate, int $term, string $disbursementDate): array
     {
-        // The PHP create/edit controllers apply the same simple formula to both
-        // configured interest types; preserve that behavior exactly.
         $totalPayable = $principal + ($principal * $rate / 100);
         $installmentAmount = $term > 0 ? $totalPayable / $term : 0;
         $maturityDate = date('Y-m-d', strtotime($disbursementDate . ' +' . $term . ' months'));
