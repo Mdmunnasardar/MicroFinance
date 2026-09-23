@@ -199,6 +199,7 @@ export default function LoginPage() {
             </div>
           </motion.div>
 
+
           {/* Hero Illustration - Unique Design */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -774,7 +775,7 @@ const styles = {
     right: '-200px',
     width: '600px',
     height: '600px',
-    background: 'rgba(79, 70, 229, 0.12)',
+    background: 'rgba(211, 27, 27, 0.12)',
     borderRadius: '50%',
     filter: 'blur(120px)',
     animation: 'float-glow 20s ease-in-out infinite',
@@ -965,7 +966,7 @@ const styles = {
     backdropFilter: 'blur(20px)',
     WebkitBackdropFilter: 'blur(20px)',
     borderRadius: '20px',
-    border: '1px solid rgba(255,255,255,0.06)',
+    border: '1px solid rgba(102, 19, 19, 0.06)',
     overflow: 'hidden',
     boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
   },
@@ -1080,7 +1081,7 @@ const styles = {
   // ===== STATS =====
   statsSection: {
     padding: '60px 24px',
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    backgroundColor: 'rgba(53, 104, 95, 0.02)',
   },
   statsGrid: {
     maxWidth: '1200px',
